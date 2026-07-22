@@ -1,0 +1,23 @@
+@import 'tailwindcss';
+
+/* MyOS design tokens — calm, restrained. Refined later; named now. */
+@theme {
+  --color-bg: #0a0a0a;
+  --color-surface: #141414;
+  --color-ink: #e8e6e1;
+  --color-ink-dim: #8a877f;
+  --color-accent: #d4a24e;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}

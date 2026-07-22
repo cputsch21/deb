@@ -1,0 +1,1 @@
+-- dated .sql migrations live here, applied via the Supabase SQL editor
