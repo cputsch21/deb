@@ -21,6 +21,18 @@ cross-app archaeology it was all distilled from). Currently at **Milestone 0**
 
 ## The log (newest first)
 
+### July 22, 2026 — M1 rulings (plan approved: 7 tickets)
+- **The composer is the task-adder from M1 — deliberately dumb.** Every
+  submitted line becomes a task verbatim: no parsing, no cleverness. In a
+  project lens it lands in that project; at home it lands on the Bench.
+  M2 swaps the brain, not the box. M1 placeholder copy: "Add a task…"
+  (the "Talk, drop, or ask anything…" line arrives with Deb in M2).
+- **Bench fade: dimming starts at 14 days untouched, floor at 30 days,
+  always readable.** (7 was too aggressive for a four-venture life — the
+  Bench must never nag.)
+- **Recurring rhythms V1: exactly three** — daily · weekly on chosen days ·
+  monthly on a date.
+
 ### July 22, 2026 — The app is Deb
 The product and the mentor share one name: **Deb**. Chosen over Kai (a crowded
 field of AI assistants) and Vero (partially taken); Deb's field is clear — and
