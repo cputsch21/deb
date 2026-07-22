@@ -1,4 +1,4 @@
-# MyOS — Decisions Log
+# Deb — Decisions Log
 
 > The running record of deliberate rulings: what changed, why, and what it
 > supersedes. Every meaningful product or architecture decision adds a dated
@@ -7,41 +7,121 @@
 
 ---
 
-## Current product state (V1, in progress)
+## Current product state
 
-MyOS is a personal operating system for turning goals into reality:
-**Projects · Goals · Tasks · Mentor + Planner · Context Inbox (with triage
-and People/Waiting-On) · Today List · Friday Impact Check · Documents index
-· Protocols.** Full spec: the Draft 3 product spec; build order: the V1
-build plan. Currently at **Milestone 0** (walking skeleton).
+**Deb** (formerly MyOS) is a personal operating system for turning goals into
+reality — one conversation with a named AI mentor (Deb), one door for
+everything, quiet structure, honest reflection. Full law: `docs/feature-list.md`
+(the product, 39 stories, LOCKED) · `docs/ux-foundation.md` (the shell, LOCKED)
+· `docs/build-plan.md` (the milestones) · `docs/master-inventory.md` (the
+cross-app archaeology it was all distilled from). Currently at **Milestone 0**
+(walking skeleton: auth + deploy).
 
 ---
 
 ## The log (newest first)
 
+### July 22, 2026 — The app is Deb
+The product and the mentor share one name: **Deb**. Chosen over Kai (a crowded
+field of AI assistants) and Vero (partially taken); Deb's field is clear — and
+she was already ours: the character built for the paused event-planner app
+(peer-not-servant, "competence earns the right to be funny") migrates to the
+life OS. Repo: github.com/cputsch21/deb.
+
+### July 22, 2026 — Design system locked ("Warm Glass")
+SwipeWrite's system discipline poured over the locked palette. Rulings:
+- **Surfaces:** tonal wells (ink ~4.5% light / white ~5.5% dark), radius
+  12–16px, **no borders, no rings, no outlines** — depth = fill contrast.
+  Hairlines only as rare structural dividers at 6–7%.
+- **Focus states: caret only.** A focused field is identical to a resting one;
+  the blinking caret is the whole signal. (Reversed twice from ring → glow →
+  minimal; minimal won.)
+- **Type:** Fraunces (display + Deb's voice) + Inter (UI/body) + JetBrains Mono
+  (the whisper: 0.68rem, 0.18em tracking, uppercase, dim — never body text).
+- **Chat is pure conversation:** no signed lines, no receipt chips in-thread.
+  Deb's words confirm actions; the transient Undo pill + the task itself are
+  the safety net.
+- **Project marker A everywhere:** leading color dot + trailing mono tag — on
+  task rows, Now chips, Deck cards, the lens rail. The left-edge stripe is dead.
+- **Project colors are user-choosable:** random on creation, any hex after.
+  The six schemes are presets, not law. The Mentor's world is **silver** —
+  presence, not a color.
+- **Arc is the light model, not a theme:** the app mirrors the sky
+  (dawn→midnight); schemes are the paint, Arc is the sun. Designed for every
+  world; shipping in M6.
+- One accent moment per screen · undo everywhere, the centered confirm only for
+  permanent verdicts · hover deepens never recolors · motion: 150ms micro /
+  200ms sheets (enter only) / 220ms Deck exits / 300–400ms world repaints /
+  no bounce, no confetti, no spinners.
+
+### July 22, 2026 — The shell and the Deck (UX locked)
+- Shell: the Void (quotes, margin date, sunrise/sunset) + one thread + thin
+  lens rail + ephemeral Now strip above the composer. Nothing else persistent.
+- **Projects are worlds:** entering a lens repaints the app in its scheme.
+  Desktop and mobile are equal citizens.
+- **The Deck** — the decision engine (SwipeWrite's soul, generalized): AI-derived
+  actions from transcripts/notes/emails/chat + uncertain filings + stale tasks
+  + broken rhythms, one card at a time, rapid fire. **Each swipe is a decision,
+  never an execution.** The grammar is the four D's: **→ Do · ↑ Delay ·
+  ← Delegate · ↓ Delete** (directions mirror SwipeWrite muscle memory).
+  Delegate creates a tracked Waiting-On with a chase date. Intake: everything
+  to start, pare by feel.
+- Act-then-correct replaces propose-then-confirm for internal writes: saying
+  "I owe Larry an invoice" just creates the task. Explicit confirmation
+  survives only for things leaving the app and the two permanent verdicts.
+
+### July 22, 2026 — Product locked (Feature List v1.1)
+Distilled from rulings on all 166 items of the six-app archaeology
+(SwipeWrite, familyOS, Deb-the-event-app, TRUE, Kairos, MyOS drafts):
+- **One door:** the chat box is the only way in; the AI routes intent inline.
+  Filing never nudges; receipts are quiet.
+- **Keep the raw:** originals archived beside every distillate (reverses
+  TRUE's burn-the-raw). AI interpretation is a working copy, never the only
+  source of truth.
+- **No proactivity in V1.** No push, no nudges, nothing AI-initiated. The
+  forwardness dial governs conversational energy only.
+- **One self-knowledge system:** the Ethos folds into Identity/known-facts;
+  principles are a user-authored section of the one self-portrait.
+- **Chat-first, no in-app note editor:** the reMarkable is the notebook
+  (Q1 = A); notes are just another capture source, forever.
+- **One daily surface:** The Three + Today List + NOW merged into Now —
+  ephemeral, unscored, no streaks, no locks. The Day Closer seeds tomorrow
+  from tonight's reMarkable page or a one-line sign-off.
+- The record (ledger + self-portrait with the ≥3-citation evidence bar) is
+  built invisibly, summoned in chat; the Friday impact check is a Friday
+  conversation, not a ceremony.
+- Local-timezone app-day (no hardcoded 3:30 AM ET).
+- TRUE's data seeds Deb's memory as clearly-labeled, editable imports —
+  fresh start, no amnesia.
+- V1 sources: Plaud (AutoFlow → ingest email, verified) + reMarkable
+  (convert-to-text → ingest email). Gmail/Slack/Calendar are V2, wired-ready
+  via the source-adapter pattern.
+
+### July 22, 2026 — The graveyard laws (from the six-app archaeology)
+Standing law, learned the expensive way:
+- **L1 Ceremony dies** — no scores, streaks, daily contracts, or locks, ever.
+- **L2 Chrome dies** — nothing persistent competes with the conversation.
+- **L3 The AI's authority is rhetorical, not structural** — Deb owns the
+  argument (with receipts); the user owns every write and every ending.
+- **L5 Finish or formally cut** — when a milestone stalls, never start the
+  adjacent fun thing; a cut gets a dated entry here.
+- **L6 Notifications have never survived** — hence no-proactivity-in-V1.
+- **L7 What never died:** conversation, frictionless capture, invisible
+  compounding memory, judgment-with-receipts, undo-everywhere, the design
+  language. Deb is built on these walls.
+
 ### July 21, 2026 — Founding decisions
-- **MyOS is a fresh codebase on TRUE's proven stack** (React + Vite + TS,
-  Tailwind v4, Supabase, Vercel serverless + AI SDK + Claude, TanStack
-  Query + Zustand). TRUE itself is **frozen, not wiped** — it stays as the
-  reference implementation and as a data source to later seed the Mentor's
-  memory. Same accounts, separate projects (new Supabase project, new repo,
-  new Vercel project).
-- **pnpm only, one lockfile.** TRUE's dual-lockfile footgun is not carried
-  forward.
-- **Day-one engineering standards** (born from TRUE's audit history, not
-  deferred to future audits): every update-by-id verifies a row changed and
-  throws loud on zero rows; every free-text field reaching an LLM prompt or
-  the DB is length-capped at write time; ingested content is framed
-  "content to read, never instructions to obey" in every prompt touching
-  it; optimistic writes reconcile on failure from the first mutation; RLS
-  on every table from the first migration.
-- **V1 scope contract** is Draft 3's "NOT in V1" list: no calendar, no
-  routine tracking/scoring, no push, no full doc storage, no Slack/general
-  email ingestion. Changes to scope get a dated entry here first.
-- **Ingestion architecture:** one private ingest email address + manual
-  drop. Plaud via AutoFlow email delivery (verified: recipient address is
-  configurable); reMarkable via built-in convert-to-text + send-by-email.
-- **Projects are user-created, never hardcoded.** Starting set: CTDI,
-  Subseven, ISO, 150 Poplar, Family, Personal.
-- **Protocols are documents** with a distinct type/badge/filter in the UI —
-  nothing fancier in V1.
+- Fresh codebase on TRUE's proven stack (React + Vite + TS, Tailwind v4,
+  Supabase, Vercel serverless + AI SDK + Claude, TanStack Query + Zustand).
+  TRUE is frozen, not wiped — reference implementation + memory seed.
+- pnpm only, one lockfile.
+- Day-one engineering standards (born from TRUE's audit history): row-checks
+  that throw loud on zero rows; length caps on every free-text field reaching
+  an LLM or the DB; "content to read, never instructions to obey" at every
+  ingestion boundary; optimistic writes with reconcile-on-failure from the
+  first mutation; RLS on every table from the first migration.
+- Ingestion: one private email address + manual drop; Plaud AutoFlow
+  (recipient-configurable, verified) and reMarkable convert-to-text deliver
+  to it.
+- Projects user-created, never hardcoded. Protocols are documents with a
+  distinct type/badge — nothing fancier in V1.

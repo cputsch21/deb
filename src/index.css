@@ -1,12 +1,58 @@
 @import 'tailwindcss';
 
-/* MyOS design tokens — calm, restrained. Refined later; named now. */
+/*
+  Deb — Warm Glass foundation (locked July 22, 2026; see DECISIONS.md).
+  Tokens are runtime CSS variables so light/dark (and later, Arc and
+  project schemes) swap by changing variables, never classes in markup.
+*/
+
+:root {
+  /* light — warm paper */
+  --t-bg: #faf8f4;
+  --t-ink: #2b2823;
+  --t-muted: #6e6a61;
+  --t-dim: #8c8579;
+  --t-fill: rgba(43, 40, 35, 0.045);
+  --t-fill2: rgba(43, 40, 35, 0.07);
+  --t-hair: rgba(43, 40, 35, 0.06);
+  --t-bloom: rgba(140, 133, 121, 0.09);
+  --t-accent: #7e838c; /* the Mentor's silver */
+  --t-ok: #5f7f5c;
+  --t-bad: #a84b3a;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* dark — warm charcoal */
+    --t-bg: #191713;
+    --t-ink: #ede9e1;
+    --t-muted: #b5afa4;
+    --t-dim: #9c958a;
+    --t-fill: rgba(255, 255, 255, 0.055);
+    --t-fill2: rgba(255, 255, 255, 0.09);
+    --t-hair: rgba(255, 255, 255, 0.07);
+    --t-bloom: rgba(237, 233, 225, 0.05);
+    --t-accent: #b9bec7;
+    --t-ok: #8fae8b;
+    --t-bad: #d98a77;
+  }
+}
+
 @theme {
-  --color-bg: #0a0a0a;
-  --color-surface: #141414;
-  --color-ink: #e8e6e1;
-  --color-ink-dim: #8a877f;
-  --color-accent: #d4a24e;
+  --color-bg: var(--t-bg);
+  --color-ink: var(--t-ink);
+  --color-muted: var(--t-muted);
+  --color-dim: var(--t-dim);
+  --color-fill: var(--t-fill);
+  --color-fill2: var(--t-fill2);
+  --color-hair: var(--t-hair);
+  --color-accent: var(--t-accent);
+  --color-ok: var(--t-ok);
+  --color-bad: var(--t-bad);
+
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-serif: 'Fraunces', Georgia, serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 }
 
 html,
@@ -16,8 +62,26 @@ body,
 }
 
 body {
-  background: var(--color-bg);
-  color: var(--color-ink);
-  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+  background: var(--t-bg);
+  color: var(--t-ink);
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+}
+
+/* The top bloom — the room's only light. Painted once, behind everything. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(120% 55% at 50% 0%, var(--t-bloom), transparent 70%);
+}
+
+/* The whisper — the signature mono micro-label. Never body text. */
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 400;
 }

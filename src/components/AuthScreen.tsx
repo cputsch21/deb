@@ -20,12 +20,19 @@ export function AuthScreen() {
     setBusy(false)
   }
 
+  // Warm Glass: tonal wells, no borders, no rings — the caret is the focus state.
+  const well =
+    'w-full rounded-xl bg-fill px-4 py-3.5 text-ink placeholder:text-dim outline-none'
+
   return (
-    <div className="flex h-full items-center justify-center">
-      <form onSubmit={submit} className="w-80 space-y-4">
-        <h1 className="text-center text-2xl font-light tracking-widest text-ink">
-          MyOS
-        </h1>
+    <div className="flex h-full items-center justify-center px-7">
+      <form onSubmit={submit} className="w-full max-w-xs space-y-4">
+        <div className="pb-4 text-center">
+          <div className="eyebrow text-dim">Your operating system</div>
+          <h1 className="font-serif text-4xl font-medium tracking-tight text-ink">
+            Deb
+          </h1>
+        </div>
         <input
           type="email"
           required
@@ -33,7 +40,7 @@ export function AuthScreen() {
           placeholder="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full rounded-md bg-surface px-3 py-2 text-ink outline-none focus:ring-1 focus:ring-accent"
+          className={well}
         />
         <input
           type="password"
@@ -42,20 +49,20 @@ export function AuthScreen() {
           placeholder="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full rounded-md bg-surface px-3 py-2 text-ink outline-none focus:ring-1 focus:ring-accent"
+          className={well}
         />
-        {error && <p className="text-sm text-red-400">{error}</p>}
+        {error && <p className="text-sm text-bad">{error}</p>}
         <button
           type="submit"
           disabled={busy}
-          className="w-full rounded-md bg-accent px-3 py-2 font-medium text-bg disabled:opacity-50"
+          className="w-full rounded-xl bg-accent px-4 py-3 font-medium text-bg disabled:opacity-40 dark:text-bg"
         >
-          {mode === 'signin' ? 'Sign in' : 'Create account'}
+          {mode === 'signin' ? 'Sign in' : 'Create the account'}
         </button>
         <button
           type="button"
           onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}
-          className="w-full text-sm text-ink-dim hover:text-ink"
+          className="w-full text-sm text-dim transition-colors hover:text-ink"
         >
           {mode === 'signin' ? 'First time? Create the account' : 'Back to sign in'}
         </button>
