@@ -29,6 +29,13 @@ cross-app archaeology it was all distilled from). Currently at **Milestone 0**
   prompt is built from that document and only that document. Changes to
   her character go through the soul doc (and an entry here), never
   directly into prompt code.
+- **Messages are append-only, enforced by the database** — no update or
+  delete permission exists on the thread, period. If redaction of
+  accidentally pasted sensitive content is ever needed, it arrives as its
+  own narrow, deliberate mechanism via a future ruling here — never a
+  general edit/delete door.
+- **The memory room opens from a quiet "memory" whisper in the home
+  header.** Everything Deb knows: visible, editable, forgettable.
 
 ### July 22, 2026 — M1 rulings (plan approved: 7 tickets)
 - **The composer is the task-adder from M1 — deliberately dumb.** Every
