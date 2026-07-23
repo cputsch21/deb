@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useLens } from '../lib/lens'
+import { useMaterializer } from '../lib/materialize'
 import { paintWorld } from '../lib/worldTheme'
 import { useProjects } from '../db/queries/projects'
 import { useTaskMutations } from '../db/queries/tasks'
@@ -18,6 +19,9 @@ export function Shell(_props: { email: string }) {
   const [sheet, setSheet] = useState<'closed' | 'create' | 'edit'>('closed')
   const [draft, setDraft] = useState('')
   const { create: createTask } = useTaskMutations()
+
+  // rhythms materialize as normal tasks at app open + on return
+  useMaterializer()
 
   // If the active project disappears (deleted, rolled back), come home.
   useEffect(() => {
