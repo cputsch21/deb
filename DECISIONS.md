@@ -21,6 +21,15 @@ cross-app archaeology it was all distilled from). Currently at **Milestone 0**
 
 ## The log (newest first)
 
+### July 23, 2026 — M2 opening rulings
+- **Design polish is deferred until the app is functionally complete** —
+  deliberate, not drift. The Warm Glass foundation ships as-is through the
+  functional milestones; the dedicated polish pass comes after.
+- **`docs/deb-soul.md` is locked law for Deb's behavior.** Her system
+  prompt is built from that document and only that document. Changes to
+  her character go through the soul doc (and an entry here), never
+  directly into prompt code.
+
 ### July 22, 2026 — M1 rulings (plan approved: 7 tickets)
 - **The composer is the task-adder from M1 — deliberately dumb.** Every
   submitted line becomes a task verbatim: no parsing, no cleverness. In a
