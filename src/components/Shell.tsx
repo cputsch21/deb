@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import { UndoPill } from './UndoPill'
 
 /** The app shell. Milestone 0: proves auth + deploy, wearing the Warm Glass. */
 export function Shell({ email }: { email: string }) {
@@ -34,6 +35,8 @@ export function Shell({ email }: { email: string }) {
         </p>
         <p className="eyebrow mt-8 text-dim">Milestone 0 · {email}</p>
       </main>
+
+      <UndoPill />
     </div>
   )
 }

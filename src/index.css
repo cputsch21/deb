@@ -77,6 +77,38 @@ body::before {
   background: radial-gradient(120% 55% at 50% 0%, var(--t-bloom), transparent 70%);
 }
 
+/* The sheet — the one floating edge in the app. 200ms enter, instant exit. */
+.sheet {
+  background: var(--t-bg);
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.16),
+    0 2px 12px rgba(0, 0, 0, 0.07);
+  animation: sheet-in 200ms ease-out;
+}
+
+@keyframes sheet-in {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+}
+
+/* The transient pill — 150ms micro motion, centered above the composer. */
+.pill {
+  transform: translateX(-50%);
+  animation: pill-in 150ms ease-out;
+}
+
+@keyframes pill-in {
+  from {
+    transform: translate(-50%, 6px);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, 0);
+  }
+}
+
 /* The whisper — the signature mono micro-label. Never body text. */
 .eyebrow {
   font-family: var(--font-mono);
