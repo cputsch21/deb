@@ -140,6 +140,18 @@ body::after {
   }
 }
 
+/* The verdict scrim — under the one centered confirm. A hush, not a shadow. */
+.verdict-scrim {
+  background: color-mix(in oklab, var(--t-ink) 10%, transparent);
+  animation: scrim-in 150ms ease-out;
+}
+
+@keyframes scrim-in {
+  from {
+    opacity: 0;
+  }
+}
+
 /* The transient pill — 150ms micro motion, centered above the composer. */
 .pill {
   transform: translateX(-50%);

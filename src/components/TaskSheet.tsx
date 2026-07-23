@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Sheet } from './Sheet'
+import { useGoals } from '../db/queries/goals'
 import { useProjects } from '../db/queries/projects'
 import { useTasks, useTaskMutations } from '../db/queries/tasks'
 import { TITLE_MAX, type Task } from '../db/types'
@@ -17,8 +18,13 @@ export function TaskSheet({ taskId, onClose }: { taskId: string; onClose: () => 
 
 function TaskSheetInner({ task, onClose }: { task: Task; onClose: () => void }) {
   const { data: projects = [] } = useProjects()
+  const { data: goals = [] } = useGoals()
   const { update, setDone, remove } = useTaskMutations()
   const [title, setTitle] = useState(task.title)
+
+  const projectGoals = goals.filter(
+    (g) => g.project_id === task.project_id && g.status === 'active',
+  )
 
   const commitTitle = () => {
     if (title.trim() && title.trim() !== task.title) update(task.id, { title })
@@ -72,6 +78,33 @@ function TaskSheetInner({ task, onClose }: { task: Task; onClose: () => void }) 
             ))}
           </div>
         </div>
+
+        {task.project_id !== null && projectGoals.length > 0 && (
+          <div className="flex flex-col gap-2">
+            <span className="eyebrow text-dim">Goal</span>
+            <div className="flex flex-col gap-1.5">
+              <button
+                onClick={() => update(task.id, { goal_id: null })}
+                className={`rounded-xl px-3.5 py-2.5 text-left text-sm transition-colors duration-150 ${
+                  task.goal_id === null ? 'bg-fill2 text-ink' : 'text-muted hover:bg-fill'
+                }`}
+              >
+                None
+              </button>
+              {projectGoals.map((g) => (
+                <button
+                  key={g.id}
+                  onClick={() => update(task.id, { goal_id: g.id })}
+                  className={`rounded-xl px-3.5 py-2.5 text-left text-sm transition-colors duration-150 ${
+                    task.goal_id === g.id ? 'bg-fill2 text-ink' : 'text-muted hover:bg-fill'
+                  }`}
+                >
+                  {g.title}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="flex items-center gap-5">
           <button
