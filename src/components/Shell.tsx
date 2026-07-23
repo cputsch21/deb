@@ -3,16 +3,21 @@ import { supabase } from '../lib/supabase'
 import { useLens } from '../lib/lens'
 import { paintWorld } from '../lib/worldTheme'
 import { useProjects } from '../db/queries/projects'
+import { useTaskMutations } from '../db/queries/tasks'
+import { Bench } from './Bench'
 import { LensRail } from './LensRail'
+import { LensView } from './LensView'
 import { ProjectSheet } from './ProjectSheet'
 import { UndoPill } from './UndoPill'
 
-/** The app shell: lens rail + the active world. */
-export function Shell({ email }: { email: string }) {
+/** The app shell: lens rail + the active world + the one door. */
+export function Shell(_props: { email: string }) {
   const { lens, setLens } = useLens()
   const { data: projects = [], isFetched } = useProjects()
   const world = projects.find((p) => p.id === lens) ?? null
   const [sheet, setSheet] = useState<'closed' | 'create' | 'edit'>('closed')
+  const [draft, setDraft] = useState('')
+  const { create: createTask } = useTaskMutations()
 
   // If the active project disappears (deleted, rolled back), come home.
   useEffect(() => {
@@ -23,6 +28,14 @@ export function Shell({ email }: { email: string }) {
   useEffect(() => {
     paintWorld(world?.color ?? null)
   }, [world?.color])
+
+  // M1 ruling: the composer is deliberately dumb — every submitted line
+  // becomes a task verbatim. M2 swaps the brain, not the box.
+  const submitDraft = () => {
+    if (!draft.trim()) return
+    createTask(draft, world ? { projectId: world.id } : {})
+    setDraft('')
+  }
 
   const today = new Date().toLocaleDateString('en-US', {
     weekday: 'short',
@@ -64,23 +77,22 @@ export function Shell({ email }: { email: string }) {
           <div className="font-serif text-base font-medium text-ink">{today}</div>
         </div>
 
-        <main className="flex flex-1 flex-col items-center justify-center px-7 text-center">
-          {world ? (
-            <p className="max-w-md font-serif text-3xl leading-snug font-medium text-ink">
-              {world.name}
-            </p>
-          ) : (
-            <>
-              <p className="max-w-md font-serif text-2xl leading-snug font-medium text-ink">
-                The skeleton lives.
-              </p>
-              <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted">
-                Auth, deploy, and the Warm Glass are real. Next: your worlds.
-              </p>
-              <p className="eyebrow mt-8 text-dim">Milestone 0 · {email}</p>
-            </>
-          )}
+        <main className="flex-1 overflow-y-auto">
+          {world ? <LensView world={world} /> : <Bench />}
         </main>
+
+        {/* the one door */}
+        <footer className="px-7 pt-3 pb-7">
+          <input
+            autoFocus
+            value={draft}
+            maxLength={200}
+            placeholder="Add a task…"
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && submitDraft()}
+            className="mx-auto block w-full max-w-xl rounded-2xl bg-fill px-5 py-4 text-[15px] text-ink outline-none placeholder:text-dim"
+          />
+        </footer>
       </div>
 
       {sheet !== 'closed' && (
