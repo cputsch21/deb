@@ -16,7 +16,8 @@
   --t-fill2: rgba(43, 40, 35, 0.07);
   --t-hair: rgba(43, 40, 35, 0.06);
   --t-bloom: rgba(140, 133, 121, 0.09);
-  --t-accent: #7e838c; /* the Mentor's silver */
+  --t-silver: #7e838c; /* the Mentor's silver — no project can take it */
+  --t-accent: var(--t-silver);
   --t-ok: #5f7f5c;
   --t-bad: #a84b3a;
 }
@@ -32,7 +33,7 @@
     --t-fill2: rgba(255, 255, 255, 0.09);
     --t-hair: rgba(255, 255, 255, 0.07);
     --t-bloom: rgba(237, 233, 225, 0.05);
-    --t-accent: #b9bec7;
+    --t-silver: #b9bec7;
     --t-ok: #8fae8b;
     --t-bad: #d98a77;
   }
@@ -46,6 +47,7 @@
   --color-fill: var(--t-fill);
   --color-fill2: var(--t-fill2);
   --color-hair: var(--t-hair);
+  --color-silver: var(--t-silver);
   --color-accent: var(--t-accent);
   --color-ok: var(--t-ok);
   --color-bad: var(--t-bad);
@@ -68,6 +70,27 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/*
+  The world repaint (350ms, inside the 300–400ms law): entering a project
+  sets --world + .in-world on <html>; the accent and the room's light
+  crossfade to the project's color. Home is always silver.
+*/
+:root {
+  --world: #808080;
+}
+
+:root.in-world {
+  --t-accent: var(--world);
+}
+
+body {
+  transition: background-color 350ms ease;
+}
+
+:root.in-world body {
+  background-color: color-mix(in oklab, var(--world) 5%, var(--t-bg));
+}
+
 /* The top bloom — the room's only light. Painted once, behind everything. */
 body::before {
   content: '';
@@ -75,6 +98,30 @@ body::before {
   inset: 0;
   pointer-events: none;
   background: radial-gradient(120% 55% at 50% 0%, var(--t-bloom), transparent 70%);
+  transition: opacity 350ms ease;
+}
+
+/* The world's light — same lamp, the project's color. */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    120% 55% at 50% 0%,
+    color-mix(in oklab, var(--world) 10%, transparent),
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 350ms ease;
+}
+
+:root.in-world body::before {
+  opacity: 0;
+}
+
+:root.in-world body::after {
+  opacity: 1;
 }
 
 /* The sheet — the one floating edge in the app. 200ms enter, instant exit. */

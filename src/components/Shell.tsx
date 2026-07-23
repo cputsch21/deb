@@ -1,8 +1,29 @@
+import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { useLens } from '../lib/lens'
+import { paintWorld } from '../lib/worldTheme'
+import { useProjects } from '../db/queries/projects'
+import { LensRail } from './LensRail'
+import { ProjectSheet } from './ProjectSheet'
 import { UndoPill } from './UndoPill'
 
-/** The app shell. Milestone 0: proves auth + deploy, wearing the Warm Glass. */
+/** The app shell: lens rail + the active world. */
 export function Shell({ email }: { email: string }) {
+  const { lens, setLens } = useLens()
+  const { data: projects = [], isFetched } = useProjects()
+  const world = projects.find((p) => p.id === lens) ?? null
+  const [sheet, setSheet] = useState<'closed' | 'create' | 'edit'>('closed')
+
+  // If the active project disappears (deleted, rolled back), come home.
+  useEffect(() => {
+    if (lens !== null && isFetched && !world) setLens(null)
+  }, [lens, world, isFetched, setLens])
+
+  // The repaint: the whole app wears the world's color.
+  useEffect(() => {
+    paintWorld(world?.color ?? null)
+  }, [world?.color])
+
   const today = new Date().toLocaleDateString('en-US', {
     weekday: 'short',
     month: 'short',
@@ -10,31 +31,66 @@ export function Shell({ email }: { email: string }) {
   })
 
   return (
-    <div className="relative flex h-full flex-col">
-      <header className="flex items-center justify-between px-7 py-5">
-        <span className="eyebrow text-dim">Deb</span>
-        <button
-          onClick={() => supabase.auth.signOut()}
-          className="text-sm text-dim transition-colors hover:text-ink"
-        >
-          sign out
-        </button>
-      </header>
+    <div className="relative flex h-full">
+      <LensRail onNewProject={() => setSheet('create')} />
 
-      {/* the margin date — the notepad's edge */}
-      <div className="absolute top-14 right-7 text-right">
-        <div className="font-serif text-base font-medium text-ink">{today}</div>
+      <div className="relative flex min-w-0 flex-1 flex-col">
+        <header className="flex items-center justify-between py-5 pr-7 pl-2">
+          {world ? (
+            <button
+              onClick={() => setSheet('edit')}
+              title="Project settings"
+              className="flex items-center gap-2.5 opacity-90 transition-opacity duration-150 hover:opacity-100"
+            >
+              <span
+                className="h-2 w-2 rounded-full"
+                style={{ backgroundColor: world.color }}
+              />
+              <span className="eyebrow text-dim">{world.name}</span>
+            </button>
+          ) : (
+            <span className="eyebrow text-dim">Deb</span>
+          )}
+          <button
+            onClick={() => supabase.auth.signOut()}
+            className="text-sm text-dim transition-colors hover:text-ink"
+          >
+            sign out
+          </button>
+        </header>
+
+        {/* the margin date — the notepad's edge */}
+        <div className="absolute top-14 right-7 text-right">
+          <div className="font-serif text-base font-medium text-ink">{today}</div>
+        </div>
+
+        <main className="flex flex-1 flex-col items-center justify-center px-7 text-center">
+          {world ? (
+            <p className="max-w-md font-serif text-3xl leading-snug font-medium text-ink">
+              {world.name}
+            </p>
+          ) : (
+            <>
+              <p className="max-w-md font-serif text-2xl leading-snug font-medium text-ink">
+                The skeleton lives.
+              </p>
+              <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted">
+                Auth, deploy, and the Warm Glass are real. Next: your worlds.
+              </p>
+              <p className="eyebrow mt-8 text-dim">Milestone 0 · {email}</p>
+            </>
+          )}
+        </main>
       </div>
 
-      <main className="flex flex-1 flex-col items-center justify-center px-7 text-center">
-        <p className="max-w-md font-serif text-2xl leading-snug font-medium text-ink">
-          The skeleton lives.
-        </p>
-        <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted">
-          Auth, deploy, and the Warm Glass are real. Next: your worlds.
-        </p>
-        <p className="eyebrow mt-8 text-dim">Milestone 0 · {email}</p>
-      </main>
+      {sheet !== 'closed' && (
+        <ProjectSheet
+          key={sheet === 'edit' ? (world?.id ?? 'edit') : 'create'}
+          open
+          onClose={() => setSheet('closed')}
+          project={sheet === 'edit' ? world : null}
+        />
+      )}
 
       <UndoPill />
     </div>
