@@ -24,6 +24,38 @@ archaeology it was all distilled from). Currently at **Milestone 2 — The Mento
 
 ## The log (newest first)
 
+### July 24, 2026 — M5 approved: ingestion + the record (plan + two redlines)
+Ticket order T1 (record spine) → T2 (the one door) → T3 (distillation) →
+T4 (minting + the learning loop) → T5 (the Read room) → T6 (the margins) →
+T7 (Plaud spike, timeboxed, non-blocking) — approved as proposed, with the
+60k raw cap and the founding migration carrying `tasks.source_entry_id` and
+`extractor_feedback` from day one.
+- **The raw is physically immutable, by the letter of the law:** the raw
+  lives in its own table (`entry_raw`) with select + insert policies ONLY —
+  no update, no delete, same enforcement as the thread. The entry surface
+  (routing, distillate, soft-hide) lives in `entries` and may evolve; the
+  verbatim beneath it cannot be touched by anyone, including us.
+- **Redline 1 — the threshold reads pastes, not messages.** The paste event
+  is the primary signal (the client flags it on the message); size is
+  secondary confirmation. Typed text of ANY length is conversation — a
+  1,500-character typed message is a thought that wants Deb's mind, never
+  auto-filed. A large paste is presumed material; a small paste can still
+  be filed via the `file_entry` hand when it reads as material.
+- **Redline 2 — filing never mutes her.** Filing is the act (receipt chip,
+  act-then-correct, cards minted); whether she also SAYS something rides
+  the normal restraint law. Most filings earn the chip and nothing more; a
+  filing containing something real (a pattern against the record, a promise
+  to hold, evidence worth an honest read) may earn one short line in her
+  voice alongside the chip. Silence stays the default; the door to speech
+  stays open. **She never summarizes back what was just filed** — Chris
+  knows what he pasted.
+- `entry_notes` (the margins' home, T6) is founded in the same T1 migration
+  — one gate instead of two; the table is inert until T6 writes it.
+- M4 acceptance: both flagged judgment calls confirmed (the one-stage room
+  with silent → on Line cards; the T2–T4 commit). Chris's device pass on
+  drag physics + the live why layer is the remaining gate; the 110px commit
+  threshold and STALE_AFTER_DAYS stay tunable on his report.
+
 ### July 24, 2026 — M4 approved: the stack + the Line (charter + model rulings)
 Ticket order T1 (schema) → T2 (the stack) → T3 (Delay/Delegate + Waiting-on
 + the chase return) → T4 (the Line + the punch) → T5 (Deb's ranking + why),
