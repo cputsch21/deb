@@ -10,6 +10,7 @@ import { RoomsNav } from './rooms/RoomsNav'
 import { Reflect } from './rooms/Reflect'
 import { Stub } from './rooms/Stub'
 import { ProjectSheet } from './ProjectSheet'
+import { MemorySheet } from './MemorySheet'
 import { UndoPill } from './UndoPill'
 
 /**
@@ -25,6 +26,7 @@ export function Shell(_props: { email: string }) {
   const { data: projects = [], isFetched } = useProjects()
   const world = projects.find((p) => p.id === lens) ?? null
   const [sheet, setSheet] = useState<'closed' | 'create' | 'edit'>('closed')
+  const [memoryOpen, setMemoryOpen] = useState(false)
 
   // rhythms materialize as normal tasks at app open + on return
   useMaterializer()
@@ -95,6 +97,14 @@ export function Shell(_props: { email: string }) {
           <div className="font-serif text-[15px] font-medium text-ink opacity-90">{today}</div>
         </div>
 
+        {/* the memory whisper — the visible half of memory, one tap away */}
+        <button
+          onClick={() => setMemoryOpen(true)}
+          className="eyebrow absolute right-8 bottom-6 z-10 text-dim opacity-55 transition-opacity hover:opacity-100"
+        >
+          memory
+        </button>
+
         {/* sign out — a quiet corner */}
         <button
           onClick={() => supabase.auth.signOut()}
@@ -117,6 +127,8 @@ export function Shell(_props: { email: string }) {
           project={sheet === 'edit' ? world : null}
         />
       )}
+
+      <MemorySheet open={memoryOpen} onClose={() => setMemoryOpen(false)} />
 
       <UndoPill />
     </div>

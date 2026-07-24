@@ -7,6 +7,19 @@ export const NAME_MAX = 80
 export const TITLE_MAX = 200
 export const MESSAGE_MAX = 4000
 
+export const FACT_MAX = 500
+
+/** Everything Deb knows — visible, editable, forgettable. Never hard-deleted. */
+export type FactSource = 'conversation' | 'chris' | 'seed'
+
+export type KnownFact = {
+  id: string
+  content: string
+  source: FactSource
+  created_at: string
+  deleted_at: string | null
+}
+
 /** The one thread. Append-only in the DB; project_id = the lens it was said in. */
 export type MessageRole = 'user' | 'deb'
 

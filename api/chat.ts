@@ -3,6 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { randomUUID } from 'node:crypto'
 import { DEB_IDENTITY, SILENT_SENTINEL } from './_lib/identity.js'
 import {
+  FACT_MAX,
   MESSAGE_MAX,
   TASK_TITLE_MAX,
   buildHistory,
@@ -47,6 +48,40 @@ const CREATE_TASK: Anthropic.Tool = {
     required: ['title'],
   },
 }
+
+/** Remember a durable fact — the write half of memory. Facts ride the slow cache tier. */
+const REMEMBER: Anthropic.Tool = {
+  name: 'remember',
+  description: `Store a durable fact about Chris or his world when you learn something worth keeping across every future conversation — a stable preference, a relationship, a constraint, a commitment pattern ("Weekends are family time", "Larry is the CTDI auditor", "Prefers hard conversations early in the day"). Remember DELIBERATELY: durable truths, not the passing detail of today, and never something you already know (it is all in WHAT YOU KNOW, above). Everything you remember is visible to Chris — he can edit or forget any of it.`,
+  input_schema: {
+    type: 'object',
+    properties: {
+      content: {
+        type: 'string',
+        description: 'The fact in one clear sentence, in your own words. Under 500 characters.',
+      },
+    },
+    required: ['content'],
+  },
+}
+
+/** Recall — the read half: search her memory and the thread for something specific. */
+const RECALL: Anthropic.Tool = {
+  name: 'recall',
+  description: `Search your memory and the thread for something specific — a name, a promise, a number, a moment — especially when it may be older than the recent conversation you can already see. Use it to ground a receipt in real dates before you assert a pattern; never invent a date. Returns matching facts and past lines with their dates.`,
+  input_schema: {
+    type: 'object',
+    properties: {
+      query: {
+        type: 'string',
+        description: 'A word or short phrase to search for.',
+      },
+    },
+    required: ['query'],
+  },
+}
+
+const TOOLS: Anthropic.Tool[] = [CREATE_TASK, REMEMBER, RECALL]
 
 const json = (body: unknown, status: number) =>
   new Response(JSON.stringify(body), {
@@ -134,7 +169,7 @@ export async function POST(request: Request): Promise<Response> {
             thinking: { type: 'adaptive' },
             system,
             messages: convo,
-            tools: [CREATE_TASK],
+            tools: TOOLS,
           })
 
           for await (const event of stream) {
@@ -182,7 +217,11 @@ export async function POST(request: Request): Promise<Response> {
             const r =
               use.name === 'create_task'
                 ? await createTask(db, use, projectId, send)
-                : { content: `Unknown tool: ${use.name}`, is_error: true }
+                : use.name === 'remember'
+                  ? await remember(db, use, send)
+                  : use.name === 'recall'
+                    ? await recall(db, use)
+                    : { content: `Unknown tool: ${use.name}`, is_error: true }
             results.push({
               type: 'tool_result',
               tool_use_id: use.id,
@@ -249,6 +288,78 @@ async function createTask(
   send({ type: 'action', kind: 'task_created', id, title })
   return {
     content: `Created "${title}" (id ${id}). It is on his list now — do not create it again.`,
+    is_error: false,
+  }
+}
+
+/** Execute remember: RLS-scoped insert into known_facts (the slow tier), then tell the client. */
+async function remember(
+  db: SupabaseClient,
+  use: Anthropic.ToolUseBlock,
+  send: (event: Record<string, unknown>) => void,
+): Promise<{ content: string; is_error: boolean }> {
+  const input = (use.input ?? {}) as { content?: unknown }
+  const content = capText(String(input.content ?? ''), FACT_MAX)
+  if (!content) return { content: 'No content given — nothing was remembered.', is_error: true }
+
+  const id = randomUUID()
+  const { error } = await db.from('known_facts').insert({ id, content, source: 'conversation' })
+  if (error) {
+    console.error('[chat] remember', error)
+    return { content: 'The write failed — it was NOT remembered. Tell Chris plainly.', is_error: true }
+  }
+
+  send({ type: 'action', kind: 'fact_remembered', id, content })
+  return {
+    content: `Remembered: "${content}" (id ${id}). It is in your memory now — do not store it again.`,
+    is_error: false,
+  }
+}
+
+/** Execute recall: search known_facts + the thread for a term, dated, so receipts stay honest. */
+async function recall(
+  db: SupabaseClient,
+  use: Anthropic.ToolUseBlock,
+): Promise<{ content: string; is_error: boolean }> {
+  const input = (use.input ?? {}) as { query?: unknown }
+  const query = String(input.query ?? '')
+    .trim()
+    .slice(0, 200)
+  if (!query) return { content: 'No query given.', is_error: true }
+  const like = `%${query.replace(/[%_\\]/g, ' ')}%`
+
+  const [facts, msgs] = await Promise.all([
+    db
+      .from('known_facts')
+      .select('content, source, created_at')
+      .is('deleted_at', null)
+      .ilike('content', like)
+      .limit(8),
+    db
+      .from('messages')
+      .select('content, role, created_at')
+      .ilike('content', like)
+      .order('created_at', { ascending: false })
+      .limit(8),
+  ])
+
+  const lines: string[] = []
+  for (const f of facts.data ?? []) {
+    const date = String(f.created_at).slice(0, 10)
+    const tag = f.source === 'seed' ? ', inherited from TRUE' : ''
+    lines.push(`- fact (${date}${tag}): ${f.content}`)
+  }
+  for (const m of msgs.data ?? []) {
+    const date = String(m.created_at).slice(0, 10)
+    const who = m.role === 'deb' ? 'you said' : 'Chris said'
+    lines.push(`- ${who} (${date}): ${String(m.content).slice(0, 200)}`)
+  }
+
+  if (lines.length === 0) {
+    return { content: `Nothing in memory or the thread matches "${query}".`, is_error: false }
+  }
+  return {
+    content: `Matches for "${query}" (keep the dates honest):\n${lines.join('\n')}`,
     is_error: false,
   }
 }

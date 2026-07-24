@@ -3,6 +3,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 /** Server-side length caps (mirror the schema; law: caps at write time). */
 export const MESSAGE_MAX = 4000
 export const TASK_TITLE_MAX = 200
+export const FACT_MAX = 500
 
 export function capText(text: string, max: number): string {
   const trimmed = text.trim()

@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { messageKeys, useMessages } from '../../db/queries/messages'
 import { useProjects } from '../../db/queries/projects'
 import { taskKeys, useTaskMutations } from '../../db/queries/tasks'
+import { factKeys, useFactMutations } from '../../db/queries/facts'
 import { MESSAGE_MAX } from '../../db/types'
 import { streamDeb } from '../../lib/deb'
 import { transient } from '../../lib/undo'
@@ -25,6 +26,7 @@ export function Reflect({ lens }: { lens: string | null }) {
   const { data: messages = [] } = useMessages(lens)
   const { data: projects = [] } = useProjects()
   const { remove: removeTask } = useTaskMutations()
+  const { forget: forgetFact } = useFactMutations()
   const world = projects.find((p) => p.id === lens) ?? null
   const [turn, setTurn] = useState<Turn | null>(null)
   const [draft, setDraft] = useState('')
@@ -55,6 +57,10 @@ export function Reflect({ lens }: { lens: string | null }) {
           void qc.invalidateQueries({ queryKey: taskKeys.all })
           const id = e.id
           transient.undo(`Added · ${e.title.slice(0, 40)}`, () => removeTask(id, false))
+        } else if (e.kind === 'fact_remembered') {
+          void qc.invalidateQueries({ queryKey: factKeys.all })
+          const id = e.id
+          transient.undo(`Noted · ${e.content.slice(0, 40)}`, () => forgetFact(id, false))
         }
       } else if (e.type === 'done' || e.type === 'silent') {
         // The DB is truth now (user line always persisted; her reply too, on done).

@@ -11,6 +11,7 @@ import { supabase } from './supabase'
 export type DebEvent =
   | { type: 'delta'; text: string }
   | { type: 'action'; kind: 'task_created'; id: string; title: string }
+  | { type: 'action'; kind: 'fact_remembered'; id: string; content: string }
   | { type: 'done'; id: string; content: string; saved: boolean }
   | { type: 'silent' }
   | { type: 'error'; message: string }
