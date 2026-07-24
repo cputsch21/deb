@@ -6,6 +6,7 @@ import { useMaterializer } from '../lib/materialize'
 import { paintWorld } from '../lib/worldTheme'
 import { useProjects } from '../db/queries/projects'
 import { LensRail } from './LensRail'
+import { LoadFailed } from './LoadFailed'
 import { RoomsNav } from './rooms/RoomsNav'
 import { Reflect } from './rooms/Reflect'
 import { Review } from './rooms/Review'
@@ -24,7 +25,7 @@ import { UndoPill } from './UndoPill'
 export function Shell(_props: { email: string }) {
   const { lens, setLens } = useLens()
   const { room, setRoom } = useRoom()
-  const { data: projects = [], isFetched } = useProjects()
+  const { data: projects = [], isFetched, isError, refetch } = useProjects()
   const world = projects.find((p) => p.id === lens) ?? null
   const [sheet, setSheet] = useState<'closed' | 'create' | 'edit'>('closed')
   const [memoryOpen, setMemoryOpen] = useState(false)
@@ -114,10 +115,17 @@ export function Shell(_props: { email: string }) {
           sign out
         </button>
 
-        {room === 'reflect' && <Reflect lens={lens} />}
-        {room === 'read' && <Stub eyebrow="Read" line="Your days will land here." />}
-        {room === 'review' && <Review lens={lens} />}
-        {room === 'react' && <Stub eyebrow="React" line="Nothing to decide yet." />}
+        {/* Law: a failed worlds load never renders as an empty board. */}
+        {isError ? (
+          <LoadFailed what="Your worlds" onRetry={() => void refetch()} />
+        ) : (
+          <>
+            {room === 'reflect' && <Reflect lens={lens} />}
+            {room === 'read' && <Stub eyebrow="Read" line="Your days will land here." />}
+            {room === 'review' && <Review lens={lens} />}
+            {room === 'react' && <Stub eyebrow="React" line="Nothing to decide yet." />}
+          </>
+        )}
       </main>
 
       {sheet !== 'closed' && (

@@ -1,4 +1,5 @@
 import { useLens } from '../../lib/lens'
+import { LoadFailed } from '../LoadFailed'
 import { useProjects } from '../../db/queries/projects'
 import { useGoals } from '../../db/queries/goals'
 import { useTasks } from '../../db/queries/tasks'
@@ -16,10 +17,23 @@ import type { Goal, Project, Task } from '../../db/types'
  * stay silent rather than performing fullness.
  */
 export function Review({ lens }: { lens: string | null }) {
-  const { data: projects = [] } = useProjects()
-  const { data: goals = [] } = useGoals()
-  const { data: tasks = [] } = useTasks()
+  const projectsQ = useProjects()
+  const goalsQ = useGoals()
+  const tasksQ = useTasks()
+  const projects = projectsQ.data ?? []
+  const goals = goalsQ.data ?? []
+  const tasks = tasksQ.data ?? []
   const world = projects.find((p) => p.id === lens) ?? null
+
+  // Law: a failed dossier load never renders as an empty study.
+  if (projectsQ.isError || goalsQ.isError || tasksQ.isError) {
+    const retry = () => {
+      void projectsQ.refetch()
+      void goalsQ.refetch()
+      void tasksQ.refetch()
+    }
+    return <LoadFailed what="The dossiers" onRetry={retry} />
+  }
 
   return (
     <div className="min-h-0 flex-1 overflow-y-auto">

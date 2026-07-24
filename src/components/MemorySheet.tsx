@@ -10,7 +10,7 @@ import { FACT_MAX, type KnownFact } from '../db/types'
  * here was earned in conversation or added by Chris's own hand.
  */
 export function MemorySheet({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { data: facts = [] } = useFacts()
+  const { data: facts = [], isError, refetch } = useFacts()
   const { remember } = useFactMutations()
   const [draft, setDraft] = useState('')
 
@@ -40,7 +40,19 @@ export function MemorySheet({ open, onClose }: { open: boolean; onClose: () => v
       </div>
 
       <div className="mt-4 flex flex-col gap-2">
-        {facts.length === 0 ? (
+        {isError ? (
+          <div className="flex flex-col items-center gap-2 py-6 text-center">
+            <p className="text-[13px] text-muted">
+              Her memory couldn't be loaded. Nothing is lost.
+            </p>
+            <button
+              onClick={() => void refetch()}
+              className="rounded-xl bg-fill2 px-3.5 py-1.5 text-xs text-ink"
+            >
+              Try again
+            </button>
+          </div>
+        ) : facts.length === 0 ? (
           <p className="py-6 text-center text-[13px] text-dim">
             Nothing yet — an empty memory is the honest place to start.
           </p>

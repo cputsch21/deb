@@ -24,6 +24,49 @@ archaeology it was all distilled from). Currently at **Milestone 2 — The Mento
 
 ## The log (newest first)
 
+### July 24, 2026 — The empty-board incident: two standing disciplines
+The M3 T2 deploy selected `projects.mission` before the by-hand migration
+had been run. Every projects read failed ("column does not exist"), the
+failed fetch defaulted to an empty list, and the app rendered a bare rail —
+worlds *appeared* wiped. No data was ever touched: reads failed, nothing
+wrote; running the missions migration restores the fetch. Two laws so this
+class of failure cannot recur:
+1. **A failed load never renders as an empty board.** Empty says "your life
+   is gone," and that's a silent lie. Every load-bearing read (the rail +
+   rooms via the worlds query, the thread, the dossiers, the memory room)
+   now shows an honest failure state — what didn't load, "nothing is lost,"
+   and a retry. Extends the errors-are-never-silent law to reads; applies
+   to every future surface from its first query.
+2. **Migration before deploy.** Code that requires a schema change does not
+   get pushed until its migration has been run in Supabase and confirmed by
+   Chris. Migrations stay additive and idempotent, so already-deployed code
+   keeps working the moment the migration lands (expand first, never
+   break-then-fix). The push waits; never again "deploy now, migrate
+   quickly."
+
+### July 24, 2026 — Standing correction: nothing is special about six
+Worlds are just Chris's current projects — could be 2, could be 10, changes
+over time. Standing law:
+- **No count-language in operative docs or completion criteria.** M3's done
+  is: the intake works end-to-end and every world *currently* held has a
+  mission — a moving target by design, never a number. (Scrubbed this date:
+  Deb's prompt intro, PRD's "six dossiers," build-plan's M1 line,
+  ux-foundation's Friday line, and the M3 criterion below.)
+- **No UI, copy, layout, or logic may assume a world count.** Verified: the
+  rail, the Review grid, context assembly, and the prompt all read the live
+  list; nothing caps or hardcodes. ("The six instincts," the six-app
+  archaeology, and the six color *presets* are not world counts and stand.)
+- **The world lifecycle is complete and verified from M1:** create (rail +),
+  rename, recolor, and retire. Retire = soft delete with undo — the dot
+  leaves the rail, the entire record stays (tasks, goals, mission, rhythms,
+  thread lines — no delete policy exists in the DB, nothing cascades). UI
+  copy aligned from "Delete" to "Retire" this date. A quiet "finished shelf"
+  in Review may surface retired worlds later; the preservation is the law
+  today.
+- **Deb may have opinions about the count — LOAD gives her standing — but it
+  is commentary, never a constraint. She never blocks a world's creation.**
+  (Soul doc gains the matching line.)
+
 ### July 24, 2026 — M2 closed · M3 T2: the interview is the onboarding
 M2 (Reflect: voice, hands, memory, the first message) is closed — the T6 SQL
 ran; her first words are the blank-start text.
@@ -39,7 +82,9 @@ ran; her first words are the blank-start text.
   the one new column; Review hangs it over the world's mantle. A world
   without a mission simply hasn't been given to her yet — the state block
   says so honestly.
-- **M3 closes when all six worlds have missions**; then M4 (React).
+- **M3 closes when the intake works end-to-end and every world currently
+  held has a mission** — a moving target by design, never a number (amended
+  same day; see the standing correction above); then M4 (React).
 - Two Reflect quiets, same date: the composer is a growing textarea
   (Enter sends, Shift+Enter breaks a line, ~5 lines then internal scroll);
   **the quote is removed from Reflect with its breathing room preserved** —

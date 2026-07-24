@@ -6,6 +6,7 @@ import { taskKeys, useTaskMutations } from '../../db/queries/tasks'
 import { factKeys, useFactMutations } from '../../db/queries/facts'
 import { MESSAGE_MAX } from '../../db/types'
 import { streamDeb } from '../../lib/deb'
+import { LoadFailed } from '../LoadFailed'
 import { transient } from '../../lib/undo'
 
 /** One in-flight turn. 'waiting' = the silent gap (nothing shown but your line);
@@ -14,7 +15,7 @@ type Turn = { text: string; phase: 'waiting' | 'speaking' | 'error' }
 
 export function Reflect({ lens }: { lens: string | null }) {
   const qc = useQueryClient()
-  const { data: messages = [] } = useMessages(lens)
+  const { data: messages = [], isError, refetch } = useMessages(lens)
   const { data: projects = [] } = useProjects()
   const { remove: removeTask } = useTaskMutations()
   const { forget: forgetFact } = useFactMutations()
@@ -84,6 +85,9 @@ export function Reflect({ lens }: { lens: string | null }) {
     // Stream closed with no terminal event → honest error, never a half-saved reply.
     if (!resolved) setTurn((t) => (t ? { ...t, phase: 'error' } : t))
   }
+
+  // Law: a failed thread load never renders as an empty thread.
+  if (isError) return <LoadFailed what="The thread" onRetry={() => void refetch()} />
 
   const daymark = world
     ? `${world.name} · same mind, narrowed`
