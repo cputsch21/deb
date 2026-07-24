@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { randomUUID } from 'node:crypto'
-import { DEB_IDENTITY, SILENT_SENTINEL } from './_lib/identity'
+import { DEB_IDENTITY, SILENT_SENTINEL } from './_lib/identity.js'
 import {
   MESSAGE_MAX,
   buildHistory,
@@ -9,7 +9,7 @@ import {
   loadContext,
   stateBlock,
   userClient,
-} from './_lib/context'
+} from './_lib/context.js'
 
 /**
  * /api/chat — Deb's voice.
