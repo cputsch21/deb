@@ -2,8 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { messageKeys, useMessages } from '../../db/queries/messages'
 import { useProjects } from '../../db/queries/projects'
+import { taskKeys, useTaskMutations } from '../../db/queries/tasks'
 import { MESSAGE_MAX } from '../../db/types'
 import { streamDeb } from '../../lib/deb'
+import { transient } from '../../lib/undo'
 
 /** UI-only for now — a rotating set, tap to freeze. Context-wiring rides a later ticket. */
 const QUOTES = [
@@ -22,6 +24,7 @@ export function Reflect({ lens }: { lens: string | null }) {
   const qc = useQueryClient()
   const { data: messages = [] } = useMessages(lens)
   const { data: projects = [] } = useProjects()
+  const { remove: removeTask } = useTaskMutations()
   const world = projects.find((p) => p.id === lens) ?? null
   const [turn, setTurn] = useState<Turn | null>(null)
   const [draft, setDraft] = useState('')
@@ -46,6 +49,13 @@ export function Reflect({ lens }: { lens: string | null }) {
       if (e.type === 'delta') {
         // First delta = she's decided to speak. Now the dots may show.
         setTurn((t) => (t && t.phase === 'waiting' ? { ...t, phase: 'speaking' } : t))
+      } else if (e.type === 'action') {
+        // Act-then-correct: she made a write. It exists now — the pill is the undo.
+        if (e.kind === 'task_created') {
+          void qc.invalidateQueries({ queryKey: taskKeys.all })
+          const id = e.id
+          transient.undo(`Added · ${e.title.slice(0, 40)}`, () => removeTask(id, false))
+        }
       } else if (e.type === 'done' || e.type === 'silent') {
         // The DB is truth now (user line always persisted; her reply too, on done).
         resolved = true

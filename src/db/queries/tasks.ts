@@ -111,8 +111,13 @@ export function useTaskMutations() {
     })
   }
 
-  /** Soft delete + the undo pill. Never a confirm, never a hard delete. */
-  const remove = (id: string) => {
+  /**
+   * Soft delete. Never a confirm, never a hard delete. `announce` shows the
+   * undo pill (the default); Deb's act-then-correct undo passes false — the
+   * "Added" pill is already the safety net, so undoing it shouldn't chain a
+   * second "deleted" pill.
+   */
+  const remove = (id: string, announce = true) => {
     const row = qc.getQueryData<Task[]>(taskKeys.all)?.find((t) => t.id === id)
     void optimisticWrite(qc, {
       keys: [taskKeys.all],
@@ -128,7 +133,7 @@ export function useTaskMutations() {
       },
       onFail: "Couldn't delete that — it's back.",
     })
-    if (row) transient.undo(`"${row.title}" deleted`, () => restore(row))
+    if (announce && row) transient.undo(`"${row.title}" deleted`, () => restore(row))
   }
 
   return { create, update, setDone, remove, restore }

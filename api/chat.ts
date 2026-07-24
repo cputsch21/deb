@@ -1,8 +1,10 @@
 import Anthropic from '@anthropic-ai/sdk'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { randomUUID } from 'node:crypto'
 import { DEB_IDENTITY, SILENT_SENTINEL } from './_lib/identity.js'
 import {
   MESSAGE_MAX,
+  TASK_TITLE_MAX,
   buildHistory,
   capText,
   factsBlock,
@@ -12,17 +14,39 @@ import {
 } from './_lib/context.js'
 
 /**
- * /api/chat — Deb's voice.
- * One turn: persist the user's line, assemble her mind (three cache
- * tiers + windowed day-stamped history), stream her reply, persist it.
- * The [[SILENT]] choice is buffered server-side: the client sees nothing
- * until she has decided to speak.
+ * /api/chat — Deb's voice AND her hands.
+ * One turn: persist the user's line, assemble her mind (three cache tiers +
+ * windowed day-stamped history), then run her turn — she may act (create a
+ * task, act-then-correct) before she speaks. Her spoken reply is streamed,
+ * buffered for the [[SILENT]] choice, and persisted.
  *
  * Wire format: newline-delimited JSON —
- *   {type:'delta', text}  {type:'done', id, content}  {type:'silent'}  {type:'error', message}
+ *   {type:'delta', text}
+ *   {type:'action', kind:'task_created', id, title}   — a write she made
+ *   {type:'done', id, content, saved}
+ *   {type:'silent'}
+ *   {type:'error', message}
  */
 
 const MODEL = 'claude-opus-4-8'
+const MAX_HOPS = 5
+
+/** Her one hand for now: create a task. Server stamps the lens; she picks the words. */
+const CREATE_TASK: Anthropic.Tool = {
+  name: 'create_task',
+  description: `Create a task on Chris's list when he says something actionable that is HIS to do ("I owe Larry an invoice", "remind me to call the contractor", "I need to book Grace's dentist"). Act-then-correct: it exists the instant you call this, and then your words carry the confirmation — briefly, in your voice. ONLY call it for a real to-do that belongs to Chris. Do NOT call it for something he is musing about, asking a question about, delegating to someone else, or that already exists on the list (check the current state first — never re-create a task that is already there). The task lands in whatever lens he is speaking from; you do not choose where it goes.`,
+  input_schema: {
+    type: 'object',
+    properties: {
+      title: {
+        type: 'string',
+        description:
+          'The task as a clean imperative, not a transcript: "Invoice Larry", not "i owe larry an invoice". Under 200 characters.',
+      },
+    },
+    required: ['title'],
+  },
+}
 
 const json = (body: unknown, status: number) =>
   new Response(JSON.stringify(body), {
@@ -66,83 +90,127 @@ export async function POST(request: Request): Promise<Response> {
     { type: 'text' as const, text: DEB_IDENTITY, cache_control: { type: 'ephemeral' as const } },
     { type: 'text' as const, text: factsBlock(ctx.facts), cache_control: { type: 'ephemeral' as const } },
   ]
-  const messages = [
-    ...buildHistory(ctx, userMessageId, tz),
+  const convo: Anthropic.MessageParam[] = [
+    ...(buildHistory(ctx, userMessageId, tz) as Anthropic.MessageParam[]),
     {
-      role: 'user' as const,
+      role: 'user',
       content: [
-        { type: 'text' as const, text: stateBlock(ctx, projectId, tz) },
-        { type: 'text' as const, text: content },
+        { type: 'text', text: stateBlock(ctx, projectId, tz) },
+        { type: 'text', text: content },
       ],
     },
   ]
 
   const anthropic = new Anthropic()
-  const stream = anthropic.messages.stream({
-    model: MODEL,
-    max_tokens: 2048,
-    thinking: { type: 'adaptive' },
-    system,
-    messages,
-  })
-
   const encoder = new TextEncoder()
+
   const readable = new ReadableStream({
     async start(controller) {
       const send = (event: Record<string, unknown>) =>
         controller.enqueue(encoder.encode(JSON.stringify(event) + '\n'))
 
-      // The silence buffer: nothing reaches the client until we know
-      // she's speaking. While the text so far is a prefix of the
-      // sentinel, keep holding.
+      // The silence buffer, carried across tool hops: nothing reaches the
+      // client until we know she is speaking (or she acts — acting is not
+      // silence). While the text so far is a prefix of the sentinel, hold.
       let buffer = ''
       let decided = false
       let silent = false
+      let acted = false
+      let reply = '' // her spoken text, accumulated across hops
+
+      const flushBuffer = () => {
+        if (!decided) {
+          decided = true
+          silent = false
+          if (buffer.trim()) send({ type: 'delta', text: buffer })
+        }
+      }
 
       try {
-        for await (const event of stream) {
-          if (event.type !== 'content_block_delta' || event.delta.type !== 'text_delta') continue
-          if (decided) {
-            if (!silent) send({ type: 'delta', text: event.delta.text })
-            continue
+        for (let hop = 0; hop < MAX_HOPS; hop++) {
+          const stream = anthropic.messages.stream({
+            model: MODEL,
+            max_tokens: 2048,
+            thinking: { type: 'adaptive' },
+            system,
+            messages: convo,
+            tools: [CREATE_TASK],
+          })
+
+          for await (const event of stream) {
+            if (event.type !== 'content_block_delta' || event.delta.type !== 'text_delta') continue
+            const text = event.delta.text
+            if (decided) {
+              if (!silent) send({ type: 'delta', text })
+              continue
+            }
+            buffer += text
+            const sofar = buffer.trimStart()
+            if (sofar.startsWith(SILENT_SENTINEL)) {
+              decided = true
+              silent = true
+            } else if (!SILENT_SENTINEL.startsWith(sofar)) {
+              decided = true
+              send({ type: 'delta', text: buffer })
+            }
           }
-          buffer += event.delta.text
-          const sofar = buffer.trimStart()
-          if (sofar.startsWith(SILENT_SENTINEL)) {
-            decided = true
-            silent = true
-          } else if (!SILENT_SENTINEL.startsWith(sofar)) {
-            decided = true
-            send({ type: 'delta', text: buffer })
+
+          const final = await stream.finalMessage()
+          const turnText = final.content
+            .filter((b): b is Anthropic.TextBlock => b.type === 'text')
+            .map((b) => b.text)
+            .join('')
+          if (silent !== true) reply += turnText
+
+          const toolUses = final.content.filter(
+            (b): b is Anthropic.ToolUseBlock => b.type === 'tool_use',
+          )
+          if (final.stop_reason !== 'tool_use' || toolUses.length === 0) break
+
+          // She acted — that is never silence. Flush any held preamble.
+          acted = true
+          flushBuffer()
+
+          // Echo her turn back unchanged (thinking + tool_use blocks preserved),
+          // then execute each tool and answer with its result.
+          convo.push({
+            role: 'assistant',
+            content: final.content as unknown as Anthropic.MessageParam['content'],
+          })
+          const results: Anthropic.ToolResultBlockParam[] = []
+          for (const use of toolUses) {
+            const r =
+              use.name === 'create_task'
+                ? await createTask(db, use, projectId, send)
+                : { content: `Unknown tool: ${use.name}`, is_error: true }
+            results.push({
+              type: 'tool_result',
+              tool_use_id: use.id,
+              content: r.content,
+              is_error: r.is_error,
+            })
           }
+          convo.push({ role: 'user', content: results })
         }
 
-        const final = await stream.finalMessage()
-        const full = final.content
-          .filter((b) => b.type === 'text')
-          .map((b) => b.text)
-          .join('')
-        const trimmed = full.trim()
+        const trimmed = reply.trim()
+        const nothingToSay =
+          !trimmed || trimmed === SILENT_SENTINEL || trimmed.startsWith(SILENT_SENTINEL)
 
-        if (!decided) {
-          // stream ended while still ambiguous (very short output)
-          silent = trimmed === '' || trimmed.startsWith(SILENT_SENTINEL)
-          if (!silent) send({ type: 'delta', text: full })
-        }
-
-        if (silent || !trimmed) {
+        if ((silent && !acted) || nothingToSay) {
+          // She chose silence, or acted without narrating — no assistant row.
+          // Any action she took already reached the client and the record.
           send({ type: 'silent' })
         } else {
           const replyId = randomUUID()
-          const reply = capText(trimmed, MESSAGE_MAX)
+          const clean = capText(trimmed, MESSAGE_MAX)
           const { error: replyError } = await db.from('messages').insert({
             id: replyId,
             role: 'deb',
-            content: reply,
+            content: clean,
             project_id: projectId,
           })
-          // honest either way: the client learns whether her words landed in the record
-          send({ type: 'done', id: replyId, content: reply, saved: !replyError })
+          send({ type: 'done', id: replyId, content: clean, saved: !replyError })
         }
       } catch (err) {
         console.error('[chat]', err)
@@ -158,4 +226,29 @@ export async function POST(request: Request): Promise<Response> {
       'Cache-Control': 'no-store',
     },
   })
+}
+
+/** Execute create_task: RLS-scoped insert, length-capped, then tell the client. */
+async function createTask(
+  db: SupabaseClient,
+  use: Anthropic.ToolUseBlock,
+  projectId: string | null,
+  send: (event: Record<string, unknown>) => void,
+): Promise<{ content: string; is_error: boolean }> {
+  const input = (use.input ?? {}) as { title?: unknown }
+  const title = capText(String(input.title ?? ''), TASK_TITLE_MAX)
+  if (!title) return { content: 'No title given — nothing was created.', is_error: true }
+
+  const id = randomUUID()
+  const { error } = await db.from('tasks').insert({ id, title, project_id: projectId })
+  if (error) {
+    console.error('[chat] create_task', error)
+    return { content: 'The write failed — the task was NOT created. Tell Chris plainly.', is_error: true }
+  }
+
+  send({ type: 'action', kind: 'task_created', id, title })
+  return {
+    content: `Created "${title}" (id ${id}). It is on his list now — do not create it again.`,
+    is_error: false,
+  }
 }
