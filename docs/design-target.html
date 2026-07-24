@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deb — V1 Prototype · Read Review React Reflect</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* ================= Warm Glass — tokens ================= */
+:root{
+  --bg:#FAF8F4; --ink:#2B2823; --muted:#6E6A61; --dim:#8C8579;
+  --fill:rgba(43,40,35,0.045); --fill2:rgba(43,40,35,0.075);
+  --bloom:rgba(140,133,121,0.09); --accent:#7E838C;
+  --ok:#5F7F5C; --bad:#A84B3A; --tintable: 255,255,255;
+  --world-tint: transparent;
+}
+html.dark{
+  --bg:#191713; --ink:#EDE9E1; --muted:#B5AFA4; --dim:#9C958A;
+  --fill:rgba(255,255,255,0.055); --fill2:rgba(255,255,255,0.09);
+  --bloom:rgba(237,233,225,0.05); --accent:#B9BEC7;
+  --ok:#8FAE8B; --bad:#D98A77;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  background:color-mix(in srgb, var(--world-tint) 5%, var(--bg));
+  color:var(--ink);
+  font-family:'Inter',ui-sans-serif,system-ui,sans-serif;
+  font-size:15px; -webkit-font-smoothing:antialiased;
+  overflow:hidden;
+  transition:background .35s ease;
+}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(120% 55% at 50% 0%, var(--bloom), transparent 70%)}
+.serif{font-family:'Fraunces',Georgia,serif}
+.eb{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:.68rem;
+  letter-spacing:.18em;text-transform:uppercase;font-weight:400;color:var(--dim)}
+.tag{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:.6rem;
+  letter-spacing:.14em;text-transform:uppercase;font-weight:500}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+input{font:inherit;color:var(--ink);background:none;border:none;outline:none;width:100%}
+::placeholder{color:var(--dim)}
+
+/* ================= Shell ================= */
+#shell{position:relative;z-index:1;height:100%;display:flex}
+
+/* --- lens rail --- */
+#rail{width:56px;flex:none;display:flex;flex-direction:column;align-items:center;
+  padding:26px 0;gap:7px}
+.rdot{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;transition:background .15s}
+.rdot:hover{background:var(--fill)}
+.rdot i{display:block;width:10px;height:10px;border-radius:50%;background:var(--c);
+  transition:transform .15s}
+.rdot.active i{transform:scale(1.25);box-shadow:0 0 0 3px color-mix(in srgb, var(--c) 22%, transparent)}
+.rdot.home i{background:linear-gradient(135deg,#C8CCD4,#8A8F98)}
+html.dark .rdot.home i{background:linear-gradient(135deg,#D8DCE2,#9BA1AC)}
+#railplus{margin-top:auto;color:var(--dim);font-size:17px;width:30px;height:30px;
+  border-radius:50%;display:flex;align-items:center;justify-content:center}
+#railplus:hover{background:var(--fill);color:var(--ink)}
+#deckbadge{position:relative;margin-bottom:2px}
+#deckbadge .n{position:absolute;top:-2px;right:-2px;min-width:15px;height:15px;
+  border-radius:99px;background:var(--accent);color:var(--bg);font-size:9.5px;
+  font-weight:600;display:flex;align-items:center;justify-content:center;padding:0 4px}
+#deckbadge svg{width:15px;height:15px;stroke:var(--dim);fill:none;stroke-width:1.8}
+#deckbadge:hover svg{stroke:var(--ink)}
+
+/* --- main column --- */
+#main{flex:1;display:flex;flex-direction:column;min-width:0;position:relative}
+#margin-block{position:absolute;top:24px;right:34px;text-align:right;z-index:5}
+#mdate{font-family:'Fraunces',serif;font-size:16px;font-weight:500}
+#sun{font-size:10px;letter-spacing:.06em;color:var(--dim);margin-top:3px;
+  opacity:0;transition:opacity .25s}
+#margin-block:hover #sun{opacity:.85}
+#worldname{position:absolute;top:24px;left:34px;z-index:5;display:flex;
+  align-items:center;gap:8px;opacity:0;transition:opacity .3s}
+#worldname.show{opacity:1}
+#worldname i{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+#worldname span{font-family:'Fraunces',serif;font-size:15px;font-weight:500}
+#modebtn{position:absolute;bottom:26px;left:-46px;color:var(--dim);font-size:13px;opacity:.6}
+#modebtn:hover{opacity:1}
+
+/* --- quote --- */
+#quote{max-width:640px;margin:64px auto 6px;padding:0 34px;text-align:center;
+  font-family:'Fraunces',serif;font-style:italic;font-size:14.5px;color:var(--dim);
+  opacity:.85;transition:opacity 1.2s, color .3s;cursor:pointer;user-select:none}
+#quote.frozen{color:var(--accent);opacity:1}
+
+/* --- thread --- */
+#threadwrap{flex:1;overflow-y:auto;scrollbar-width:none}
+#threadwrap::-webkit-scrollbar{display:none}
+#thread{max-width:640px;margin:0 auto;padding:26px 34px 18px;display:flex;
+  flex-direction:column;gap:26px}
+.daymark{text-align:center}
+.daymark span{font-family:'JetBrains Mono',monospace;font-size:.58rem;
+  letter-spacing:.22em;text-transform:uppercase;color:var(--dim);opacity:.7}
+.msg{line-height:1.62;animation:rise .3s ease both}
+.msg.you{margin-left:auto;text-align:right;max-width:78%;color:var(--ink);opacity:.87;font-size:14.5px}
+.msg.deb{font-family:'Fraunces',serif;font-size:16px;max-width:88%}
+@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.thinking{display:flex;gap:5px;padding:4px 0}
+.thinking i{width:5px;height:5px;border-radius:50%;background:var(--dim);
+  animation:pulse 1.2s ease infinite}
+.thinking i:nth-child(2){animation-delay:.15s}
+.thinking i:nth-child(3){animation-delay:.3s}
+@keyframes pulse{0%,100%{opacity:.25}50%{opacity:.85}}
+
+/* --- tasks strip inside thread (lens view) --- */
+.tasklist{display:flex;flex-direction:column;gap:9px;margin:2px 0}
+.task{display:flex;align-items:center;gap:12px;padding:13px 16px;border-radius:14px;
+  background:var(--fill);animation:rise .25s ease both;transition:opacity .4s}
+.task .punch{width:19px;height:19px;border-radius:50%;flex:none;cursor:pointer;
+  background:var(--c, var(--accent));position:relative;transition:transform .12s}
+.task .punch:hover{transform:scale(1.15)}
+.task.done .punch::after{content:'✓';position:absolute;inset:0;display:flex;
+  align-items:center;justify-content:center;font-size:11px;color:var(--bg)}
+.task .tt{flex:1;font-size:13.5px;cursor:pointer}
+.task.done .tt{opacity:.4;text-decoration:line-through}
+.task .tag{color:var(--c, var(--dim))}
+.task .due{font-size:11px;color:var(--dim)}
+.task.fading{opacity:.55}
+.task .loose{font-size:10.5px;color:var(--dim);font-style:italic}
+.goalhead{display:flex;align-items:baseline;gap:10px;margin-top:10px}
+.goalhead .g{font-family:'Fraunces',serif;font-size:15px;font-weight:500}
+.goalhead .sub{font-size:11px;color:var(--dim)}
+.secthead{margin-top:8px}
+
+/* --- Now strip --- */
+#now{max-width:640px;width:100%;margin:0 auto;padding:0 34px;transition:max-height .3s ease, opacity .3s ease;
+  max-height:200px;overflow:hidden}
+#now.hidden{max-height:0;opacity:0}
+#nowin{display:flex;gap:10px;padding-bottom:12px}
+.nchip{flex:1;padding:11px 14px;border-radius:13px;background:var(--fill);cursor:pointer;
+  transition:background .15s}
+.nchip:hover{background:var(--fill2)}
+.nchip .r{display:flex;align-items:center;gap:8px}
+.nchip .r i{width:7px;height:7px;border-radius:50%;background:var(--c);flex:none}
+.nchip .t{font-size:12.5px;font-weight:600}
+.nchip .why{font-size:10.5px;color:var(--dim);margin-top:3px;line-height:1.45}
+
+/* --- composer --- */
+#composerwrap{max-width:640px;width:100%;margin:0 auto;padding:0 34px 26px}
+#composer{display:flex;align-items:center;gap:12px;background:var(--fill);
+  border-radius:16px;padding:14px 18px}
+#composer .plus{color:var(--dim);font-size:18px;line-height:1}
+#composer input{font-size:15px}
+
+/* ================= The Instrument's stack (SwipeWrite grammar) ================= */
+#inst{position:relative}
+#inst .dir{position:absolute;font-family:'JetBrains Mono',monospace;font-size:.66rem;
+  letter-spacing:.18em;font-weight:500;color:var(--dim);opacity:.4;transition:opacity .1s,color .1s;z-index:3}
+#dir-up{top:70px;left:50%;transform:translateX(-50%)}
+#dir-down{bottom:26px;left:50%;transform:translateX(-50%)}
+#dir-left{left:30px;top:50%;transform:translateY(-50%)}
+#dir-right{right:30px;top:50%;transform:translateY(-50%)}
+#inst .dir.lit{opacity:1}
+#dir-right.lit{color:var(--ok)}
+#dir-up.lit{color:var(--accent)}
+#dir-left.lit{color:#8a6ea8}
+#dir-down.lit{color:var(--bad)}
+#dcount{position:absolute;top:74px;right:34px}
+#inststage{position:relative;text-align:center}
+#dcard{width:min(430px, 86vw);border-radius:20px;padding:30px 28px;position:relative;
+  background:#fff;box-shadow:0 22px 48px -20px rgba(60,50,40,.22);cursor:grab;
+  touch-action:none;user-select:none}
+html.dark #dcard{background:#221F1A;box-shadow:0 22px 48px -20px rgba(0,0,0,.55)}
+#dcard.flying{transition:transform .22s ease-out, opacity .22s ease-out}
+#dcard .prov{margin-bottom:12px;display:block}
+#dcard .action{font-family:'Fraunces',serif;font-size:21px;line-height:1.25;
+  font-weight:500;margin-bottom:18px}
+#dcard .meta{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+#dcard .meta i{width:7px;height:7px;border-radius:50%;background:var(--c)}
+#dcard .onyou{font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--dim);margin-left:auto}
+#dempty{text-align:center;display:none}
+#dempty h2{font-family:'Fraunces',serif;font-size:26px;font-weight:500;margin:8px 0 6px}
+#dempty p{color:var(--muted);font-size:14px}
+
+/* ================= Sheet ================= */
+#scrim{position:fixed;inset:0;z-index:50;background:color-mix(in srgb, var(--bg) 55%, transparent);
+  backdrop-filter:blur(2px);opacity:0;pointer-events:none;transition:opacity .2s}
+#scrim.open{opacity:1;pointer-events:auto}
+#sheet{position:fixed;top:0;right:0;bottom:0;z-index:51;width:min(430px,92vw);
+  background:color-mix(in srgb, var(--world-tint) 4%, var(--bg));
+  box-shadow:-26px 0 50px -26px rgba(0,0,0,.25);
+  transform:translateX(102%);padding:30px 30px;overflow-y:auto}
+#sheet.open{transform:none;transition:transform .2s ease-out}
+#sheet .x{position:absolute;top:18px;right:18px;width:32px;height:32px;border-radius:50%;
+  background:var(--fill);color:var(--muted);display:flex;align-items:center;justify-content:center;font-size:13px}
+#sheet h2{font-family:'Fraunces',serif;font-size:21px;font-weight:500;margin:8px 0 4px}
+.f{margin-top:18px}
+.f .fl{font-size:11px;font-weight:500;color:var(--dim);margin-bottom:7px}
+.f .well{background:var(--fill);border-radius:12px;padding:12px 15px;font-size:14px;
+  display:flex;align-items:center;gap:10px}
+.f .well i{width:8px;height:8px;border-radius:50%}
+.factrow{display:flex;align-items:flex-start;gap:10px;background:var(--fill);
+  border-radius:12px;padding:12px 15px;margin-top:9px}
+.factrow .ft{flex:1;font-size:13px;line-height:1.5}
+.factrow .src{flex:none}
+.factrow .forget{color:var(--dim);font-size:12px}
+.factrow .forget:hover{color:var(--bad)}
+
+/* ================= Undo pill ================= */
+#undopill{position:fixed;bottom:96px;left:50%;transform:translate(-50%, 16px);z-index:60;
+  display:flex;align-items:center;gap:12px;background:var(--fill2);
+  backdrop-filter:blur(10px);border-radius:99px;padding:10px 18px;font-size:13px;
+  color:var(--muted);opacity:0;pointer-events:none;transition:all .2s}
+#undopill.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+#undopill b{color:var(--accent);font-weight:600;cursor:pointer}
+
+/* memory whisper */
+#memlink{position:absolute;bottom:27px;right:34px;z-index:5;opacity:.55}
+#memlink:hover{opacity:1}
+
+/* ================= Rooms nav ================= */
+#rooms{position:absolute;top:26px;left:50%;transform:translateX(-50%);z-index:6;
+  display:flex;gap:26px}
+#rooms button{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:.66rem;
+  letter-spacing:.18em;text-transform:uppercase;color:var(--dim);opacity:.65;
+  padding:4px 2px;transition:all .15s}
+#rooms button:hover{opacity:1;color:var(--ink)}
+#rooms button.on{opacity:1;color:var(--accent);border-bottom:1px solid var(--accent)}
+
+.room{display:none;flex:1;min-height:0;flex-direction:column}
+.room.on{display:flex}
+
+/* ================= The Book ================= */
+#bookwrap{flex:1;overflow-y:auto;scrollbar-width:none}
+#bookwrap::-webkit-scrollbar{display:none}
+#bookpage{max-width:720px;margin:70px auto 40px;padding:0 110px 60px 44px;position:relative}
+#bookdate{font-family:'Fraunces',serif;font-size:30px;font-weight:500;letter-spacing:-.01em}
+#booksub{font-size:12px;color:var(--dim);margin-top:5px;margin-bottom:34px}
+.entry{position:relative;margin-bottom:30px}
+.entry .eb{display:block;margin-bottom:8px}
+.entry .body{font-size:14.5px;line-height:1.75;color:var(--ink)}
+.entry .body em{font-style:italic;color:var(--muted)}
+.marginnote{position:absolute;right:-116px;top:2px;width:104px;
+  font-family:'Fraunces',serif;font-style:italic;font-size:11.5px;line-height:1.5;
+  color:var(--accent);opacity:.9}
+.marginnote::before{content:'';position:absolute;left:-10px;top:3px;bottom:3px;width:1.5px;
+  background:var(--accent);opacity:.4;border-radius:2px}
+.rawlink{font-family:'JetBrains Mono',monospace;font-size:.58rem;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--dim);opacity:.7}
+.rawlink:hover{opacity:1;color:var(--ink)}
+.entry .raw{display:none;margin-top:10px;padding:12px 15px;border-radius:12px;
+  background:var(--fill);font-size:12px;line-height:1.7;color:var(--muted)}
+.entry.rawopen .raw{display:block}
+.marginnote{cursor:pointer}
+.marginnote:hover{opacity:1;text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px}
+.pagenav{display:flex;gap:18px;margin-top:8px}
+.pagenav button{color:var(--dim);font-size:12.5px}
+.pagenav button:hover{color:var(--ink)}
+
+/* ================= The Study ================= */
+#studywrap{flex:1;overflow-y:auto;padding:84px 44px 40px;scrollbar-width:none}
+#studygrid{max-width:860px;margin:0 auto;display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
+.wcard{border-radius:18px;padding:20px 22px 18px;background:var(--fill);cursor:pointer;
+  position:relative;overflow:hidden;transition:background .15s, transform .15s}
+.wcard:hover{background:var(--fill2);transform:translateY(-2px)}
+.wcard::before{content:'';position:absolute;inset:0;
+  background:linear-gradient(160deg, color-mix(in srgb, var(--c) 10%, transparent), transparent 55%)}
+.wcard .head{display:flex;align-items:center;gap:9px;position:relative}
+.wcard .head i{width:9px;height:9px;border-radius:50%;background:var(--c)}
+.wcard .head .n{font-family:'Fraunces',serif;font-size:17px;font-weight:500}
+.wcard .stat{position:relative;font-size:12px;color:var(--muted);line-height:1.6;margin-top:10px}
+.wcard .stat b{color:var(--ink);font-weight:600}
+.wcard .spine{position:relative;margin-top:14px;height:4px;border-radius:99px;
+  background:color-mix(in srgb, var(--c) 16%, transparent);overflow:hidden}
+.wcard .spine i{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:var(--c)}
+#studyhead{max-width:860px;margin:0 auto 22px}
+#studyhead h1{font-family:'Fraunces',serif;font-size:24px;font-weight:500}
+#studyhead p{font-size:12.5px;color:var(--dim);margin-top:4px}
+
+/* ================= The Instrument ================= */
+#inst{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  position:relative;padding:0 34px}
+#instcard{width:min(480px,90vw);text-align:center;position:relative}
+#instglow{position:absolute;inset:-80px -60px;border-radius:50%;pointer-events:none;
+  background:radial-gradient(closest-side, color-mix(in srgb, var(--ic) 9%, transparent), transparent);
+  transition:background .4s}
+#instworld{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:20px}
+#instworld i{width:8px;height:8px;border-radius:50%;background:var(--ic)}
+#instaction{font-family:'Fraunces',serif;font-size:clamp(24px,4vw,32px);line-height:1.25;
+  font-weight:500;letter-spacing:-.01em}
+#instwhy{font-size:13.5px;color:var(--muted);margin-top:14px;line-height:1.55}
+#instpunch{margin-top:38px;width:74px;height:74px;border-radius:50%;background:var(--ic);
+  color:#fff;font-size:24px;display:inline-flex;align-items:center;justify-content:center;
+  transition:transform .12s;box-shadow:0 14px 34px -14px color-mix(in srgb, var(--ic) 55%, transparent)}
+#instpunch:hover{transform:scale(1.07)}
+#instskip{display:block;margin:20px auto 0;color:var(--dim);font-size:12.5px}
+#instskip:hover{color:var(--ink)}
+#instqueue{position:absolute;bottom:30px;left:50%;transform:translateX(-50%)}
+#instdecide{position:absolute;top:74px;right:34px;display:flex;align-items:center;gap:8px;
+  padding:9px 15px;border-radius:99px;background:var(--fill);font-size:12px;color:var(--muted)}
+#instdecide:hover{background:var(--fill2)}
+#instdecide b{color:var(--accent);font-weight:600}
+#instdone{text-align:center;display:none}
+#instdone h2{font-family:'Fraunces',serif;font-size:26px;font-weight:500;margin:8px 0 6px}
+#instdone p{color:var(--muted);font-size:14px}
+</style>
+<style>
+/* ================= POLISH PASS — zen analog × modern sleek ================= */
+
+/* paper grain — the analog material, felt not seen */
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:200;opacity:.028;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E")}
+html.dark body::after{opacity:.04}
+
+::selection{background:color-mix(in srgb, var(--accent) 22%, transparent)}
+
+/* rooms nav — quieter, sleeker: dot marker instead of underline */
+#rooms{gap:30px}
+#rooms button{font-size:.62rem;letter-spacing:.22em;opacity:.5;border:none;position:relative;padding:4px 0}
+#rooms button.on{border:none;color:var(--ink);opacity:1}
+#rooms button.on::after{content:'';position:absolute;left:50%;bottom:-7px;transform:translateX(-50%);
+  width:3.5px;height:3.5px;border-radius:50%;background:var(--accent)}
+
+/* room transitions — enter with motion */
+.room.on{animation:roomin .26s ease both}
+@keyframes roomin{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+
+/* rail — finer instrument */
+#rail{width:58px;gap:9px;padding-top:30px}
+.rdot{width:26px;height:26px}
+.rdot:hover{background:none}
+.rdot i{width:8.5px;height:8.5px;transition:transform .18s cubic-bezier(.34,1.4,.64,1)}
+.rdot:hover i{transform:scale(1.35)}
+.rdot.active i{transform:scale(1.3);box-shadow:0 0 0 3px color-mix(in srgb, var(--c, var(--accent)) 20%, transparent)}
+
+/* thread — reading rhythm */
+#thread{gap:30px;padding-top:30px}
+.msg.deb{font-size:16.5px;line-height:1.68;letter-spacing:.002em}
+.msg.you{font-size:14px;line-height:1.6;opacity:.8}
+#quote{margin-top:58px;font-size:15px;letter-spacing:.005em}
+
+/* composer — floating glass, modern */
+#composer{background:color-mix(in srgb, var(--fill2) 55%, transparent);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  box-shadow:0 10px 34px -18px rgba(40,32,25,.28);border-radius:18px;padding:15px 20px}
+html.dark #composer{box-shadow:0 10px 34px -18px rgba(0,0,0,.5)}
+#composer .plus{font-size:19px;font-weight:300;opacity:.55}
+#modebtn{position:fixed;left:20px;bottom:22px;font-size:14px;opacity:.35;z-index:10}
+#modebtn:hover{opacity:.9}
+
+/* Now chips — lift on hover, calmer type */
+.nchip{border-radius:14px;transition:background .15s, transform .18s}
+.nchip:hover{transform:translateY(-1.5px)}
+.nchip .t{font-weight:500;letter-spacing:.003em}
+.nchip .why{font-family:'Fraunces',serif;font-style:italic;font-size:11px;opacity:.75}
+
+/* tasks — analog checklist */
+.task{border-radius:15px;padding:13px 17px;transition:background .15s, opacity .4s}
+.task:hover{background:var(--fill2)}
+.task .punch{box-shadow:0 3px 10px -4px color-mix(in srgb, var(--c, var(--accent)) 45%, transparent)}
+.task .tt{letter-spacing:.002em}
+
+/* Book — the manuscript */
+#bookpage{padding-top:6px}
+#bookdate{font-size:34px;letter-spacing:-.015em}
+#booksub{font-family:'Fraunces',serif;font-style:italic;font-size:12.5px;
+  border-bottom:1px solid var(--fill2);padding-bottom:22px;margin-bottom:38px}
+.entry{margin-bottom:36px}
+.entry .body{font-size:15px;line-height:1.8;max-width:62ch}
+.entry .eb{font-size:.6rem;opacity:.85}
+.marginnote{font-size:12px;line-height:1.55;transition:opacity .15s}
+.entry .raw{border-left:2px solid var(--fill2);border-radius:0 12px 12px 0;
+  font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.85;letter-spacing:.01em}
+
+/* Study — objects, not cards */
+.wcard{border-radius:20px;padding:22px 24px 20px;
+  transition:transform .22s cubic-bezier(.3,1,.5,1), background .15s, box-shadow .22s}
+.wcard:hover{transform:translateY(-3px);box-shadow:0 18px 40px -24px color-mix(in srgb, var(--c) 45%, rgba(0,0,0,.25))}
+.wcard::before{background:linear-gradient(165deg, color-mix(in srgb, var(--c) 7%, transparent), transparent 50%)}
+.wcard .head .n{font-size:18px}
+.wcard .stat{font-size:12.5px;margin-top:11px}
+.wcard .spine{height:3px;margin-top:16px}
+#studyhead h1{font-size:26px}
+#studyhead p{font-family:'Fraunces',serif;font-style:italic}
+
+/* Instrument — the focus chamber */
+#instaction{letter-spacing:-.015em}
+#instwhy{font-family:'Fraunces',serif;font-style:italic;font-size:14px;max-width:40ch;margin-left:auto;margin-right:auto}
+#instpunch{box-shadow:0 18px 44px -16px color-mix(in srgb, var(--ic) 60%, transparent);
+  transition:transform .15s cubic-bezier(.34,1.5,.64,1)}
+#instpunch:active{transform:scale(.94)}
+#instdecide{backdrop-filter:blur(10px)}
+
+/* Deck — heavier card, cleaner hints */
+#dcard{border-radius:22px;padding:32px 30px;
+  box-shadow:0 2px 6px rgba(50,40,30,.05), 0 26px 54px -22px rgba(60,50,40,.28)}
+html.dark #dcard{box-shadow:0 2px 6px rgba(0,0,0,.3), 0 26px 54px -22px rgba(0,0,0,.6)}
+#dcard .action{font-size:22px;letter-spacing:-.01em}
+#deck .dir{font-size:.62rem;letter-spacing:.24em}
+
+/* sheet — softer arrival */
+#sheet{box-shadow:-30px 0 60px -30px rgba(30,24,18,.3);border-radius:22px 0 0 22px;padding-top:34px}
+#sheet h2{letter-spacing:-.01em}
+.f .well{border-radius:13px}
+
+/* undo pill — glassier */
+#undopill{backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  box-shadow:0 10px 30px -16px rgba(40,32,25,.35);font-size:12.5px;padding:11px 20px}
+
+.navn{font-size:.58rem;color:var(--accent);margin-left:6px;letter-spacing:0}
+.navn:empty{display:none}
+#worldname{cursor:default}
+#worldx{color:var(--dim);font-size:11px;margin-left:4px;opacity:.6;padding:2px 4px}
+#worldx:hover{opacity:1;color:var(--ink)}
+.wplus{border-radius:20px;padding:22px 24px;border:1.5px dashed var(--fill2);
+  display:flex;align-items:center;justify-content:center;color:var(--dim);
+  font-size:13px;cursor:pointer;min-height:110px}
+.wplus:hover{color:var(--ink);background:var(--fill)}
+#studydetail{max-width:640px;margin:0 auto}
+/* the Study — warm, read-only dossier */
+#room-study{position:relative}
+#room-study::after{content:'';position:absolute;left:0;right:0;bottom:0;height:40%;
+  pointer-events:none;background:radial-gradient(90% 100% at 50% 100%,
+  color-mix(in srgb, var(--accent) 6%, transparent), transparent 70%)}
+.sd-mission{font-family:'Fraunces',serif;font-style:italic;font-size:15px;
+  color:var(--muted);margin-top:6px}
+.sd-sec{margin-top:34px}
+.sd-sec > .eb{display:block;margin-bottom:14px}
+.sd-goal{display:flex;align-items:baseline;gap:12px;padding:10px 0;
+  border-bottom:1px solid var(--fill2)}
+.sd-goal:last-child{border-bottom:none}
+.sd-goal .g{font-family:'Fraunces',serif;font-size:16.5px;font-weight:500;flex:1}
+.sd-goal .st{font-size:11px;color:var(--dim)}
+.ev{display:flex;gap:14px;padding:8px 0;font-size:13.5px;line-height:1.6}
+.ev .d{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.08em;
+  color:var(--dim);padding-top:4px;flex:none;width:52px}
+.ro{display:flex;align-items:center;gap:11px;padding:9px 0;font-size:13.5px}
+.ro i{width:6px;height:6px;border-radius:50%;background:var(--accent);flex:none;opacity:.8}
+.ro .dim{margin-left:auto;font-size:11px;color:var(--dim)}
+.wo{font-size:13.5px;padding:9px 0;display:flex;align-items:center;gap:11px}
+.wo b{font-weight:600}
+.wo .chase{margin-left:auto;font-size:11px;color:var(--accent)}
+/* margin block — quieter until wanted */
+#mdate{font-size:15.5px;opacity:.9}
+#memlink{letter-spacing:.2em;font-size:.6rem}
+</style>
+</head>
+<body>
+<div id="shell">
+  <div id="rail">
+    <button class="rdot home active" data-w="home" title="Everything"><i></i></button>
+    <button id="railplus" title="New world">+</button>
+  </div>
+
+  <div id="main">
+    <div id="rooms">
+      <button data-r="book" onclick="setRoom('book')">Read</button>
+      <button data-r="study" onclick="setRoom('study')">Review</button>
+      <button data-r="inst" onclick="setRoom('inst')">React<span class="navn" id="deckn"></span></button>
+      <button data-r="mentor" class="on" onclick="setRoom('mentor')">Reflect</button>
+    </div>
+    <div id="worldname"><i></i><span></span><button id="worldx" title="back to whole life">✕</button></div>
+    <div id="margin-block">
+      <div id="mdate" class="serif"></div>
+      <div id="sun">↑ 6:14 &nbsp; ↓ 8:37</div>
+    </div>
+    <button id="memlink" class="eb" onclick="openMemory()">memory</button>
+
+    <!-- ============ MENTOR (think & reflect) ============ -->
+    <div class="room on" id="room-mentor">
+      <div id="quote" onclick="this.classList.toggle('frozen')">“Busy is not the same as forward.”</div>
+      <div id="threadwrap"><div id="thread"></div></div>
+      <div id="now"><div id="nowin"></div></div>
+      <div id="composerwrap">
+        <div id="composer">
+          <span class="plus">+</span>
+          <input id="cinput" placeholder="Talk, drop, or ask anything…" autocomplete="off">
+        </div>
+        <button id="modebtn" onclick="document.documentElement.classList.toggle('dark')" title="light/dark">◐</button>
+      </div>
+    </div>
+
+    <!-- ============ BOOK (take notes / the days) ============ -->
+    <div class="room" id="room-book">
+      <div id="bookwrap"><div id="bookpage">
+        <div id="bookdate" class="serif"></div>
+        <div id="booksub">Chapter 204 · a Tuesday in July</div>
+
+        <div class="entry" data-w="">
+          <span class="eb">7:41 · reMarkable · morning page</span>
+          <div class="body">Slept badly, woke clear anyway. Three things circling:
+          the ISO scope, Larry's invoice, and whether Subseven's onboarding is
+          actually done or just <em>declared</em> done. Want the afternoon at the
+          shop with Travis if the day allows it.</div>
+          <div class="marginnote">The afternoon is holdable — nothing after 2:30 needs you.</div>
+        </div>
+
+        <div class="entry" data-w="ctdi">
+          <span class="eb">11:02 · call · Larry · 38m &nbsp;<button class="rawlink" onclick="this.closest('.entry').classList.toggle('rawopen')">raw ▾</button></span>
+          <div class="body">Scope revision agreed. He signs off once the evidence
+          checklist lands. <em>Promised: invoice this week.</em></div>
+          <div class="raw">[11:02:14] LARRY: …so if the scope reads the way we discussed, I don't see a problem signing off.<br>
+          [11:02:31] CHRIS: I'll get you the revised language today, and the evidence checklist behind it.<br>
+          [11:03:02] LARRY: Then we're good. And Chris — the invoice, whenever.<br>
+          [11:03:09] CHRIS: This week. You'll have it this week.<br>
+          <span style="opacity:.5">… 34 more minutes · full transcript preserved</span></div>
+          <div class="marginnote">Third promise to Larry this month — all kept so far.</div>
+        </div>
+
+        <div class="entry" data-w="pop">
+          <span class="eb">3:15 · filed</span>
+          <div class="body">Two quotes in for the roof at 150 Poplar. Both high.
+          Contractor claims material costs; Kelly isn't convinced.</div>
+          <div class="marginnote">Last month's quote was 22% lower. Worth naming that out loud.</div>
+        </div>
+
+        <div class="pagenav">
+          <button>← yesterday</button>
+          <button style="opacity:.4">today</button>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- ============ STUDY (get organized) ============ -->
+    <div class="room" id="room-study">
+      <div id="studywrap">
+        <div id="studyhead">
+          <h1 class="serif">The Study</h1>
+          <p>Six worlds, one glance. Everything derived, nothing maintained.</p>
+        </div>
+        <div id="studygrid"></div>
+      </div>
+    </div>
+
+    <!-- ============ INSTRUMENT (decide + do, one stack) ============ -->
+    <div class="room" id="room-inst">
+      <div id="inst">
+        <span class="eb" id="dcount"></span>
+        <span class="dir" id="dir-up">↑ DELAY</span>
+        <span class="dir" id="dir-left">← DELEGATE</span>
+        <span class="dir" id="dir-right">DO →</span>
+        <span class="dir" id="dir-down">↓ DELETE</span>
+        <div id="inststage">
+          <div id="instglow"></div>
+          <div id="dcard"></div>
+          <button id="instpunch" onclick="instDone()" title="Done">✓</button>
+        </div>
+        <div id="instdone">
+          <span class="eb">React</span>
+          <h2 class="serif">Clear.</h2>
+          <p>Every loop has a verdict. Go live it.</p>
+        </div>
+        <span class="eb" id="instqueue"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Sheet -->
+<div id="scrim" onclick="closeSheet()"></div>
+<div id="sheet"></div>
+
+<!-- Undo -->
+<div id="undopill"><span id="undotext">Done · Invoice Larry</span><b onclick="hideUndo()">Undo</b></div>
+
+<script>
+/* ================= data ================= */
+const P = [
+  {id:'ctdi', name:'CTDI', c:'#5C7285', cd:'#8FA7BC'},
+  {id:'sub',  name:'Subseven', c:'#B05F41', cd:'#D68A6E'},
+  {id:'iso',  name:'ISO', c:'#4E7A72', cd:'#7FA89F'},
+  {id:'pop',  name:'150 Poplar', c:'#B8863B', cd:'#D3A45E'},
+  {id:'fam',  name:'Family', c:'#A96B75', cd:'#C99AA2'},
+  {id:'per',  name:'Personal', c:'#5F7F5C', cd:'#8FAE8B'},
+];
+const col = p => document.documentElement.classList.contains('dark') ? p.cd : p.c;
+const byId = id => P.find(p=>p.id===id);
+
+let TASKS = [
+  {id:1, t:'Send revised ISO scope to the auditor', p:'iso', due:'today'},
+  {id:2, t:'Invoice Larry', p:'ctdi', due:'this week'},
+  {id:3, t:'Call contractor about the roof line', p:'pop', due:'Thu'},
+  {id:4, t:'Review Subseven onboarding flow', p:'sub', done:true},
+  {id:5, t:'Book Grace\'s dentist appointment', p:'fam'},
+  {id:6, t:'Research standing desk options', p:null, fading:true},
+];
+
+
+
+const FACTS = [
+  {t:'Weekends are family time — Deb plans around them, never through them.', src:'inherited'},
+  {t:'Larry is the CTDI auditor contact; promises to him have a perfect kept streak.', src:'inherited'},
+  {t:'Thursday afternoons stay light during summer — the kids have games.', src:'you'},
+  {t:'Prefers hard conversations early in the day.', src:'conversation'},
+];
+
+const DEB_LINES = [
+  "On the list for CTDI. That's the third promise to Larry this month — all kept so far.",
+  "Held. Thursday stays yours after 3.",
+  "Noted — and filed where you'll actually see it again.",
+  "That one's been circling for a while. Want it on today, or shall we let it go honestly?",
+  "Done. The scope is the whole ballgame this week — everything else here can idle.",
+];
+let debIdx = 0;
+
+/* ================= world painting ================= */
+let world = 'home';
+function paint(){
+  const root = document.documentElement;
+  const wn = document.getElementById('worldname');
+  if(world==='home'){
+    root.style.setProperty('--world-tint','transparent');
+    root.style.removeProperty('--accent-override');
+    root.style.setProperty('--accent', root.classList.contains('dark') ? '#B9BEC7' : '#7E838C');
+    wn.classList.remove('show');
+  } else {
+    const p = byId(world), c = col(p);
+    root.style.setProperty('--world-tint', c);
+    root.style.setProperty('--accent', c);
+    wn.querySelector('i').style.background = c;
+    wn.querySelector('span').textContent = p.name;
+    wn.classList.add('show');
+  }
+  document.querySelectorAll('.rdot').forEach(d=>d.classList.toggle('active', d.dataset.w===world));
+  renderThread();
+  if(window.roomRefresh) roomRefresh();
+}
+
+/* the rail — the one global filter */
+const railEl = document.getElementById('rail');
+P.forEach(p=>{
+  const b = document.createElement('button');
+  b.className='rdot'; b.dataset.w=p.id; b.title=p.name;
+  b.innerHTML=`<i></i>`;
+  b.querySelector('i').style.background = p.c;
+  b.style.setProperty('--c', p.c);
+  b.onclick=()=>{world=p.id; paint();};
+  railEl.insertBefore(b, document.getElementById('railplus'));
+});
+document.querySelector('.rdot.home').onclick=()=>{world='home'; paint();};
+
+/* ================= thread ================= */
+const THREAD_HOME = [
+  {k:'day'},
+  {k:'you', t:'Back from the Larry call — I owe him the invoice this week.'},
+  {k:'deb', t:"On the list for CTDI. That's the third promise to Larry this month — all kept so far."},
+  {k:'you', t:'Keep Thursday light, the kids have a game.'},
+  {k:'deb', t:'Held. Thursday stays yours after 3.'},
+];
+let extra = [];   // messages added this session (home only, for simplicity)
+
+function taskRow(t){
+  const p = t.p ? byId(t.p) : null;
+  return `<div class="task ${t.done?'done':''} ${t.fading?'fading':''}" data-id="${t.id}">
+    <span class="punch" style="background:${p?col(p):'var(--fill2)'}" onclick="punch(${t.id},event)"></span>
+    <span class="tt" onclick="openTaskSheet(${t.id})">${t.t}</span>
+    ${world==='home' && p ? `<span class="tag" style="color:${col(p)}">${p.name}</span>` : ''}
+    ${!p ? '<span class="loose">loose · fading</span>' : ''}
+    ${t.due?`<span class="due">${t.due}</span>`:''}
+  </div>`;
+}
+
+function renderThread(){
+  const el = document.getElementById('thread');
+  let h = '';
+  if(world==='home'){
+    h += `<div class="daymark"><span>${dateStr()}</span></div>`;
+    THREAD_HOME.slice(1).forEach(m=> h += `<div class="msg ${m.k}${m.k==='deb'?' serif':''}">${m.t}</div>`);
+    extra.forEach(m=> h += m.k==='dots'
+      ? `<div class="thinking"><i></i><i></i><i></i></div>`
+      : `<div class="msg ${m.k}${m.k==='deb'?' serif':''}">${m.t}</div>`);
+    const bench = TASKS.filter(t=>!t.p && !t.done);
+    if(bench.length){
+      h += `<span class="eb secthead">The Bench</span><div class="tasklist">${bench.map(taskRow).join('')}</div>`;
+    }
+  } else {
+    const p = byId(world);
+    h += `<div class="daymark"><span>${p.name} · same mind, narrowed</span></div>`;
+    if(world==='iso'){
+      h += `<div class="msg deb serif">The scope is the whole ballgame this week. Everything else here can idle.</div>`;
+      h += `<div class="goalhead"><span class="g">Close the audit by September</span><span class="sub">active · on pace</span></div>`;
+    } else {
+      h += `<div class="msg deb serif">Where we left off — the list below is current.</div>`;
+    }
+    const rows = TASKS.filter(t=>t.p===world);
+    h += `<div class="tasklist">${rows.map(taskRow).join('')}</div>`;
+  }
+  el.innerHTML = h;
+  document.getElementById('threadwrap').scrollTop = 1e6;
+  renderNow();
+}
+
+function dateStr(){
+  return new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+}
+document.getElementById('mdate').textContent = dateStr();
+
+/* ================= Now strip — a WINDOW onto the Line (top 2) ================= */
+function renderNow(){
+  const nowEl = document.getElementById('nowin');
+  const items = STACK.filter(c=>c.st==='line').filter(i=> world==='home' || i.p===world).slice(0,2);
+  if(!items.length){ document.getElementById('now').classList.add('hidden'); return; }
+  document.getElementById('now').classList.remove('hidden');
+  nowEl.innerHTML = items.map(i=>{
+    const p=byId(i.p);
+    return `<div class="nchip" onclick="jumpToMove('${i.a.replace(/'/g,"\\'")}')">
+      <div class="r"><i style="background:${col(p)}"></i>
+      <span class="t">${i.a}</span></div><div class="why">${i.why||''}</div></div>`;
+  }).join('');
+}
+/* chips are doorways: tap -> the Instrument, that card dealt */
+function jumpToMove(action){
+  const idx = STACK.findIndex(m=>m.a===action);
+  if(idx>0){ const [m] = STACK.splice(idx,1); STACK.unshift(m); }
+  setRoom('inst');
+}
+
+/* Now collapses while typing */
+const cinput = document.getElementById('cinput');
+cinput.addEventListener('focus',()=>document.getElementById('now').classList.add('hidden'));
+cinput.addEventListener('blur',()=>{ if(!cinput.value) renderNow(); });
+
+/* ================= composer → Deb ================= */
+cinput.addEventListener('keydown',e=>{
+  if(e.key==='Enter' && cinput.value.trim()){
+    const text = cinput.value.trim(); cinput.value='';
+    if(world!=='home'){ world='home'; paint(); }
+    extra.push({k:'you', t:text});
+    extra.push({k:'dots'});
+    renderThread();
+    setTimeout(()=>{
+      extra.pop();
+      const lower = text.toLowerCase();
+      let reply = DEB_LINES[debIdx++ % DEB_LINES.length];
+      if(lower.includes('need to')||lower.includes('i owe')||lower.includes('remind')||lower.includes('task')){
+        const nt = {id:Date.now(), t:text.replace(/^i (need to|owe|should)\s*/i,'').replace(/^./,c=>c.toUpperCase()), p:null};
+        TASKS.push(nt);
+        reply = 'On the Bench — move it to a world when it finds its home.';
+        showUndo('Added · ' + nt.t.slice(0,32));
+      }
+      extra.push({k:'deb', t:reply});
+      renderThread();
+    }, 900);
+  }
+});
+
+/* ================= tasks ================= */
+function punch(id, ev){
+  ev.stopPropagation();
+  const t = TASKS.find(x=>x.id===id);
+  t.done = !t.done;
+  if(t.done) showUndo('Done · ' + t.t.slice(0,32));
+  renderThread();
+}
+function openTaskSheet(id){
+  const t = TASKS.find(x=>x.id===id);
+  const p = t.p ? byId(t.p) : null;
+  openSheet(`
+    <span class="eb">Task${p? ' · '+p.name : ' · The Bench'}</span>
+    <h2>${t.t}</h2>
+    <div class="f"><div class="fl">World</div>
+      <div class="well"><i style="background:${p?col(p):'var(--fill2)'}"></i>${p?p.name:'Bench — no home yet'}</div></div>
+    <div class="f"><div class="fl">Due</div><div class="well">${t.due||'someday'}</div></div>
+    <div class="f"><div class="fl">Goal</div><div class="well">${t.p==='iso'?'Close the audit by September':'—'}</div></div>
+  `);
+}
+
+/* ================= sheet ================= */
+function openSheet(html){
+  document.getElementById('sheet').innerHTML = `<button class="x" onclick="closeSheet()">✕</button>` + html;
+  document.getElementById('sheet').classList.add('open');
+  document.getElementById('scrim').classList.add('open');
+}
+function closeSheet(){
+  document.getElementById('sheet').classList.remove('open');
+  document.getElementById('scrim').classList.remove('open');
+}
+function openMemory(){
+  openSheet(`
+    <span class="eb">Memory</span>
+    <h2>What Deb knows</h2>
+    <p style="font-size:12.5px;color:var(--muted);margin-top:4px">Nothing hidden. Edit or forget any of it.</p>
+    ${FACTS.map(f=>`<div class="factrow">
+      <div class="ft">${f.t}</div>
+      <span class="tag src" style="color:var(--dim)">${f.src}</span>
+      <button class="forget">✕</button>
+    </div>`).join('')}
+  `);
+}
+
+/* ================= undo pill ================= */
+let undoTimer;
+function showUndo(text){
+  document.getElementById('undotext').textContent = text;
+  const pill = document.getElementById('undopill');
+  pill.classList.add('show');
+  clearTimeout(undoTimer);
+  undoTimer = setTimeout(hideUndo, 4200);
+}
+function hideUndo(){ document.getElementById('undopill').classList.remove('show'); }
+
+/* ============ The Instrument — one stack, two species (SwipeWrite grammar) ============ */
+/* st: 'decide' (needs a verdict) | 'line' (decided: Do, awaiting execution)
+   sp: 'notes' (from your own notes/calls) | 'people' (inbound comms — V2 species, one demo card) */
+let STACK = [
+  {sp:'notes',  st:'line',   a:'Send the revised ISO scope to the auditor', p:'iso',
+   prov:'On the Line', why:"He can't move until you send it — 25 focused minutes is enough."},
+  {sp:'notes',  st:'line',   a:'Call the contractor about the roof line', p:'pop',
+   prov:'On the Line', why:"Promised Tuesday. It's Tuesday."},
+  {sp:'notes',  st:'decide', a:'Draft the ISO evidence checklist', p:'iso',
+   prov:"From this morning's reMarkable page", onyou:''},
+  {sp:'people', st:'decide', a:'Get Tyler the API keys he asked for', p:'sub',
+   prov:'Slack · Tyler · 9:41', onyou:'ON YOU — promised by Friday'},
+  {sp:'notes',  st:'decide', a:'Research standing desk options', p:null,
+   prov:'Stale on the Bench · 16 days', onyou:'STILL WANT THIS?'},
+  {sp:'people', st:'decide', a:'RSVP to the Hendersons for Saturday', p:'fam',
+   prov:'Text · Kelly · filed Tuesday', onyou:'ON YOU — reply expected'},
+];
+
+function ordered(){ /* undecided first, then the Line */
+  return [...STACK.filter(c=>c.st==='decide'), ...STACK.filter(c=>c.st==='line')];
+}
+function syncStack(ord){ STACK = ord; }
+
+let FRONT = null;
+function renderInst(){
+  STACK = ordered();
+  const VIEW = world==='home' ? STACK : STACK.filter(c=>c.p===world);
+  const card = document.getElementById('dcard');
+  const done = document.getElementById('instdone');
+  const stage = document.getElementById('inststage');
+  const nDecide = VIEW.filter(c=>c.st==='decide').length;
+  const nLine = VIEW.filter(c=>c.st==='line').length;
+  document.getElementById('deckn').textContent = (nDecide + nLine) || '';
+  document.getElementById('dcount').textContent =
+    (nDecide? nDecide+' to decide' : '') + (nDecide&&nLine? ' · ':'') + (nLine? nLine+' on the line':'');
+  document.getElementById('instqueue').textContent =
+    VIEW.length>1 ? (VIEW.length-1)+' behind this one' : VIEW.length===1 ? 'last one' : '';
+  if(!VIEW.length){ stage.style.display='none'; done.style.display='block';
+    document.getElementById('dcount').textContent=''; renderNow(); return; }
+  stage.style.display='block'; done.style.display='none';
+  const c = VIEW[0]; FRONT = c;
+  const p = c.p ? byId(c.p) : null;
+  const cc = p ? col(p) : 'var(--accent)';
+  document.documentElement.style.setProperty('--ic', p ? col(p) : (document.documentElement.classList.contains('dark')?'#B9BEC7':'#7E838C'));
+  card.style.transform=''; card.style.opacity=1; card.classList.remove('flying');
+  card.innerHTML = `
+    <span class="eb prov">${c.prov}${c.sp==='people' ? ' &nbsp;·&nbsp; from people' : ''}</span>
+    <div class="action serif">${c.a}</div>
+    <div class="meta">
+      ${p?`<i style="background:${cc}"></i><span class="tag" style="color:${cc}">${p.name}</span>`
+         :`<span class="tag" style="color:var(--dim)">BENCH</span>`}
+      <span class="onyou">${c.st==='line' ? (c.why||'') : (c.onyou||'')}</span>
+    </div>`;
+  document.getElementById('instpunch').style.background = p ? cc : 'var(--accent)';
+  renderNow();
+}
+
+/* drag physics — SwipeWrite's hands */
+const cardEl = document.getElementById('dcard');
+let drag = null;
+cardEl.addEventListener('pointerdown', e=>{
+  drag = {x:e.clientX, y:e.clientY}; cardEl.setPointerCapture(e.pointerId);
+  cardEl.classList.remove('flying');
+});
+cardEl.addEventListener('pointermove', e=>{
+  if(!drag) return;
+  const dx = e.clientX-drag.x, dy = e.clientY-drag.y;
+  const rot = Math.max(-12, Math.min(12, dx*0.04));
+  cardEl.style.transform = `translate(${dx}px,${dy}px) rotate(${rot}deg)`;
+  const ax = Math.abs(dx), ay = Math.abs(dy);
+  light(ax>ay && dx>16 ? 'right' : ax>ay && dx<-16 ? 'left' : ay>ax && dy<-16 ? 'up' : ay>ax && dy>16 ? 'down' : null);
+});
+cardEl.addEventListener('pointerup', e=>{
+  if(!drag) return;
+  const dx = e.clientX-drag.x, dy = e.clientY-drag.y; drag=null;
+  const ax=Math.abs(dx), ay=Math.abs(dy);
+  if(Math.max(ax,ay) > 110){
+    fly(ax>ay ? (dx>0?'right':'left') : (dy>0?'down':'up'), dx, dy);
+  } else {
+    cardEl.classList.add('flying'); cardEl.style.transform='';
+    light(null);
+  }
+});
+function light(which){
+  ['up','down','left','right'].forEach(d=>
+    document.getElementById('dir-'+d).classList.toggle('lit', d===which));
+}
+
+/* the four D's — species-aware verdicts */
+function fly(dir, dx=40, dy=0){
+  const c = FRONT; if(!c) return;
+  cardEl.classList.add('flying');
+  const off = {right:'translate(720px,'+dy+'px) rotate(12deg)',
+               left:'translate(-720px,'+dy+'px) rotate(-12deg)',
+               up:'translate('+dx+'px,-900px)', down:'translate('+dx+'px,900px)'}[dir];
+  cardEl.style.transform = off; cardEl.style.opacity=0;
+  let verdict;
+  const take = ()=>STACK.splice(STACK.indexOf(c),1)[0];
+  if(dir==='right'){
+    if(c.st==='decide'){ c.st='line'; c.prov='On the Line'; c.why='You decided this today.'; verdict='Do — on the Line'; }
+    else { verdict='Kept up front — next'; }
+    STACK.push(take());
+  } else if(dir==='up'){ take(); verdict='Delayed — tomorrow'; }
+  else if(dir==='left'){ take(); verdict='Delegated — chase set'; }
+  else { take();
+    verdict = c.sp==='people' ? 'Junked — the filter learns' : 'Deleted — the extractor learns'; }
+  showUndo(verdict + ' · ' + c.a.slice(0,26));
+  light(null);
+  setTimeout(renderInst, 230);
+}
+
+/* the punch — execution */
+function instDone(){
+  const c = FRONT; if(!c) return;
+  STACK.splice(STACK.indexOf(c),1);
+  showUndo('Done · ' + c.a.slice(0,30));
+  renderInst();
+}
+
+/* arrow keys while in the Instrument */
+document.addEventListener('keydown', e=>{
+  if(room!=='inst' || e.target.tagName==='INPUT') return;
+  const map = {ArrowRight:'right', ArrowLeft:'left', ArrowUp:'up', ArrowDown:'down'};
+  if(map[e.key]){ e.preventDefault(); fly(map[e.key]); }
+  if(e.key==='Enter'){ e.preventDefault(); instDone(); }
+});
+
+/* ================= Rooms ================= */
+let room = 'mentor';
+function setRoom(r){
+  room = r;
+  document.querySelectorAll('#rooms button').forEach(b=>b.classList.toggle('on', b.dataset.r===r));
+  document.querySelectorAll('.room').forEach(el=>el.classList.toggle('on', el.id==='room-'+r));
+  roomRefresh();
+}
+function roomRefresh(){
+  if(room==='study') renderStudy();
+  if(room==='inst') renderInst();
+  if(room==='book') renderBook();
+  if(room==='mentor') renderNow();
+}
+document.addEventListener('keydown', e=>{
+  if(e.target.tagName==='INPUT') return;
+  const order = {'1':'book','2':'study','3':'inst','4':'mentor'};
+  if(order[e.key]) setRoom(order[e.key]);
+});
+
+/* the world chip's exit — back to whole life */
+document.getElementById('worldx').onclick = ()=>{ world='home'; paint(); };
+
+/* ================= The Study — the door to the worlds ================= */
+const WSTATS = {
+  ctdi:{line:'Invoice Larry <b>this week</b> · audit prep steady', p:.62},
+  sub:{line:'Onboarding review <b>done</b> · quiet week', p:.85},
+  iso:{line:'Scope <b>out today</b> · audit in <b>19 days</b>', p:.44},
+  pop:{line:'Two roof quotes in — <b>both high</b>', p:.3},
+  fam:{line:"Grace's dentist to book · Saturday RSVP open", p:.5},
+  per:{line:'One loose thread, fading honestly', p:.15},
+};
+const DOSSIER = {
+  ctdi:{m:'The operation runs without you having to hold it.',
+    goals:[['Q3 invoicing clean and current','active · on pace']],
+    recent:[['Jul 22','Call with Larry — scope agreed, sign-off pending the checklist.'],
+            ['Jul 19','Invoice cycle reviewed; one straggler (Larry) left.']],
+    waiting:[['Larry','the scope sign-off','chase Thu']]},
+  sub:{m:'Onboarding so good it sells itself.',
+    goals:[['Ship the new onboarding','active · nearly done']],
+    recent:[['Jul 21','Onboarding review finished — flows approved.'],
+            ['Jul 18','Tyler flagged API key handoff for partners.']],
+    waiting:[]},
+  iso:{m:'Certified by September, no findings.',
+    goals:[['Close the audit by September','active · on pace']],
+    recent:[['Jul 22','Scope revision out to the auditor.'],
+            ['Jul 20','Evidence checklist drafted from the morning pages.']],
+    waiting:[['Larry','scope sign-off','chase Thu']]},
+  pop:{m:'A sound house, honestly maintained.',
+    goals:[['Roof re-done before the fall rains','active · early']],
+    recent:[['Jul 22','Two quotes in — both high; last month ran 22% lower.']],
+    waiting:[['Contractor','revised quote','promised Tue']]},
+  fam:{m:'Present, not just provider.',
+    goals:[['Summer that the kids remember','active · living it']],
+    recent:[['Jul 21',"Grace's dentist due; Hendersons' RSVP still open."]],
+    waiting:[]},
+  per:{m:'Strong body, quiet mind.',
+    goals:[],
+    recent:[['Jul 16','One loose thread on the Bench, fading honestly.']],
+    waiting:[]},
+};
+function renderStudy(){
+  const g = document.getElementById('studygrid');
+  const head = document.getElementById('studyhead');
+  if(world==='home'){
+    head.innerHTML = '<h1 class="serif">Review</h1><p>Every world, at a glance — pick one on the rail to sit down with it.</p>';
+    g.style.display='grid';
+    g.innerHTML = P.map(p=>{
+      const st = WSTATS[p.id], c = col(p);
+      return `<div class="wcard" style="--c:${c}" onclick="world='${p.id}';paint();">
+        <div class="head"><i></i><span class="n">${p.name}</span></div>
+        <div class="stat">${st.line}</div>
+        <div class="spine"><i style="width:${st.p*100}%"></i></div>
+      </div>`;
+    }).join('') + '<div class="wplus">+ new world</div>';
+  } else {
+    const p = byId(world), c = col(p), d = DOSSIER[world];
+    head.innerHTML = `<h1 class="serif">${p.name}</h1><div class="sd-mission">“${d.m}”</div>`;
+    g.style.display='block';
+    const next = STACK.filter(x=>x.p===world).slice(0,3);
+    const tasks = TASKS.filter(t=>t.p===world && !t.done).slice(0,3);
+    g.innerHTML = `<div id="studydetail">
+      ${d.goals.length ? `<div class="sd-sec"><span class="eb">Goals</span>
+        ${d.goals.map(([t,st])=>`<div class="sd-goal"><span class="g">${t}</span><span class="st">${st}</span></div>`).join('')}</div>` : ''}
+      <div class="sd-sec"><span class="eb">Recently</span>
+        ${d.recent.map(([dt,t])=>`<div class="ev"><span class="d">${dt}</span><span>${t}</span></div>`).join('')}</div>
+      ${(next.length||tasks.length) ? `<div class="sd-sec"><span class="eb">Next</span>
+        ${next.map(x=>`<div class="ro"><i style="background:${c}"></i>${x.a}<span class="dim">${x.st==='line'?'on the line':'to decide'}</span></div>`).join('')}
+        ${tasks.filter(t=>!next.find(x=>x.a===t.t)).map(t=>`<div class="ro"><i style="background:${c}"></i>${t.t}<span class="dim">${t.due||''}</span></div>`).join('')}</div>` : ''}
+      ${d.waiting.length ? `<div class="sd-sec"><span class="eb">Waiting on</span>
+        ${d.waiting.map(([who,what,when])=>`<div class="wo"><b>${who}</b> — ${what}<span class="chase">${when}</span></div>`).join('')}</div>` : ''}
+    </div>`;
+  }
+}
+
+/* ================= The Book — pages follow the world ================= */
+function renderBook(){
+  document.getElementById('bookdate').textContent =
+    new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+  const scoped = world!=='home';
+  document.querySelectorAll('#bookpage .entry').forEach(en=>{
+    const w = en.dataset.w;
+    en.style.display = (!scoped || w==='' || w===world) ? '' : 'none';
+  });
+  document.getElementById('booksub').textContent = scoped
+    ? 'the ' + byId(world).name + ' pages · whole-life entries stay'
+    : 'Chapter 204 · a Tuesday in July';
+}
+
+/* margin notes are doors: tap → the Mentor, context loaded */
+document.addEventListener('click', e=>{
+  const mn = e.target.closest('.marginnote');
+  if(!mn) return;
+  setRoom('mentor');
+  extra.push({k:'you', t:'Tell me more about that margin note.'});
+  extra.push({k:'deb', t:'That was a receipt: '+mn.textContent.trim()+' Want to talk about it?'});
+  renderThread();
+});
+
+paint();
+</script>
+</body>
+</html>

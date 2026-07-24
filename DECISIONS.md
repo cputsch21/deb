@@ -10,16 +10,66 @@
 ## Current product state
 
 **Deb** (formerly MyOS) is a personal operating system for turning goals into
-reality — one conversation with a named AI mentor (Deb), one door for
-everything, quiet structure, honest reflection. Full law: `docs/feature-list.md`
-(the product, 39 stories, LOCKED) · `docs/ux-foundation.md` (the shell, LOCKED)
-· `docs/build-plan.md` (the milestones) · `docs/master-inventory.md` (the
-cross-app archaeology it was all distilled from). Currently at **Milestone 0**
-(walking skeleton: auth + deploy).
+reality — one AI mentor (Deb) across **one rail and four rooms** (Read · Review
+· React · Reflect), one door for everything, quiet structure, honest reflection.
+Product law, newest first: `docs/prd.md` (the intention) + `docs/design-target.html`
+(the approved clickable prototype — the design target) · then `docs/feature-list.md`
+and `docs/ux-foundation.md` (v1, superseded where they conflict — see July 24) ·
+`docs/build-plan.md` (the milestones) · `docs/master-inventory.md` (the cross-app
+archaeology it was all distilled from). Currently at **Milestone 2 — The Mentor**
+(the Reflect room): the soul doc, the append-only thread tables, and the
+`/api/chat` voice engine are in; the thread UI is next.
 
 ---
 
 ## The log (newest first)
+
+### July 24, 2026 — The four rooms (PRD + design target are the law now)
+A major product evolution, locked in Cowork. Two artifacts land as the top of
+the law stack: `docs/prd.md` (the product intention) and `docs/design-target.html`
+(the approved clickable prototype — composition, spacing, type sizes, colors,
+motion timings, and interaction behavior incl. drag physics are extracted from
+it, not invented; when in doubt, match the prototype). **Where these conflict
+with `feature-list.md` or `ux-foundation.md` (v1), the PRD and the design target
+win** — ux-foundation v1 is superseded on every point of conflict; what it still
+uniquely covers remains reference.
+
+- **One rail, four rooms.** The app is four verbs across the top —
+  **READ** (what happened: ingested days as pages, Deb's four kinds of margin
+  annotation), **REVIEW** (where things stand: a read-only warm dossier per
+  world), **REACT** (decide + do: one card stack — the four D's + the punch —
+  and the Line), **REFLECT** (what it means: the one thread with Deb). One
+  spine under all four; nothing exists in two rooms; each room does one verb
+  completely.
+- **The rail is the sole global filter.** Silver = whole life; a world dot
+  scopes every room at once and repaints the app in its color. *Where you are*
+  is one decision, made in one place. Supersedes any per-room or per-screen
+  filtering.
+- **Review is read-only, by law.** Everything derived, nothing maintained,
+  nothing tappable into action — read-only is the feature. The moment Review
+  lets you edit, it becomes a workspace, and workspaces become chores (the
+  graveyard's verdict). To act, walk to another room.
+- **React is one stack over one queue.** The old Deck / Now / Instrument
+  concepts merge into React: exactly ONE stack of cards and exactly ONE queue
+  (the Line). Two card species — from-my-notes (V1) and from-people (V2) —
+  share the same gesture; Delete verdicts are species-aware (the extractor
+  learns vs the mail filter learns). The Now strip survives only as a two-chip
+  window onto the Line inside Reflect. Three zoom levels, one truth, no second
+  list anywhere, ever.
+- **The stack is never a second inbox** (the entry bar). From-people cards
+  enter only over a high bar — the ball is on you · it truly matters · you
+  asked to be told; the rest stay in their source, unpunished.
+- **Read is where ingestion lands; no in-app writing in V1.** The reMarkable is
+  the pen. Distillation on the page, the verbatim raw one tap beneath (keep the
+  raw). Every margin note is a door into Reflect.
+
+**Impact on the build:** all of the approved M2 work — the thread, her voice,
+her hands, her memory, the inheritance from TRUE — survives unchanged. It *is*
+the Reflect room. M2 continues exactly as ticketed, now built inside a minimal
+rooms shell (top nav + rail per the prototype) with Read / Review / React as
+empty stubs behind the nav. A milestone re-cut mapped to rooms is proposed when
+M2 lands: React absorbs the old Deck + Now milestones, Read absorbs ingestion +
+the record's surfaces, Review grows from M1's spine data.
 
 ### July 23, 2026 — M2 opening rulings
 - **Design polish is deferred until the app is functionally complete** —
