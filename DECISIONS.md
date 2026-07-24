@@ -24,6 +24,42 @@ archaeology it was all distilled from). Currently at **Milestone 2 — The Mento
 
 ## The log (newest first)
 
+### July 24, 2026 — M4 approved: the stack + the Line (charter + model rulings)
+Ticket order T1 (schema) → T2 (the stack) → T3 (Delay/Delegate + Waiting-on
++ the chase return) → T4 (the Line + the punch) → T5 (Deb's ranking + why),
+strictly. The model rulings, all approved explicitly:
+- **`anchored_on` is the one verdict field.** Null = undecided (the stack
+  deals it). Do → today; Delay → its chosen day. **A woken Delay joins the
+  LINE, not the stack** — Delay was a verdict; its day arriving isn't a new
+  question. The stack must not care about card origin (M5's note-minted
+  cards deal identically).
+- **Delegation lives on the task** (`delegated_to` + `chase_on`, paired).
+  Leaves the stack and the Line; shows in Review's Waiting-on (read-only).
+  **On the chase date the card returns to the STACK as a chase card** — that
+  IS a new question (re-delegate / done / delete). A chase card's Done
+  completes the task itself, credited in the record like any other finish.
+  People as first-class entities grow out of these columns later, no rework.
+- **Deb's ranking ships last (T5), signature-cached** (recompute only when
+  the Line's contents change), behind honest degradation: until her ranking
+  lands, order is today-anchored-then-age and no why renders — never a fake.
+- **Redline 1 — the stale return (T4).** An open task whose `anchored_on` is
+  more than STALE_AFTER_DAYS (= 7, a named constant, tunable) past returns
+  to the stack as a re-deal card ("On the Line since Jul 10 — still real?");
+  the Line derivation excludes anything past the threshold. Do re-anchors to
+  today, Delay picks an honest new day, Delete admits it was never real.
+  Rationale: a week-old anchor is no longer a decision, it's a wish wearing
+  one — and the stack is the room where wishes get re-decided.
+- **Redline 2 — age is information, never guilt.** Nowhere in this room —
+  card, punch, or Now strip — does age render as an alarm: no OVERDUE label,
+  no red, no warning weight. Age states itself in the same muted mono as the
+  source line ("on the Line 5 days"), full stop. The stale return is the
+  mechanism that handles neglect; the pixels never scold. Graveyard law
+  wearing M4 clothes.
+- One queue, three zoom levels: `lib/line.ts` is the single derivation —
+  React deals all of it, the Now strip glances its top (the open-tasks
+  stand-in retires in T4), Reflect's "what now?" speaks the same top via the
+  state block. A second list anywhere is a bug by definition.
+
 ### July 24, 2026 — The mobile grammar (TRUE's, layered with the rooms)
 Responsive, one codebase: below ~768px the shell re-arranges; desktop is
 untouched. No separate app, no forked components — the same rooms wearing a
