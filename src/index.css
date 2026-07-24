@@ -168,6 +168,18 @@ body::after {
   }
 }
 
+/* Thread lines arrive with a soft rise (once, on mount). */
+.rise {
+  animation: rise 0.3s ease both;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
 /* The whisper — the signature mono micro-label. Never body text. */
 .eyebrow {
   font-family: var(--font-mono);

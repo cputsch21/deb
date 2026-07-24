@@ -5,6 +5,18 @@
 /** Length caps — mirrored in the schema; enforced again at write time. */
 export const NAME_MAX = 80
 export const TITLE_MAX = 200
+export const MESSAGE_MAX = 4000
+
+/** The one thread. Append-only in the DB; project_id = the lens it was said in. */
+export type MessageRole = 'user' | 'deb'
+
+export type Message = {
+  id: string
+  project_id: string | null
+  role: MessageRole
+  content: string
+  created_at: string
+}
 
 export type Project = {
   id: string
