@@ -10,6 +10,20 @@ export const MISSION_MAX = 200
 export const DELEGATE_MAX = 80
 
 export const FACT_MAX = 500
+export const RAW_MAX = 60000
+export const DISTILLATE_MAX = 8000
+
+/** The record's surface rows (M5). The raw beneath lives in entry_raw,
+ *  physically immutable — the client never reads it except one tap under
+ *  the distillate (T5). */
+export type EntrySource = 'plaud' | 'remarkable' | 'filed'
+
+export type EntryMeta = {
+  id: string
+  project_id: string | null
+  source: EntrySource
+  entry_day: string
+}
 
 /** Everything Deb knows — visible, editable, forgettable. Never hard-deleted. */
 export type FactSource = 'conversation' | 'chris' | 'seed'

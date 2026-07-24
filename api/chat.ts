@@ -2,11 +2,16 @@ import Anthropic from '@anthropic-ai/sdk'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { randomUUID } from 'node:crypto'
 import { DEB_IDENTITY, SILENT_SENTINEL } from './_lib/identity.js'
+import { runDistill, DISTILLATE_MAX } from './_lib/distill.js'
 import {
   FACT_MAX,
+  MATERIAL_MIN,
   MESSAGE_MAX,
   MISSION_MAX,
+  RAW_MAX,
   TASK_TITLE_MAX,
+  todayKeyInTz,
+  type DebContext,
   buildHistory,
   capText,
   factsBlock,
@@ -102,7 +107,22 @@ const SET_MISSION: Anthropic.Tool = {
   },
 }
 
-const TOOLS: Anthropic.Tool[] = [CREATE_TASK, REMEMBER, RECALL, SET_MISSION]
+/** File the current message as an entry — the small-material hand. */
+const FILE_ENTRY: Anthropic.Tool = {
+  name: 'file_entry',
+  description: `File Chris's latest message into the record as an entry — at this size his words ARE the readable entry. Use when what he sent is MATERIAL rather than conversation: a note or log he clearly wants kept, or when he says "file this". Pass the world it belongs to by content; omit when genuinely unsure (it files at silver — never block a filing on doubt, ask your one short question instead). The receipt chip is the confirmation; add words only if something real needs saying, and NEVER summarize the content back to him.`,
+  input_schema: {
+    type: 'object',
+    properties: {
+      world: {
+        type: 'string',
+        description: 'Exact world name; omit if unsure (files at silver).',
+      },
+    },
+  },
+}
+
+const TOOLS: Anthropic.Tool[] = [CREATE_TASK, REMEMBER, RECALL, SET_MISSION, FILE_ENTRY]
 
 const json = (body: unknown, status: number) =>
   new Response(JSON.stringify(body), {
@@ -118,16 +138,27 @@ export async function POST(request: Request): Promise<Response> {
   const { data: userData, error: authError } = await db.auth.getUser(token)
   if (authError || !userData?.user) return json({ error: 'Not signed in.' }, 401)
 
-  let body: { content?: unknown; projectId?: unknown; tz?: unknown }
+  let body: { content?: unknown; projectId?: unknown; tz?: unknown; pasted?: unknown }
   try {
     body = await request.json()
   } catch {
     return json({ error: 'Bad request.' }, 400)
   }
-  const content = capText(String(body.content ?? ''), MESSAGE_MAX)
-  if (!content) return json({ error: 'Nothing to say.' }, 400)
+  const rawInput = String(body.content ?? '').trim()
+  if (!rawInput) return json({ error: 'Nothing to say.' }, 400)
   const projectId = typeof body.projectId === 'string' ? body.projectId : null
   const tz = typeof body.tz === 'string' && body.tz ? body.tz : 'UTC'
+  const pasted = body.pasted === true
+
+  // THE DOOR (M5 T2, redline law): the paste EVENT is the primary signal,
+  // size the secondary confirmation. A large paste is material — it files
+  // into the record and never enters the thread. Typed text of any length
+  // is conversation.
+  if (pasted && rawInput.length >= MATERIAL_MIN) {
+    return fileMaterial(db, rawInput.slice(0, RAW_MAX), projectId, tz)
+  }
+
+  const content = capText(rawInput, MESSAGE_MAX)
 
   // The user's line joins the thread first — the thread is truth even if
   // the model call fails after this point.
@@ -244,7 +275,9 @@ export async function POST(request: Request): Promise<Response> {
                     ? await recall(db, use)
                     : use.name === 'set_mission'
                       ? await setMission(db, use, projectId, ctx.projects, send)
-                      : { content: `Unknown tool: ${use.name}`, is_error: true }
+                      : use.name === 'file_entry'
+                        ? await fileEntryTool(db, use, content, ctx, tz, send)
+                        : { content: `Unknown tool: ${use.name}`, is_error: true }
             results.push({
               type: 'tool_result',
               tool_use_id: use.id,
@@ -425,5 +458,153 @@ async function setMission(
   return {
     content: `Mission written for ${String(target.name)}: "${mission}". It hangs over the mantle in Review now — he can redo it by saying so.`,
     is_error: false,
+  }
+}
+
+
+/**
+ * The material path (M5 T2+T3): a large paste files straight into the
+ * record — raw into entry_raw (immutable), the distilled entry over it,
+ * routed to a world by content (silver when unsure). It never enters the
+ * thread. Filing never fails on the engine: if distillation errors, the
+ * raw still files (distillate lands later; nothing is ever lost).
+ * Redline law: filing never mutes her — `say` streams and persists only
+ * when the engine found something real; the chip alone is the default.
+ */
+async function fileMaterial(
+  db: SupabaseClient,
+  raw: string,
+  lensProjectId: string | null,
+  tz: string,
+): Promise<Response> {
+  const encoder = new TextEncoder()
+  const readable = new ReadableStream({
+    async start(controller) {
+      const send = (event: Record<string, unknown>) =>
+        controller.enqueue(encoder.encode(JSON.stringify(event) + '\n'))
+      try {
+        const ctx = await loadContext(db)
+        const anthropic = new Anthropic()
+        const result = await runDistill(anthropic, ctx, raw, tz).catch((err) => {
+          console.error('[chat] distill', err)
+          return null
+        })
+        const target = result?.world
+          ? ctx.projects.find(
+              (p) => String(p.name).toLowerCase() === result.world!.toLowerCase(),
+            )
+          : undefined
+
+        const { entryId, worldName } = await insertEntry(db, {
+          raw,
+          projectId: target ? String(target.id) : null,
+          worldName: target ? String(target.name) : null,
+          distillate: result?.distillate ?? null,
+          tz,
+        })
+        send({ type: 'action', kind: 'entry_filed', id: entryId, worldName, taskIds: [] })
+
+        const say = result?.say ?? null
+        if (say) {
+          send({ type: 'delta', text: say })
+          const replyId = randomUUID()
+          const { error: replyError } = await db.from('messages').insert({
+            id: replyId,
+            role: 'deb',
+            content: capText(say, MESSAGE_MAX),
+            project_id: lensProjectId,
+          })
+          send({ type: 'done', id: replyId, content: say, saved: !replyError })
+        } else {
+          send({ type: 'silent' })
+        }
+      } catch (err) {
+        console.error('[chat] file', err)
+        send({ type: 'error', message: 'That could not be filed — nothing was lost. Try again.' })
+      }
+      controller.close()
+    },
+  })
+  return new Response(readable, {
+    headers: {
+      'Content-Type': 'application/x-ndjson; charset=utf-8',
+      'Cache-Control': 'no-store',
+    },
+  })
+}
+
+/** The shared write: raw first (immutable), then the entry surface over it. */
+async function insertEntry(
+  db: SupabaseClient,
+  input: {
+    raw: string
+    projectId: string | null
+    worldName: string | null
+    distillate: string | null
+    tz: string
+  },
+): Promise<{ entryId: string; worldName: string | null }> {
+  const rawId = randomUUID()
+  const { error: rawError } = await db
+    .from('entry_raw')
+    .insert({ id: rawId, content: input.raw })
+  if (rawError) throw new Error(`raw insert failed: ${rawError.message}`)
+
+  const entryId = randomUUID()
+  const { error: entryError } = await db.from('entries').insert({
+    id: entryId,
+    raw_id: rawId,
+    project_id: input.projectId,
+    source: 'filed',
+    distillate: input.distillate,
+    entry_day: todayKeyInTz(input.tz),
+  })
+  if (entryError) throw new Error(`entry insert failed: ${entryError.message}`)
+  return { entryId, worldName: input.worldName }
+}
+
+/** Execute file_entry: the message itself becomes the entry (it is already
+ *  the readable form at conversation size — its own distillate). */
+async function fileEntryTool(
+  db: SupabaseClient,
+  use: Anthropic.ToolUseBlock,
+  content: string,
+  ctx: DebContext,
+  tz: string,
+  send: (event: Record<string, unknown>) => void,
+): Promise<{ content: string; is_error: boolean }> {
+  const input = (use.input ?? {}) as { world?: unknown }
+  const worldName = String(input.world ?? '').trim()
+  const target = worldName
+    ? ctx.projects.find((p) => String(p.name).toLowerCase() === worldName.toLowerCase())
+    : undefined
+  if (worldName && !target) {
+    return {
+      content: `No world named "${worldName}" — file at silver (omit world) or use a real one.`,
+      is_error: true,
+    }
+  }
+  try {
+    const { entryId } = await insertEntry(db, {
+      raw: content,
+      projectId: target ? String(target.id) : null,
+      worldName: target ? String(target.name) : null,
+      distillate: capText(content, DISTILLATE_MAX),
+      tz,
+    })
+    send({
+      type: 'action',
+      kind: 'entry_filed',
+      id: entryId,
+      worldName: target ? String(target.name) : null,
+      taskIds: [],
+    })
+    return {
+      content: `Filed to ${target ? String(target.name) : 'silver'} (entry ${entryId}). The chip is his receipt — do not repeat the content back.`,
+      is_error: false,
+    }
+  } catch (err) {
+    console.error('[chat] file_entry', err)
+    return { content: 'The filing failed — tell Chris plainly.', is_error: true }
   }
 }

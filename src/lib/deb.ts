@@ -13,6 +13,13 @@ export type DebEvent =
   | { type: 'action'; kind: 'task_created'; id: string; title: string }
   | { type: 'action'; kind: 'fact_remembered'; id: string; content: string }
   | { type: 'action'; kind: 'mission_set'; id: string; name: string; mission: string }
+  | {
+      type: 'action'
+      kind: 'entry_filed'
+      id: string
+      worldName: string | null
+      taskIds: string[]
+    }
   | { type: 'done'; id: string; content: string; saved: boolean }
   | { type: 'silent' }
   | { type: 'error'; message: string }
@@ -22,6 +29,7 @@ const CANT_ANSWER = 'Deb could not answer just now.'
 export async function streamDeb(
   content: string,
   projectId: string | null,
+  pasted: boolean,
   onEvent: (event: DebEvent) => void,
 ): Promise<void> {
   const { data } = await supabase.auth.getSession()
@@ -37,7 +45,7 @@ export async function streamDeb(
     res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
-      body: JSON.stringify({ content, projectId, tz }),
+      body: JSON.stringify({ content, projectId, tz, pasted }),
     })
   } catch {
     onEvent({ type: 'error', message: CANT_ANSWER })

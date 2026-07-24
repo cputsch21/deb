@@ -5,6 +5,8 @@ export const MESSAGE_MAX = 4000
 export const TASK_TITLE_MAX = 200
 export const FACT_MAX = 500
 export const MISSION_MAX = 200
+export const RAW_MAX = 60000
+export const MATERIAL_MIN = 1200 // a pasted block this size is presumed material (tunable)
 
 export function capText(text: string, max: number): string {
   const trimmed = text.trim()
@@ -36,6 +38,7 @@ export type DebContext = {
   goals: Row[]
   tasks: Row[]
   facts: Row[]
+  entries: Row[]
   history: { id: string; role: string; content: string; created_at: string }[]
 }
 
@@ -43,24 +46,32 @@ const HISTORY_WINDOW = 100
 
 /** One read pass for everything Deb's mind needs this turn. */
 export async function loadContext(db: SupabaseClient): Promise<DebContext> {
-  const [projects, goals, tasks, facts, history] = await Promise.all([
+  const [projects, goals, tasks, facts, entries, history] = await Promise.all([
     db.from('projects').select('id, name, color, mission, created_at').is('deleted_at', null).order('created_at'),
     db.from('goals').select('id, project_id, title, status, resolved_at, created_at').is('deleted_at', null).order('created_at'),
     db.from('tasks').select('id, project_id, goal_id, title, done_at, touched_at, anchored_on, delegated_to, chase_on, created_at').is('deleted_at', null).order('created_at'),
     db.from('known_facts').select('id, content, source, created_at').is('deleted_at', null).order('created_at'),
+    db
+      .from('entries')
+      .select('id, project_id, source, distillate, entry_day')
+      .is('deleted_at', null)
+      .order('entry_day', { ascending: false })
+      .limit(8),
     db
       .from('messages')
       .select('id, role, content, created_at')
       .order('created_at', { ascending: false })
       .limit(HISTORY_WINDOW),
   ])
-  const firstError = projects.error ?? goals.error ?? tasks.error ?? facts.error ?? history.error
+  const firstError =
+    projects.error ?? goals.error ?? tasks.error ?? facts.error ?? entries.error ?? history.error
   if (firstError) throw new Error(`context load failed: ${firstError.message}`)
   return {
     projects: projects.data ?? [],
     goals: goals.data ?? [],
     tasks: tasks.data ?? [],
     facts: facts.data ?? [],
+    entries: entries.data ?? [],
     history: (history.data ?? []).reverse() as DebContext['history'],
   }
 }
@@ -200,6 +211,14 @@ export function stateBlock(ctx: DebContext, lensProjectId: string | null, tz: st
           .map((t) => `  - ${t.title} (${worldName(t.project_id)})`)
           .join('\n')}`
       : `TO DECIDE: nothing — every loop has a verdict.`,
+    ctx.entries.length
+      ? `THE RECENT RECORD (filed entries, newest first — cite days honestly):\n${ctx.entries
+          .map(
+            (e) =>
+              `  - ${e.entry_day} · ${worldName(e.project_id)} · ${e.source}: ${String(e.distillate ?? '').slice(0, 160)}`,
+          )
+          .join('\n')}`
+      : '',
     waiting.length
       ? `WAITING ON (delegated, chase dates set):\n${waiting
           .map((t) => `  - ${t.delegated_to} — ${t.title} (chase ${t.chase_on})`)

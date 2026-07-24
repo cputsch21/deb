@@ -4,7 +4,8 @@ import { messageKeys, useMessages } from '../../db/queries/messages'
 import { projectKeys, useProjects, useProjectMutations } from '../../db/queries/projects'
 import { taskKeys, useTaskMutations } from '../../db/queries/tasks'
 import { factKeys, useFactMutations } from '../../db/queries/facts'
-import { MESSAGE_MAX } from '../../db/types'
+import { entryKeys, useEntryMutations } from '../../db/queries/entries'
+import { RAW_MAX } from '../../db/types'
 import { streamDeb } from '../../lib/deb'
 import { LoadFailed } from '../LoadFailed'
 import { NowStrip } from '../mobile/NowStrip'
@@ -12,8 +13,9 @@ import { useIsMobile } from '../../lib/useIsMobile'
 import { transient } from '../../lib/undo'
 
 /** One in-flight turn. 'waiting' = the silent gap (nothing shown but your line);
- *  'speaking' = she's decided to speak (the dots); 'error' = the honest line + retry. */
-type Turn = { text: string; phase: 'waiting' | 'speaking' | 'error' }
+ *  'speaking' = she's decided to speak (the dots); 'error' = the honest line + retry.
+ *  `pasted` rides along so a RETRY of a failed material paste stays material. */
+type Turn = { text: string; phase: 'waiting' | 'speaking' | 'error'; pasted: boolean }
 
 export function Reflect({ lens }: { lens: string | null }) {
   const qc = useQueryClient()
@@ -22,6 +24,7 @@ export function Reflect({ lens }: { lens: string | null }) {
   const { remove: removeTask } = useTaskMutations()
   const { forget: forgetFact } = useFactMutations()
   const { update: updateProject } = useProjectMutations()
+  const { hide: hideEntry } = useEntryMutations()
   const world = projects.find((p) => p.id === lens) ?? null
   const isMobile = useIsMobile()
   const [turn, setTurn] = useState<Turn | null>(null)
@@ -31,6 +34,9 @@ export function Reflect({ lens }: { lens: string | null }) {
   const [receipts, setReceipts] = useState<{ id: string; label: string }[]>([])
   const scrollRef = useRef<HTMLDivElement>(null)
   const taRef = useRef<HTMLTextAreaElement>(null)
+  // Redline (July 24): the paste EVENT is the primary material signal —
+  // typed text of any length is conversation. The flag rides the message.
+  const pastedRef = useRef(false)
 
   // Stay pinned to the newest line.
   useEffect(() => {
@@ -46,16 +52,18 @@ export function Reflect({ lens }: { lens: string | null }) {
     el.style.height = `${Math.min(el.scrollHeight, 120)}px`
   }, [draft])
 
-  const send = async (raw: string) => {
+  const send = async (raw: string, pastedOverride?: boolean) => {
     const content = raw.trim()
     if (!content) return
     if (turn && turn.phase !== 'error') return // one turn at a time (retry allowed)
     const projectId = lens
+    const pasted = pastedOverride ?? pastedRef.current
+    pastedRef.current = false
     setDraft('')
-    setTurn({ text: content, phase: 'waiting' })
+    setTurn({ text: content, phase: 'waiting', pasted })
 
     let resolved = false
-    await streamDeb(content, projectId, (e) => {
+    await streamDeb(content, projectId, pasted, (e) => {
       if (e.type === 'delta') {
         // First delta = she's decided to speak. Now the dots may show.
         setTurn((t) => (t && t.phase === 'waiting' ? { ...t, phase: 'speaking' } : t))
@@ -71,6 +79,25 @@ export function Reflect({ lens }: { lens: string | null }) {
           const id = e.id
           transient.undo(`Noted · ${e.content.slice(0, 40)}`, () => forgetFact(id, false))
           setReceipts((r) => [...r, { id, label: 'Noted — memory updated' }])
+        } else if (e.kind === 'entry_filed') {
+          // Filing is the act; the chip is the receipt; undo un-files —
+          // the entry surface hides, minted cards go with it. The raw
+          // beneath stays kept, as law.
+          void qc.invalidateQueries({ queryKey: entryKeys.meta })
+          void qc.invalidateQueries({ queryKey: taskKeys.all })
+          const entryId = e.id
+          const taskIds = e.taskIds
+          const where = e.worldName ?? 'silver'
+          const label =
+            taskIds.length > 0
+              ? `Filed to ${where} — ${taskIds.length} card${taskIds.length === 1 ? '' : 's'} minted`
+              : `Filed to ${where}`
+          setReceipts((r) => [...r, { id: entryId, label }])
+          transient.undo(label, () => {
+            void hideEntry(entryId)
+            for (const tid of taskIds) removeTask(tid, false)
+            setReceipts((r) => r.filter((x) => x.id !== entryId))
+          })
         } else if (e.kind === 'mission_set') {
           // Redo path: undo restores whatever the mission was before (often nothing).
           const prev =
@@ -155,7 +182,7 @@ export function Reflect({ lens }: { lens: string | null }) {
                 <p className="max-w-[88%] font-serif text-[15px] text-bad">
                   Deb could not answer just now.{' '}
                   <button
-                    onClick={() => send(turn.text)}
+                    onClick={() => send(turn.text, turn.pasted)}
                     className="underline underline-offset-2 hover:opacity-80"
                   >
                     try again
@@ -183,7 +210,10 @@ export function Reflect({ lens }: { lens: string | null }) {
             autoFocus={!isMobile}
             rows={1}
             value={draft}
-            maxLength={MESSAGE_MAX}
+            maxLength={RAW_MAX}
+            onPaste={() => {
+              pastedRef.current = true
+            }}
             placeholder={isMobile ? 'Tell Deb anything…' : 'Talk, drop, or ask anything…'}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => {
