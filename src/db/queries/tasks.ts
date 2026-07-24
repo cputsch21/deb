@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { transient } from '../../lib/undo'
 import { assertRowChanged, capText, optimisticWrite } from '../mutate'
-import { TITLE_MAX, type Task } from '../types'
+import { DELEGATE_MAX, TITLE_MAX, type Task } from '../types'
 
 export const taskKeys = { all: ['tasks'] as const }
 
@@ -10,7 +10,7 @@ async function fetchTasks(): Promise<Task[]> {
   const { data, error } = await supabase
     .from('tasks')
     .select(
-      'id, project_id, goal_id, recurring_id, title, done_at, touched_at, materialized_on, created_at, deleted_at',
+      'id, project_id, goal_id, recurring_id, title, done_at, touched_at, anchored_on, delegated_to, chase_on, materialized_on, created_at, deleted_at',
     )
     .is('deleted_at', null)
     .order('created_at')
@@ -45,6 +45,9 @@ export function useTaskMutations() {
       title: capText(title, TITLE_MAX),
       done_at: null,
       touched_at: nowISO(),
+      anchored_on: null,
+      delegated_to: null,
+      chase_on: null,
       materialized_on: null,
       created_at: nowISO(),
       deleted_at: null,
@@ -67,15 +70,26 @@ export function useTaskMutations() {
     return row.id
   }
 
-  /** Any meaningful edit resets the Bench-fade clock (touched_at). */
+  /** Any meaningful edit resets the Bench-fade clock (touched_at).
+   *  The M4 verdicts ride this same door: anchored_on (Do/Delay) and the
+   *  delegated_to + chase_on pair (Delegate) — capped at write time. */
   const update = (
     id: string,
-    fields: Partial<Pick<Task, 'title' | 'project_id' | 'goal_id' | 'done_at'>>,
+    fields: Partial<
+      Pick<
+        Task,
+        'title' | 'project_id' | 'goal_id' | 'done_at' | 'anchored_on' | 'delegated_to' | 'chase_on'
+      >
+    >,
   ) => {
     const next = { ...fields, touched_at: nowISO() }
     if (next.title !== undefined) {
       next.title = capText(next.title, TITLE_MAX)
       if (!next.title) return
+    }
+    if (next.delegated_to != null) {
+      next.delegated_to = capText(next.delegated_to, DELEGATE_MAX)
+      if (!next.delegated_to) return
     }
     void optimisticWrite(qc, {
       keys: [taskKeys.all],

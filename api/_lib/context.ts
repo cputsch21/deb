@@ -46,7 +46,7 @@ export async function loadContext(db: SupabaseClient): Promise<DebContext> {
   const [projects, goals, tasks, facts, history] = await Promise.all([
     db.from('projects').select('id, name, color, mission, created_at').is('deleted_at', null).order('created_at'),
     db.from('goals').select('id, project_id, title, status, resolved_at, created_at').is('deleted_at', null).order('created_at'),
-    db.from('tasks').select('id, project_id, goal_id, title, done_at, touched_at, created_at').is('deleted_at', null).order('created_at'),
+    db.from('tasks').select('id, project_id, goal_id, title, done_at, touched_at, anchored_on, delegated_to, chase_on, created_at').is('deleted_at', null).order('created_at'),
     db.from('known_facts').select('id, content, source, created_at').is('deleted_at', null).order('created_at'),
     db
       .from('messages')
@@ -63,6 +63,48 @@ export async function loadContext(db: SupabaseClient): Promise<DebContext> {
     facts: facts.data ?? [],
     history: (history.data ?? []).reverse() as DebContext['history'],
   }
+}
+
+/**
+ * THE ONE QUEUE — server mirror. KEEP IN SYNC with src/lib/line.ts (the
+ * client derivation): same rules, same constant, so Deb speaks the same
+ * Line the room deals and the strip glances.
+ */
+export const STALE_AFTER_DAYS = 7
+
+function dayDiff(a: string, b: string): number {
+  return Math.round((Date.parse(b) - Date.parse(a)) / 86_400_000)
+}
+
+export function todayKeyInTz(tz: string): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: tz }).format(new Date())
+}
+
+export function deriveLineRows(tasks: Row[], today: string): Row[] {
+  return tasks
+    .filter(
+      (t) =>
+        !t.done_at &&
+        !t.delegated_to &&
+        t.anchored_on !== null &&
+        String(t.anchored_on) <= today &&
+        dayDiff(String(t.anchored_on), today) <= STALE_AFTER_DAYS,
+    )
+    .sort(
+      (a, b) =>
+        String(b.anchored_on).localeCompare(String(a.anchored_on)) ||
+        String(a.touched_at).localeCompare(String(b.touched_at)),
+    )
+}
+
+export function undecidedRows(tasks: Row[], today: string): Row[] {
+  return tasks.filter(
+    (t) =>
+      !t.done_at &&
+      ((t.delegated_to && t.chase_on && String(t.chase_on) <= today) ||
+        (!t.delegated_to &&
+          (t.anchored_on === null || dayDiff(String(t.anchored_on), today) > STALE_AFTER_DAYS))),
+  )
 }
 
 const dateFmt = (tz: string) =>
@@ -124,7 +166,14 @@ export function stateBlock(ctx: DebContext, lensProjectId: string | null, tz: st
     ].join('\n')
   })
 
-  const bench = ctx.tasks.filter((t) => !t.project_id && !t.goal_id && !t.done_at)
+  const worldName = (id: unknown) =>
+    String(ctx.projects.find((p) => p.id === id)?.name ?? 'the Bench')
+  const appDay = todayKeyInTz(tz)
+  const line = deriveLineRows(ctx.tasks, appDay)
+  const undecided = undecidedRows(ctx.tasks, appDay)
+  const waiting = ctx.tasks.filter((t) => !t.done_at && t.delegated_to)
+
+  const bench = ctx.tasks.filter((t) => !t.project_id && !t.goal_id && !t.done_at && !t.delegated_to)
   const doneToday = ctx.tasks.filter(
     (t) => t.done_at && localDayKey(String(t.done_at), tz) === localDayKey(new Date().toISOString(), tz),
   )
@@ -141,6 +190,21 @@ export function stateBlock(ctx: DebContext, lensProjectId: string | null, tz: st
     doneToday.length
       ? `FINISHED TODAY:\n${doneToday.map((t) => `  - ${t.title}`).join('\n')}`
       : `FINISHED TODAY: nothing yet.`,
+    line.length
+      ? `THE LINE (today's moves, in order — when he asks "what now?", the TOP of this list is the answer, decisively, one thing):\n${line
+          .map((t) => `  - ${t.title} (${worldName(t.project_id)})`)
+          .join('\n')}`
+      : `THE LINE: empty — nothing anchored for today. If he asks "what now?", the honest answer is to deal the stack in React (${undecided.length} to decide) or rest.`,
+    undecided.length
+      ? `TO DECIDE (the stack in React deals these — you never verdict them for him):\n${undecided
+          .map((t) => `  - ${t.title} (${worldName(t.project_id)})`)
+          .join('\n')}`
+      : `TO DECIDE: nothing — every loop has a verdict.`,
+    waiting.length
+      ? `WAITING ON (delegated, chase dates set):\n${waiting
+          .map((t) => `  - ${t.delegated_to} — ${t.title} (chase ${t.chase_on})`)
+          .join('\n')}`
+      : '',
     `</current-state>`,
   ].join('\n')
 }

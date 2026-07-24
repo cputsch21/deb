@@ -11,6 +11,7 @@ import { LoadFailed } from './LoadFailed'
 import { RoomsNav } from './rooms/RoomsNav'
 import { Reflect } from './rooms/Reflect'
 import { Review } from './rooms/Review'
+import { ReactRoom } from './rooms/ReactRoom'
 import { Stub } from './rooms/Stub'
 import { MobileHeader } from './mobile/MobileHeader'
 import { RoomsPager } from './mobile/RoomsPager'
@@ -75,7 +76,7 @@ export function Shell(_props: { email: string }) {
   const rooms = {
     read: <Stub eyebrow="Read" line="Your days will land here." />,
     review: <Review lens={lens} />,
-    react: <Stub eyebrow="React" line="Nothing to decide yet." />,
+    react: <ReactRoom lens={lens} />,
     reflect: <Reflect lens={lens} />,
   }
 

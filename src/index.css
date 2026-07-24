@@ -20,6 +20,7 @@
   --t-accent: var(--t-silver);
   --t-ok: #5f7f5c;
   --t-bad: #a84b3a;
+  --t-card: #ffffff; /* the deck card — lifted above the paper */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -36,6 +37,7 @@
     --t-silver: #b9bec7;
     --t-ok: #8fae8b;
     --t-bad: #d98a77;
+    --t-card: #221f1a;
   }
 }
 
@@ -203,6 +205,7 @@ body::after {
   --t-silver: #b9bec7;
   --t-ok: #8fae8b;
   --t-bad: #d98a77;
+  --t-card: #221f1a;
 }
 
 /* ============ Phone hygiene (law, July 24 2026) ============ */
@@ -243,5 +246,26 @@ body {
 @keyframes sheet-up {
   from {
     transform: translateY(100%);
+  }
+}
+
+/* The deck card — React's one object. Its lift is part of the design-target
+   law (the card floats; everything else stays a tonal well). */
+.deck-card {
+  background: var(--t-card);
+  box-shadow:
+    0 2px 6px rgba(40, 32, 25, 0.05),
+    0 26px 54px -22px rgba(50, 40, 30, 0.28);
+}
+:root.dark .deck-card {
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.3),
+    0 26px 54px -22px rgba(0, 0, 0, 0.6);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) .deck-card {
+    box-shadow:
+      0 2px 6px rgba(0, 0, 0, 0.3),
+      0 26px 54px -22px rgba(0, 0, 0, 0.6);
   }
 }

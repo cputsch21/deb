@@ -1,5 +1,6 @@
 import { useLens } from '../../lib/lens'
 import { LoadFailed } from '../LoadFailed'
+import { dealStack, deriveLine, shortDay as lineShortDay, todayKey } from '../../lib/line'
 import { useProjects } from '../../db/queries/projects'
 import { useGoals } from '../../db/queries/goals'
 import { useTasks } from '../../db/queries/tasks'
@@ -12,9 +13,10 @@ import type { Goal, Project, Task } from '../../db/types'
  * read-only is the feature). The one allowed tap is navigation: a world
  * card steps into that world, exactly like the rail.
  *
- * Not here yet, honestly: the mission line (arrives with the intake
- * interview) and Waiting-on (arrives with People in M4). Empty sections
- * stay silent rather than performing fullness.
+ * Next draws from the same queue React works — the one-queue law — and
+ * Waiting-on shows who owes what (delegations, chase dates). Read-only,
+ * like everything here. Empty sections stay silent rather than performing
+ * fullness.
  */
 export function Review({ lens }: { lens: string | null }) {
   const projectsQ = useProjects()
@@ -152,7 +154,14 @@ function statusLine(activeGoals: number, openTasks: number, done: Task[]): strin
 function Dossier({ world, goals, tasks }: { world: Project; goals: Goal[]; tasks: Task[] }) {
   const wGoals = goals.filter((g) => g.project_id === world.id)
   const wTasks = tasks.filter((t) => t.project_id === world.id)
-  const next = wTasks.filter((t) => !t.done_at).slice(0, 6)
+  // Next = the same queue React deals (the one-queue law): the Line's moves,
+  // then what's still waiting for a verdict.
+  const today = todayKey()
+  const next = [
+    ...deriveLine(tasks, world.id, today).map((t) => ({ task: t, tag: 'on the line' })),
+    ...dealStack(tasks, world.id, today).map((c) => ({ task: c.task, tag: 'to decide' })),
+  ].slice(0, 6)
+  const waiting = wTasks.filter((t) => !t.done_at && t.delegated_to !== null)
 
   // Recently: a dated ledger of what actually happened — finishes and verdicts.
   const recent: { date: string; text: string }[] = [
@@ -217,20 +226,38 @@ function Dossier({ world, goals, tasks }: { world: Project; goals: Goal[]; tasks
         <section className="mt-8">
           <span className="eyebrow block text-dim">Next</span>
           <div className="mt-2">
-            {next.map((t) => (
-              <div key={t.id} className="flex items-center gap-2.5 py-2 text-[13.5px] text-ink">
+            {next.map(({ task, tag }) => (
+              <div key={task.id} className="flex items-center gap-2.5 py-2 text-[13.5px] text-ink">
                 <span
                   className="h-1.5 w-1.5 flex-none rounded-full opacity-80"
                   style={{ backgroundColor: world.color }}
                 />
-                {t.title}
+                <span className="min-w-0 flex-1 truncate">{task.title}</span>
+                <span className="text-[11px] text-dim">{tag}</span>
               </div>
             ))}
           </div>
         </section>
       )}
 
-      {wGoals.length === 0 && recent.length === 0 && next.length === 0 && (
+      {waiting.length > 0 && (
+        <section className="mt-8">
+          <span className="eyebrow block text-dim">Waiting on</span>
+          <div className="mt-2">
+            {waiting.map((t) => (
+              <div key={t.id} className="flex items-center gap-2.5 py-2 text-[13.5px]">
+                <span className="font-semibold text-ink">{t.delegated_to}</span>
+                <span className="min-w-0 flex-1 truncate text-ink">— {t.title}</span>
+                <span className="text-[11px] text-accent">
+                  chase {t.chase_on ? lineShortDay(t.chase_on) : ''}
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {wGoals.length === 0 && recent.length === 0 && next.length === 0 && waiting.length === 0 && (
         <p className="mt-10 font-serif text-lg text-muted">
           Quiet — nothing open, nothing owed. That&rsquo;s allowed.
         </p>

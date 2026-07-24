@@ -7,6 +7,7 @@ export const NAME_MAX = 80
 export const TITLE_MAX = 200
 export const MESSAGE_MAX = 4000
 export const MISSION_MAX = 200
+export const DELEGATE_MAX = 80
 
 export const FACT_MAX = 500
 
@@ -62,6 +63,12 @@ export type Task = {
   title: string
   done_at: string | null
   touched_at: string // the Bench-fade clock
+  /** THE one verdict field (M4): null = undecided (the stack deals it);
+   *  Do → today; Delay → its chosen day (wakes on the Line, not the stack). */
+  anchored_on: string | null
+  /** ← Delegate: who + when, always together. Off the plate until chase day. */
+  delegated_to: string | null
+  chase_on: string | null
   materialized_on: string | null
   created_at: string
   deleted_at: string | null
