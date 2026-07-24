@@ -484,8 +484,14 @@ async function fileMaterial(
         controller.enqueue(encoder.encode(JSON.stringify(event) + '\n'))
       try {
         const ctx = await loadContext(db)
+        const fb = await db
+          .from('extractor_feedback')
+          .select('title')
+          .order('created_at', { ascending: false })
+          .limit(40)
+        const notAThings = (fb.data ?? []).map((r) => String(r.title))
         const anthropic = new Anthropic()
-        const result = await runDistill(anthropic, ctx, raw, tz).catch((err) => {
+        const result = await runDistill(anthropic, ctx, raw, tz, notAThings).catch((err) => {
           console.error('[chat] distill', err)
           return null
         })
@@ -502,7 +508,22 @@ async function fileMaterial(
           distillate: result?.distillate ?? null,
           tz,
         })
-        send({ type: 'action', kind: 'entry_filed', id: entryId, worldName, taskIds: [] })
+        // Mint the open loops (T4): high bar, source worn on the card.
+        const taskIds: string[] = []
+        for (const title of result?.cards ?? []) {
+          const t = capText(title, TASK_TITLE_MAX)
+          if (!t) continue
+          const taskId = randomUUID()
+          const { error: mintError } = await db.from('tasks').insert({
+            id: taskId,
+            title: t,
+            project_id: target ? String(target.id) : null,
+            source_entry_id: entryId,
+          })
+          if (!mintError) taskIds.push(taskId)
+          else console.error('[chat] mint', mintError)
+        }
+        send({ type: 'action', kind: 'entry_filed', id: entryId, worldName, taskIds })
 
         const say = result?.say ?? null
         if (say) {

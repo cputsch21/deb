@@ -10,7 +10,7 @@ async function fetchTasks(): Promise<Task[]> {
   const { data, error } = await supabase
     .from('tasks')
     .select(
-      'id, project_id, goal_id, recurring_id, title, done_at, touched_at, anchored_on, delegated_to, chase_on, materialized_on, created_at, deleted_at',
+      'id, project_id, goal_id, recurring_id, title, done_at, touched_at, anchored_on, delegated_to, chase_on, source_entry_id, materialized_on, created_at, deleted_at',
     )
     .is('deleted_at', null)
     .order('created_at')
@@ -48,6 +48,7 @@ export function useTaskMutations() {
       anchored_on: null,
       delegated_to: null,
       chase_on: null,
+      source_entry_id: null,
       materialized_on: null,
       created_at: nowISO(),
       deleted_at: null,

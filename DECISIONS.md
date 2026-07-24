@@ -15,14 +15,38 @@ reality — one AI mentor (Deb) across **one rail and four rooms** (Read · Revi
 Product law, newest first: `docs/prd.md` (the intention) + `docs/design-target.html`
 (the approved clickable prototype — the design target) · then `docs/feature-list.md`
 and `docs/ux-foundation.md` (v1, superseded where they conflict — see July 24) ·
-`docs/build-plan.md` (the milestones) · `docs/master-inventory.md` (the cross-app
-archaeology it was all distilled from). Currently at **Milestone 2 — The Mentor**
-(the Reflect room): the soul doc, the append-only thread tables, and the
-`/api/chat` voice engine are in; the thread UI is next.
+`docs/build-plan.md` (the milestones, v3 — re-cut to rooms) ·
+`docs/master-inventory.md` (the cross-app archaeology it was all distilled
+from). M2 (Reflect: voice, hands, memory, first message) closed · M3 (Review +
+the intake interview) live · M4 (React: the stack + the Line) shipped, device
+pass pending · **M5 (Read: ingestion + the record) in flight** — T1–T4 done
+(the spine, the one door, the distillation, minting + the learning loop);
+next T5 (the Read room), T6 (the margins), T7 (Plaud spike).
 
 ---
 
 ## The log (newest first)
+
+### July 24, 2026 — M5 T2–T4 implementation rulings
+- **Material never enters the thread.** A large paste files into the
+  record (raw → entry_raw, surface → entries); the thread stays
+  conversation. Deb's awareness of filings comes from THE RECENT RECORD
+  in her state, not from thread pollution. MATERIAL_MIN = 1200 chars,
+  a named tunable; the paste flag survives a retry.
+- **A filing never fails on the engine.** If distillation errors, the raw
+  still files (distillate null, routed silver) — nothing is ever lost to
+  a model hiccup.
+- **Small-material filings are their own distillate** — at conversation
+  size, his words are already the readable form; file_entry stores them
+  as both raw and distillate.
+- **The extractor's lesson waits out the undo.** A ↓-deleted minted card
+  is logged to extractor_feedback only after the undo window passes
+  untaken — a take-back never teaches the wrong lesson. The feedback list
+  (last 40) is injected into every minting pass as learned not-a-things.
+- **Minting bar in the prompt as law:** a real loop, not every noun; zero
+  cards is a common and correct answer; six cards max per filing.
+- Provenance labels: plaud → "from Tuesday's Plaud call" · remarkable →
+  "from Tuesday's reMarkable page" · filed → "from Tuesday's filing".
 
 ### July 24, 2026 — M5 approved: ingestion + the record (plan + two redlines)
 Ticket order T1 (record spine) → T2 (the one door) → T3 (distillation) →

@@ -83,6 +83,8 @@ export type Task = {
   /** ← Delegate: who + when, always together. Off the plate until chase day. */
   delegated_to: string | null
   chase_on: string | null
+  /** M5: minted cards wear their source entry ("From Tuesday's Plaud call"). */
+  source_entry_id: string | null
   materialized_on: string | null
   created_at: string
   deleted_at: string | null

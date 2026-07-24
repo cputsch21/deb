@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useProjects } from '../../db/queries/projects'
-import { useTasks, useTaskMutations } from '../../db/queries/tasks'
-import { DELEGATE_MAX, type Task } from '../../db/types'
+import { taskKeys, useTasks, useTaskMutations } from '../../db/queries/tasks'
+import { useEntryMeta } from '../../db/queries/entries'
+import { supabase } from '../../lib/supabase'
+import { DELEGATE_MAX, type EntryMeta, type Task } from '../../db/types'
 import { useRoom } from '../../lib/rooms'
 import { transient } from '../../lib/undo'
 import { useLineWhys } from '../../lib/lineWhys'
@@ -50,6 +53,8 @@ export function ReactRoom({ lens }: { lens: string | null }) {
   const tasks = tasksQ.data ?? NO_TASKS
   const projects = projectsQ.data ?? NO_PROJECTS
   const { update, setDone, remove } = useTaskMutations()
+  const { data: entryMeta = [] } = useEntryMeta()
+  const qc = useQueryClient()
   const today = todayKey()
 
   const stack = useMemo(() => dealStack(tasks, lens, today), [tasks, lens, today])
@@ -109,6 +114,25 @@ export function ReactRoom({ lens }: { lens: string | null }) {
     } else if (dir === 'down') {
       setExiting({ task, kind, dir })
       remove(task.id) // soft delete + the standard pill
+      // The extractor must visibly learn (T4): a deleted MINTED card is
+      // logged as not-a-thing — but only after the undo window has passed
+      // untaken, so a take-back never teaches the wrong lesson.
+      if (task.source_entry_id) {
+        const entryId = task.source_entry_id
+        setTimeout(() => {
+          const stillDeleted = !qc
+            .getQueryData<Task[]>(taskKeys.all)
+            ?.some((t) => t.id === task.id)
+          if (stillDeleted) {
+            void supabase
+              .from('extractor_feedback')
+              .insert({ title: task.title, entry_id: entryId })
+              .then(({ error }) => {
+                if (error) console.error('[extractor_feedback]', error)
+              })
+          }
+        }, 6500)
+      }
     } else if (dir === 'up') {
       setChooser({ mode: 'delay', task, kind })
     } else {
@@ -252,6 +276,7 @@ export function ReactRoom({ lens }: { lens: string | null }) {
           key={show.task.id + show.kind}
           task={show.task}
           kind={show.kind}
+          entry={entryMeta.find((e) => e.id === show.task.source_entry_id) ?? null}
           worldName={world?.name ?? null}
           accent={accent}
           today={today}
@@ -287,6 +312,7 @@ export function ReactRoom({ lens }: { lens: string | null }) {
 function Card({
   task,
   kind,
+  entry,
   worldName,
   accent,
   today,
@@ -296,6 +322,7 @@ function Card({
 }: {
   task: Task
   kind: CardKind
+  entry: EntryMeta | null
   worldName: string | null
   accent: string
   today: string
@@ -367,7 +394,7 @@ function Card({
         setDxy(null)
       }}
     >
-      <span className="eyebrow block text-dim">{provenance(task, kind)}</span>
+      <span className="eyebrow block text-dim">{provenance(task, kind, entry)}</span>
 
       <div className="mt-4 font-serif text-[22px] leading-[1.25] font-medium tracking-[-0.01em] text-ink">
         {kind === 'chase' ? `Chase ${task.delegated_to} — ${task.title}` : task.title}
@@ -398,11 +425,18 @@ function Card({
   )
 }
 
-/** The source line — where this loop came from. M5 generalizes the source. */
-function provenance(task: Task, kind: CardKind): string {
+/** The source line — where this loop came from. Minted cards wear their entry. */
+function provenance(task: Task, kind: CardKind, entry: EntryMeta | null): string {
   if (kind === 'chase') return `waiting on ${task.delegated_to} · chase ${shortDay(task.chase_on!)}`
   if (kind === 'stale') return `on the Line since ${shortDay(task.anchored_on!)} — still real?`
   if (kind === 'line') return 'on the Line'
+  if (entry) {
+    const [y, m, d] = entry.entry_day.split('-').map(Number)
+    const weekday = new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'long' })
+    if (entry.source === 'plaud') return `from ${weekday}'s Plaud call`
+    if (entry.source === 'remarkable') return `from ${weekday}'s reMarkable page`
+    return `from ${weekday}'s filing`
+  }
   return `from Reflect · ${shortDay(task.created_at.slice(0, 10))}`
 }
 

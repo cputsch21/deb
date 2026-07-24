@@ -16,6 +16,7 @@ const task = (over: Partial<Task>): Task => ({
   anchored_on: null,
   delegated_to: null,
   chase_on: null,
+  source_entry_id: null,
   materialized_on: null,
   created_at: '2026-07-20T10:00:00.000Z',
   deleted_at: null,
