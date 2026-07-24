@@ -8,6 +8,7 @@ import { useProjects } from '../db/queries/projects'
 import { LensRail } from './LensRail'
 import { RoomsNav } from './rooms/RoomsNav'
 import { Reflect } from './rooms/Reflect'
+import { Review } from './rooms/Review'
 import { Stub } from './rooms/Stub'
 import { ProjectSheet } from './ProjectSheet'
 import { MemorySheet } from './MemorySheet'
@@ -115,7 +116,7 @@ export function Shell(_props: { email: string }) {
 
         {room === 'reflect' && <Reflect lens={lens} />}
         {room === 'read' && <Stub eyebrow="Read" line="Your days will land here." />}
-        {room === 'review' && <Stub eyebrow="Review" line="The dossiers are coming." />}
+        {room === 'review' && <Review lens={lens} />}
         {room === 'react' && <Stub eyebrow="React" line="Nothing to decide yet." />}
       </main>
 
