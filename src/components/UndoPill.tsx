@@ -13,7 +13,7 @@ export function UndoPill() {
   return (
     <div
       key={pill.id}
-      className="pill fixed bottom-6 left-1/2 z-50 flex items-center gap-4 rounded-full bg-fill2 px-5 py-2.5 text-sm text-ink backdrop-blur-sm"
+      className="pill fixed bottom-[calc(env(safe-area-inset-bottom)+6.5rem)] left-1/2 z-50 md:bottom-6 flex items-center gap-4 rounded-full bg-fill2 px-5 py-2.5 text-sm text-ink backdrop-blur-sm"
     >
       <span>{pill.label}</span>
       {pill.kind === 'undo' && (

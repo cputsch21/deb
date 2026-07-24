@@ -24,6 +24,56 @@ archaeology it was all distilled from). Currently at **Milestone 2 — The Mento
 
 ## The log (newest first)
 
+### July 24, 2026 — The mobile grammar (TRUE's, layered with the rooms)
+Responsive, one codebase: below ~768px the shell re-arranges; desktop is
+untouched. No separate app, no forked components — the same rooms wearing a
+phone-shaped shell. Rulings:
+- **The world pill replaces the rail.** Top center: `● WORLD ▾` in a soft
+  well — silver + Deb at home, the world's color and name in a lens. The
+  repaint works exactly as on desktop. Tapping opens the world sheet.
+- **The world sheet** (bottom sheet, TRUE's grammar): drag handle, current
+  world in a filled well (tap = its settings), hairline, every held world as
+  a row, `+ new world` in mono, bottom row = theme toggle · memory · sign
+  out. 200ms slide up, instant dismiss on flick-down/tap-away. Its floating
+  edge shares the design system's ONE sanctioned shadow.
+- **Rooms are a horizontal pager** — the ruling. Canonical order READ ·
+  REVIEW · REACT · REFLECT; landing room Reflect; indicator = the four verbs
+  in tiny mono under the pill (current ink, rest muted, each tappable as the
+  discoverability fallback); flat 200ms slide, no bounce, no parallax.
+- **Gesture ownership is decided by touch-start target, period.** A touch
+  beginning on an element marked `data-own-touch` (the React card when M4
+  ships it; the Now strip; any horizontal scroller) belongs to that element
+  — the pager never moves. A touch beginning anywhere else belongs to the
+  pager. No velocity heuristics, no mostly-horizontal guessing. The React
+  card must be tested on a real device before M4 calls it done.
+- **Act receipts on mobile: the small inline pill chip** (`● Filed — 1 task
+  added` pattern). An explicit MOBILE amendment to the July 22 "no receipt
+  chips in-thread" ruling — chips are session-ephemeral UI, mobile-only; the
+  append-only thread table stays pure conversation; desktop stays words-only.
+  (TRUE's mono attribution lines were NOT adopted — they conflict with the
+  July 22 no-signed-lines law; flagged for Chris's call.)
+- **The Now strip** (above the composer in Reflect): the Line's glance level
+  as horizontally scrolling soft cards — world dot + tag, title, done
+  circle; momentum scroll, no pagination dots. Until M4 ships the Line it
+  glances open tasks — same shape, upgraded source later.
+- **The composer:** full-width soft well, "Tell Deb anything…", round accent
+  send button (≥44px). **Voice capture is deferred entirely — the composer
+  reserves no space for a mic.** Shift+Enter newline kept for external
+  keyboards.
+- **Phone hygiene is law:** viewport-fit=cover + safe-area insets (composer
+  clears the home indicator, pill clears the notch) · 100dvh never 100vh ·
+  inputs ≥16px below the breakpoint (no iOS zoom-jump) · overscroll
+  contained (no page rubber-banding) · tap targets ≥44px · momentum
+  scrolling on the thread and the strip.
+- **PWA install shell pulled forward from M6:** manifest (name "Deb", Warm
+  Glass theme colors), icons (warm paper + the silver home dot), standalone
+  display — Add to Home Screen loses the browser chrome. Arc and the rest of
+  M6 stay parked.
+- **A manual theme toggle exists** (the sheet's bottom row): persisted
+  override, system preference when unset.
+- The honest failure states apply to every mobile surface identically (same
+  components, no forks).
+
 ### July 24, 2026 — The empty-board incident: two standing disciplines
 The M3 T2 deploy selected `projects.mission` before the by-hand migration
 had been run. Every projects read failed ("column does not exist"), the

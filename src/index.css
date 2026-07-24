@@ -23,7 +23,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not(.light) {
     /* dark — warm charcoal */
     --t-bg: #191713;
     --t-ink: #ede9e1;
@@ -187,4 +187,61 @@ body::after {
   letter-spacing: 0.18em;
   text-transform: uppercase;
   font-weight: 400;
+}
+
+/* Manual theme override (mobile world sheet's toggle; persisted). The class
+   wins over the system preference; no class = follow the system. */
+:root.dark {
+  --t-bg: #191713;
+  --t-ink: #ede9e1;
+  --t-muted: #b5afa4;
+  --t-dim: #9c958a;
+  --t-fill: rgba(255, 255, 255, 0.055);
+  --t-fill2: rgba(255, 255, 255, 0.09);
+  --t-hair: rgba(255, 255, 255, 0.07);
+  --t-bloom: rgba(237, 233, 225, 0.05);
+  --t-silver: #b9bec7;
+  --t-ok: #8fae8b;
+  --t-bad: #d98a77;
+}
+
+/* ============ Phone hygiene (law, July 24 2026) ============ */
+
+/* Full height that survives the iOS URL bar: dvh, with % fallback. */
+#root {
+  height: 100%;
+  height: 100dvh;
+}
+
+/* The page never rubber-bands; scrollers keep their own physics. */
+body {
+  overscroll-behavior: none;
+}
+.momentum {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* iOS zoom-jump guard: every input at ≥16px below the breakpoint. */
+@media (max-width: 767px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
+/* The mobile world sheet: 200ms slide up (enter only; exit is instant). Its
+   floating edge is the design system's one sanctioned shadow, shared with
+   the desktop sheet. */
+.sheet-up {
+  animation: sheet-up 200ms ease-out;
+  box-shadow:
+    0 -24px 80px rgba(0, 0, 0, 0.16),
+    0 -2px 12px rgba(0, 0, 0, 0.07);
+}
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
 }

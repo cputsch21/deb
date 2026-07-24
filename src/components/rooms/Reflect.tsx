@@ -7,6 +7,8 @@ import { factKeys, useFactMutations } from '../../db/queries/facts'
 import { MESSAGE_MAX } from '../../db/types'
 import { streamDeb } from '../../lib/deb'
 import { LoadFailed } from '../LoadFailed'
+import { NowStrip } from '../mobile/NowStrip'
+import { useIsMobile } from '../../lib/useIsMobile'
 import { transient } from '../../lib/undo'
 
 /** One in-flight turn. 'waiting' = the silent gap (nothing shown but your line);
@@ -21,8 +23,12 @@ export function Reflect({ lens }: { lens: string | null }) {
   const { forget: forgetFact } = useFactMutations()
   const { update: updateProject } = useProjectMutations()
   const world = projects.find((p) => p.id === lens) ?? null
+  const isMobile = useIsMobile()
   const [turn, setTurn] = useState<Turn | null>(null)
   const [draft, setDraft] = useState('')
+  // Act receipts (mobile thread ruling, July 24): small inline pill chips,
+  // session-ephemeral — the append-only thread stays pure conversation.
+  const [receipts, setReceipts] = useState<{ id: string; label: string }[]>([])
   const scrollRef = useRef<HTMLDivElement>(null)
   const taRef = useRef<HTMLTextAreaElement>(null)
 
@@ -59,10 +65,12 @@ export function Reflect({ lens }: { lens: string | null }) {
           void qc.invalidateQueries({ queryKey: taskKeys.all })
           const id = e.id
           transient.undo(`Added · ${e.title.slice(0, 40)}`, () => removeTask(id, false))
+          setReceipts((r) => [...r, { id, label: 'Filed — 1 task added' }])
         } else if (e.kind === 'fact_remembered') {
           void qc.invalidateQueries({ queryKey: factKeys.all })
           const id = e.id
           transient.undo(`Noted · ${e.content.slice(0, 40)}`, () => forgetFact(id, false))
+          setReceipts((r) => [...r, { id, label: 'Noted — memory updated' }])
         } else if (e.kind === 'mission_set') {
           // Redo path: undo restores whatever the mission was before (often nothing).
           const prev =
@@ -71,6 +79,7 @@ export function Reflect({ lens }: { lens: string | null }) {
           void qc.invalidateQueries({ queryKey: projectKeys.all })
           const id = e.id
           transient.undo(`Mission set · ${e.name}`, () => updateProject(id, { mission: prev }))
+          setReceipts((r) => [...r, { id, label: `Mission set — ${e.name}` }])
         }
       } else if (e.type === 'done' || e.type === 'silent') {
         // The DB is truth now (user line always persisted; her reply too, on done).
@@ -105,8 +114,8 @@ export function Reflect({ lens }: { lens: string | null }) {
         &ldquo;&rdquo;
       </div>
 
-      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
-        <div className="mx-auto flex max-w-[640px] flex-col gap-7 px-8 pt-7 pb-4">
+      <div ref={scrollRef} className="momentum min-h-0 flex-1 overflow-y-auto">
+        <div className="mx-auto flex max-w-[640px] flex-col gap-7 px-5 pt-7 pb-4 md:px-8">
           <div className="text-center">
             <span className="eyebrow text-dim opacity-70">{daymark}</span>
           </div>
@@ -119,12 +128,22 @@ export function Reflect({ lens }: { lens: string | null }) {
             ) : (
               <p
                 key={m.id}
-                className="rise ml-auto max-w-[78%] text-right text-[14px] leading-relaxed text-ink opacity-80"
+                className="rise ml-auto max-w-[78%] text-right text-[15px] leading-relaxed text-ink opacity-80 md:text-[14px]"
               >
                 {m.content}
               </p>
             ),
           )}
+
+          {receipts.map((r) => (
+            <div
+              key={r.id}
+              className="flex items-center gap-2 self-start rounded-full bg-fill px-3 py-1.5 md:hidden"
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+              <span className="font-mono text-[11px] text-muted">{r.label}</span>
+            </div>
+          ))}
 
           {turn && (
             <>
@@ -148,18 +167,24 @@ export function Reflect({ lens }: { lens: string | null }) {
         </div>
       </div>
 
-      {/* Deb's door — the one composer. Enter sends; Shift+Enter breaks a line;
-          the well grows to ~5 lines, then scrolls inside. Focus stays caret-only. */}
-      <div className="mx-auto w-full max-w-[640px] px-8 pt-3 pb-7">
-        <div className="flex items-start gap-3 rounded-2xl bg-fill2 px-5 py-4 backdrop-blur">
-          <span className="text-lg leading-none font-light text-dim opacity-60">+</span>
+      <NowStrip lens={lens} />
+
+      {/* Deb's door — the one composer. Enter sends; Shift+Enter breaks a line
+          (kept for external keyboards); the well grows to ~5 lines, then
+          scrolls inside. Focus stays caret-only. Mobile: 16px input (no iOS
+          zoom-jump), the round accent send button, safe-area clearance. */}
+      <div className="mx-auto w-full max-w-[640px] px-5 pt-2 pb-[max(1.25rem,env(safe-area-inset-bottom))] md:px-8 md:pt-3 md:pb-7">
+        <div className="flex items-end gap-3 rounded-2xl bg-fill2 px-4 py-2.5 backdrop-blur md:items-start md:px-5 md:py-4">
+          <span className="hidden text-lg leading-none font-light text-dim opacity-60 md:block">
+            +
+          </span>
           <textarea
             ref={taRef}
-            autoFocus
+            autoFocus={!isMobile}
             rows={1}
             value={draft}
             maxLength={MESSAGE_MAX}
-            placeholder="Talk, drop, or ask anything…"
+            placeholder={isMobile ? 'Tell Deb anything…' : 'Talk, drop, or ask anything…'}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
@@ -167,8 +192,17 @@ export function Reflect({ lens }: { lens: string | null }) {
                 send(draft)
               }
             }}
-            className="max-h-[120px] w-full resize-none bg-transparent text-[15px] text-ink outline-none placeholder:text-dim"
+            className="max-h-[120px] w-full resize-none self-center bg-transparent text-[16px] text-ink outline-none placeholder:text-dim md:text-[15px]"
           />
+          <button
+            onClick={() => send(draft)}
+            aria-label="Send"
+            disabled={!draft.trim()}
+            className="flex h-11 w-11 flex-none items-center justify-center rounded-full text-bg transition-opacity duration-150 disabled:opacity-35 md:hidden"
+            style={{ backgroundColor: 'var(--t-accent)' }}
+          >
+            ↑
+          </button>
         </div>
       </div>
     </div>
