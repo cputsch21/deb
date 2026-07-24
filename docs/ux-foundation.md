@@ -46,7 +46,7 @@ The directions deliberately mirror SwipeWrite's muscle memory: right = positive,
 
 Morning: you show up, Now is simply *right* — because last night's reMarkable page (or a one-line sign-off in chat) closed the day, and tomorrow was seeded from where you actually stopped. Asking "what should I do right now?" always gets one decisive answer, never a menu.
 
-Friday afternoon, in the same thread, the mentor opens the impact check — what moved on each of the six worlds, what drifted, receipts attached. Ten minutes, conversational, done.
+Friday afternoon, in the same thread, the mentor opens the impact check — what moved on each world, what drifted, receipts attached. Ten minutes, conversational, done.
 
 Any time: "show me my blindspots" / "how's my attention split this month?" — the invisible record surfaces on demand in the chat, then gets out of the way.
 

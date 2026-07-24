@@ -15,7 +15,7 @@
 GitHub repo + Vercel deploy of what already runs, then the Warm Glass tokens land as the real CSS foundation (palettes, type, wells, motion), plus the shell bones: the Void with quotes, the lens rail, the composer. **Done = the calm empty app at a real URL, looking like the kit.**
 
 ## M1 — The spine: Projects · Goals · Tasks
-User-created projects with choosable colors (random default) and world-repaint schemes; goals (finishable outcomes, user owns every edit, permanent Done/Dropped via the one confirm); tasks incl. the Bench (loose, fading honestly) and Recurring Tasks; right-sheet detail everywhere; the optimistic-mutation layer from the first write. **Done = you manage your six worlds by hand, daily, in the real design.**
+User-created projects with choosable colors (random default) and world-repaint schemes; goals (finishable outcomes, user owns every edit, permanent Done/Dropped via the one confirm); tasks incl. the Bench (loose, fading honestly) and Recurring Tasks; right-sheet detail everywhere; the optimistic-mutation layer from the first write. **Done = you manage your worlds by hand, daily, in the real design.**
 
 ## M2 — The Mentor
 One thread forever + project lenses over one memory. **Act-then-correct** tool grammar: internal writes just happen (mentor's words confirm; transient Undo pill; everything tappable-editable) — no proposal cards. The persona: TRUE's heritage (truth over comfort, receipts, the instincts, restraint, silence sentinel) tuned with light humor; hardcoded name (your call needed, see below). Memory: remember/recall + the tuning room. Project intake interview → one-line mission. **Done = you plan a real goal in conversation, and saying "I owe Larry an invoice" just creates the task.**

@@ -75,7 +75,7 @@ days land.
 to do anything about it.*
 
 The Study feeling: fire going, clean shelves, good light. At the silver
-dot, six dossiers at a glance — each world with its status line and
+dot, every world's dossier at a glance — each with its status line and
 momentum. Step into a world and you're reading its dossier: the **mission**
 in its own words over the mantle, **Goals** with honest status, **Recently**
 — a dated ledger of what actually happened, **Next** — what's coming, drawn

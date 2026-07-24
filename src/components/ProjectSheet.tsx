@@ -217,9 +217,10 @@ export function ProjectSheet({
         {project ? (
           <button
             onClick={deleteProject}
+            title="The dot leaves the rail; the record stays"
             className="self-start text-sm text-bad opacity-80 transition-opacity duration-150 hover:opacity-100"
           >
-            Delete project
+            Retire this world
           </button>
         ) : (
           <button

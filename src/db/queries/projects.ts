@@ -89,7 +89,7 @@ export function useProjectMutations() {
     })
   }
 
-  /** Soft delete + the undo pill. Never a confirm, never a hard delete. */
+  /** Retire = soft delete + the undo pill. The record stays; never a confirm, never a hard delete. */
   const remove = (id: string) => {
     const row = qc.getQueryData<Project[]>(projectKeys.all)?.find((p) => p.id === id)
     void optimisticWrite(qc, {
@@ -104,9 +104,9 @@ export function useProjectMutations() {
           .select('id')
         assertRowChanged(data, error, `delete project ${id}`)
       },
-      onFail: "Couldn't delete that — it's back.",
+      onFail: "Couldn't retire that — it's back.",
     })
-    if (row) transient.undo(`${row.name} deleted`, () => restore(row))
+    if (row) transient.undo(`${row.name} retired — its record is kept`, () => restore(row))
   }
 
   return { create, update, remove, restore }
