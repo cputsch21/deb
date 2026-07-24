@@ -9,7 +9,7 @@ export const projectKeys = { all: ['projects'] as const }
 async function fetchProjects(): Promise<Project[]> {
   const { data, error } = await supabase
     .from('projects')
-    .select('id, name, color, created_at, deleted_at')
+    .select('id, name, color, mission, created_at, deleted_at')
     .is('deleted_at', null)
     .order('created_at')
   if (error) throw error
@@ -33,6 +33,7 @@ export function useProjectMutations() {
       id: crypto.randomUUID(),
       name: capText(name, NAME_MAX),
       color,
+      mission: null,
       created_at: nowISO(),
       deleted_at: null,
     }
@@ -51,7 +52,7 @@ export function useProjectMutations() {
     return row.id
   }
 
-  const update = (id: string, fields: Partial<Pick<Project, 'name' | 'color'>>) => {
+  const update = (id: string, fields: Partial<Pick<Project, 'name' | 'color' | 'mission'>>) => {
     const next = { ...fields }
     if (next.name !== undefined) {
       next.name = capText(next.name, NAME_MAX)

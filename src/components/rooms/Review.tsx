@@ -158,6 +158,11 @@ function Dossier({ world, goals, tasks }: { world: Project; goals: Goal[]; tasks
   return (
     <div className="mx-auto max-w-[640px] px-8 pt-21 pb-12">
       <h1 className="font-serif text-[26px] font-medium text-ink">{world.name}</h1>
+      {world.mission && (
+        <p className="mt-1.5 font-serif text-[15px] text-muted italic">
+          &ldquo;{world.mission}&rdquo;
+        </p>
+      )}
 
       {wGoals.length > 0 && (
         <section className="mt-8">

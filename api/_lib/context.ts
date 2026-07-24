@@ -4,6 +4,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 export const MESSAGE_MAX = 4000
 export const TASK_TITLE_MAX = 200
 export const FACT_MAX = 500
+export const MISSION_MAX = 200
 
 export function capText(text: string, max: number): string {
   const trimmed = text.trim()
@@ -43,7 +44,7 @@ const HISTORY_WINDOW = 100
 /** One read pass for everything Deb's mind needs this turn. */
 export async function loadContext(db: SupabaseClient): Promise<DebContext> {
   const [projects, goals, tasks, facts, history] = await Promise.all([
-    db.from('projects').select('id, name, color, created_at').is('deleted_at', null).order('created_at'),
+    db.from('projects').select('id, name, color, mission, created_at').is('deleted_at', null).order('created_at'),
     db.from('goals').select('id, project_id, title, status, resolved_at, created_at').is('deleted_at', null).order('created_at'),
     db.from('tasks').select('id, project_id, goal_id, title, done_at, touched_at, created_at').is('deleted_at', null).order('created_at'),
     db.from('known_facts').select('id, content, source, created_at').is('deleted_at', null).order('created_at'),
@@ -112,8 +113,11 @@ export function stateBlock(ctx: DebContext, lensProjectId: string | null, tz: st
       return `    goal: ${g.title}${under.length ? `\n${under.map((t) => `      - ${t.title}`).join('\n')}` : ' (no open tasks)'}`
     })
     const loose = pTasks.filter((t) => !t.goal_id)
+    const missionNote = p.mission
+      ? ` — mission: "${p.mission}"`
+      : ' — no mission yet (this world has not been given to you in an intake interview)'
     return [
-      `  ${p.name}:`,
+      `  ${p.name}${missionNote}:`,
       ...goalLines,
       ...(loose.length ? [`    loose:\n${loose.map((t) => `      - ${t.title}`).join('\n')}`] : []),
       ...(pGoals.length === 0 && pTasks.length === 0 ? ['    (quiet — no open goals or tasks)'] : []),

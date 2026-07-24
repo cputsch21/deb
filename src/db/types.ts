@@ -6,6 +6,7 @@
 export const NAME_MAX = 80
 export const TITLE_MAX = 200
 export const MESSAGE_MAX = 4000
+export const MISSION_MAX = 200
 
 export const FACT_MAX = 500
 
@@ -35,6 +36,8 @@ export type Project = {
   id: string
   name: string
   color: string // #rrggbb
+  /** One line, distilled from the intake interview. Null until the world is given. */
+  mission: string | null
   created_at: string
   deleted_at: string | null
 }

@@ -24,6 +24,27 @@ archaeology it was all distilled from). Currently at **Milestone 2 — The Mento
 
 ## The log (newest first)
 
+### July 24, 2026 — M2 closed · M3 T2: the interview is the onboarding
+M2 (Reflect: voice, hands, memory, the first message) is closed — the T6 SQL
+ran; her first words are the blank-start text.
+- **The intake interview is Deb's real onboarding** (now that inheritance is
+  gone): Chris walks the rail and gives her each world in conversation. She
+  interviews per the soul doc — organic, one warm question at a time, never a
+  survey, never announcing the process — distills a ONE-line mission in his
+  words, and writes it herself (`set_mission`, act-then-correct with the
+  normal undo/redo). Durable facts from the interview land in memory the
+  normal, visible way ("Noted" pill). The soul doc gains the matching
+  section (this date).
+- **`projects.mission`** (nullable, ≤200, check in schema, cap in code) is
+  the one new column; Review hangs it over the world's mantle. A world
+  without a mission simply hasn't been given to her yet — the state block
+  says so honestly.
+- **M3 closes when all six worlds have missions**; then M4 (React).
+- Two Reflect quiets, same date: the composer is a growing textarea
+  (Enter sends, Shift+Enter breaks a line, ~5 lines then internal scroll);
+  **the quote is removed from Reflect with its breathing room preserved** —
+  it may return elsewhere later.
+
 ### July 24, 2026 — Reversal: NO TRUE inheritance, ever
 Supersedes the inheritance ruling (feature S38 / inventory G7, "TRUE's data
 as the seed") and the July 22 "TRUE's data seeds Deb's memory" line. **Deb

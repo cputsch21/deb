@@ -5,6 +5,7 @@ import { DEB_IDENTITY, SILENT_SENTINEL } from './_lib/identity.js'
 import {
   FACT_MAX,
   MESSAGE_MAX,
+  MISSION_MAX,
   TASK_TITLE_MAX,
   buildHistory,
   capText,
@@ -81,7 +82,27 @@ const RECALL: Anthropic.Tool = {
   },
 }
 
-const TOOLS: Anthropic.Tool[] = [CREATE_TASK, REMEMBER, RECALL]
+/** Write a world's mission — the distillation of the intake interview. */
+const SET_MISSION: Anthropic.Tool = {
+  name: 'set_mission',
+  description: `Write (or rewrite) a world's one-line mission — the distillation of an intake interview, in Chris's words more than yours. Act-then-correct: it lands the moment you call this, hangs over that world's mantle in Review, and he can redo it by simply saying so. ONLY call this when the conversation has actually surfaced what the world is for — never guess a mission to fill the field, and never announce that you are "running an interview." Defaults to the world he is speaking from; pass a world name only when the conversation clearly settled a different one.`,
+  input_schema: {
+    type: 'object',
+    properties: {
+      mission: {
+        type: 'string',
+        description: 'One line, under 200 characters. His words, distilled — not corporate speak.',
+      },
+      world: {
+        type: 'string',
+        description: 'Optional: the world name. Omit to use the lens he is speaking from.',
+      },
+    },
+    required: ['mission'],
+  },
+}
+
+const TOOLS: Anthropic.Tool[] = [CREATE_TASK, REMEMBER, RECALL, SET_MISSION]
 
 const json = (body: unknown, status: number) =>
   new Response(JSON.stringify(body), {
@@ -221,7 +242,9 @@ export async function POST(request: Request): Promise<Response> {
                   ? await remember(db, use, send)
                   : use.name === 'recall'
                     ? await recall(db, use)
-                    : { content: `Unknown tool: ${use.name}`, is_error: true }
+                    : use.name === 'set_mission'
+                      ? await setMission(db, use, projectId, ctx.projects, send)
+                      : { content: `Unknown tool: ${use.name}`, is_error: true }
             results.push({
               type: 'tool_result',
               tool_use_id: use.id,
@@ -359,6 +382,48 @@ async function recall(
   }
   return {
     content: `Matches for "${query}" (keep the dates honest):\n${lines.join('\n')}`,
+    is_error: false,
+  }
+}
+
+/** Execute set_mission: resolve the world (lens by default), row-checked update, tell the client. */
+async function setMission(
+  db: SupabaseClient,
+  use: Anthropic.ToolUseBlock,
+  lensProjectId: string | null,
+  projects: Record<string, unknown>[],
+  send: (event: Record<string, unknown>) => void,
+): Promise<{ content: string; is_error: boolean }> {
+  const input = (use.input ?? {}) as { mission?: unknown; world?: unknown }
+  const mission = capText(String(input.mission ?? ''), MISSION_MAX)
+  if (!mission) return { content: 'No mission given — nothing was written.', is_error: true }
+
+  const worldName = String(input.world ?? '').trim()
+  const target = worldName
+    ? projects.find((p) => String(p.name).toLowerCase() === worldName.toLowerCase())
+    : projects.find((p) => p.id === lensProjectId)
+  if (!target) {
+    return {
+      content: worldName
+        ? `No world named "${worldName}" exists — do not invent worlds; ask Chris.`
+        : 'No world is in focus — ask Chris to step into the world on the rail (or name it).',
+      is_error: true,
+    }
+  }
+
+  const { data, error } = await db
+    .from('projects')
+    .update({ mission })
+    .eq('id', String(target.id))
+    .select('id')
+  if (error || !data || data.length === 0) {
+    console.error('[chat] set_mission', error)
+    return { content: 'The write failed — the mission was NOT set. Tell Chris plainly.', is_error: true }
+  }
+
+  send({ type: 'action', kind: 'mission_set', id: String(target.id), name: String(target.name), mission })
+  return {
+    content: `Mission written for ${String(target.name)}: "${mission}". It hangs over the mantle in Review now — he can redo it by saying so.`,
     is_error: false,
   }
 }
