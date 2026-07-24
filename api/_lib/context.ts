@@ -88,8 +88,7 @@ export function factsBlock(facts: Row[]): string {
   }
   const lines = facts.map((f) => {
     const date = String(f.created_at).slice(0, 10)
-    const label = f.source === 'seed' ? ' [inherited from TRUE — history you inherited, not conversations you had]' : ''
-    return `- (${date})${label} ${f.content}`
+    return `- (${date}) ${f.content}`
   })
   return `WHAT YOU KNOW (durable facts, dated — your receipts drawn from these must keep their dates honest):\n${lines.join('\n')}`
 }

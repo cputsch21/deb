@@ -6,8 +6,8 @@ import { FACT_MAX, type KnownFact } from '../db/types'
 /**
  * The memory room — the visible half of memory. Everything Deb knows, nothing
  * hidden: read it, edit it, forget it (always with undo). Opens from the quiet
- * "memory" whisper. Source is labeled honestly — what she inherited from TRUE
- * says so.
+ * "memory" whisper. She starts blank by choice (July 24 reversal): every fact
+ * here was earned in conversation or added by Chris's own hand.
  */
 export function MemorySheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { data: facts = [] } = useFacts()
@@ -92,7 +92,7 @@ function FactRow({ fact }: { fact: KnownFact }) {
         </button>
       )}
       <span className="mt-0.5 font-mono text-[0.58rem] tracking-wide text-dim uppercase">
-        {fact.source === 'seed' ? 'inherited' : fact.source}
+        {fact.source}
       </span>
       <button
         onClick={() => forget(fact.id)}

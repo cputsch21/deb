@@ -24,6 +24,43 @@ archaeology it was all distilled from). Currently at **Milestone 2 — The Mento
 
 ## The log (newest first)
 
+### July 24, 2026 — Reversal: NO TRUE inheritance, ever
+Supersedes the inheritance ruling (feature S38 / inventory G7, "TRUE's data
+as the seed") and the July 22 "TRUE's data seeds Deb's memory" line. **Deb
+starts blank by deliberate choice.** Too much of TRUE's context is not wanted
+clouding her; anything worth carrying, Chris tells her himself or adds in the
+memory room.
+- The T6 inheritance migration is void and deleted; the TRUE-side export SQL
+  is void. T6 shrinks to one move: plant her first message as the thread's
+  true beginning.
+- The soul doc's memory section loses its inheritance clauses; the canonical
+  first message is replaced with the blank-start text (recorded in
+  `docs/deb-soul.md`, this date).
+- The `known_facts.source = 'seed'` value stays in the schema as a dead
+  letter (harmless; nothing will ever write it). The prompt and UI no longer
+  speak of inheritance.
+- PRD phrases like "what TRUE knew before her (inherited, labeled as such)"
+  are superseded on this point by this entry.
+
+### July 24, 2026 — The milestone re-cut, mapped to rooms (approved)
+Supersedes M3–M6 of build-plan v2. M2 (Reflect: voice, hands, memory, the
+thread) is closing. The remaining milestones map one-to-one onto rooms:
+- **M3 — Review:** the read-only dossiers over M1's spine. Six world cards at
+  a glance; a world's dossier (Goals · Recently · Next · Waiting-on as its
+  data arrives). Derived, never maintained; nothing tappable into action.
+- **M4 — React:** the one stack + the Line — the four D's + the punch,
+  species-aware Delete, the Now two-chip window in Reflect. Cards minted from
+  the spine first (stale Bench, undecided tasks, broken rhythms); the
+  from-people species stays V2.
+- **M5 — Read:** ingestion + the record — the private ingest address, Plaud +
+  reMarkable (raw kept beside the distillate), days as pages, the four margin
+  annotations (each a door into Reflect), the record building invisibly.
+- **M6 — Presence & polish:** Arc, the context-wired quote engine,
+  sunrise/sunset, PWA, keyboard pass, trash restore.
+Order rationale: Review is derivable today (cheapest whole-feeling win),
+React is the second daily driver and runs on spine-minted cards, Read is the
+largest new surface and lands once both its dependents are steady.
+
 ### July 24, 2026 — The four rooms (PRD + design target are the law now)
 A major product evolution, locked in Cowork. Two artifacts land as the top of
 the law stack: `docs/prd.md` (the product intention) and `docs/design-target.html`

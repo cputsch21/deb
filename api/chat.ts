@@ -346,8 +346,7 @@ async function recall(
   const lines: string[] = []
   for (const f of facts.data ?? []) {
     const date = String(f.created_at).slice(0, 10)
-    const tag = f.source === 'seed' ? ', inherited from TRUE' : ''
-    lines.push(`- fact (${date}${tag}): ${f.content}`)
+    lines.push(`- fact (${date}): ${f.content}`)
   }
   for (const m of msgs.data ?? []) {
     const date = String(m.created_at).slice(0, 10)
