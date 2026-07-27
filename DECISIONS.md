@@ -19,13 +19,35 @@ and `docs/ux-foundation.md` (v1, superseded where they conflict — see July 24)
 `docs/master-inventory.md` (the cross-app archaeology it was all distilled
 from). M2 (Reflect: voice, hands, memory, first message) closed · M3 (Review +
 the intake interview) live · M4 (React: the stack + the Line) shipped, device
-pass pending · **M5 (Read: ingestion + the record) in flight** — T1–T4 done
-(the spine, the one door, the distillation, minting + the learning loop);
-next T5 (the Read room), T6 (the margins), T7 (Plaud spike).
+pass pending · **M5 (Read: ingestion + the record) complete** — the spine, the one door,
+the distillation, minting + the learning loop, the Read room, the margins,
+and the Plaud spike report. Next: **M6 — presence & polish** (Arc, the
+finished shelf, PWA completion, the design reckoning, the V1 walk).
 
 ---
 
 ## The log (newest first)
+
+### July 24, 2026 — M5 T5–T7: the Book, the margins, the spike
+- The Read room ships per the design target: days as pages, chapter
+  numbering derived from the record's own spine, raw one tap beneath
+  (fetched on demand, cached forever — immutable by law), world journal
+  scoping with whole-life entries staying on the page.
+- **The margins ship with their restraint in the prompt as law:** 0–2 notes,
+  four kinds only; receipts may cite only dates from the dated record she
+  is handed — no date, no receipt, ask instead. Desktop notes hang in the
+  true margin; mobile renders them inline in the same hand.
+- **Every margin note is a door, and the tap authors the line:** tapping a
+  note opens Reflect and sends the context line as Chris's turn — a
+  deliberate act (act-then-correct), not the app speaking for him
+  unprompted. Flagged as a judgment call; redline if unwanted.
+- **T7 spike done, report at docs/spikes/plaud-autoflow.md.** Finding in
+  one line: Resend inbound (~$0 at our volume, managed parsing, ~2–3h) vs
+  Cloudflare Workers ($0 forever, we own the parsing, ~half a day); the
+  real cost either way is the identity change (/api/ingest needs the
+  service-role key + sender allowlist — today the server holds no
+  privileged key at all). The decision is Chris's; manual paste is the
+  shipping path; productionizing belongs to V2 Pillar 5. M5 is complete.
 
 ### July 24, 2026 — M5 T2–T4 implementation rulings
 - **Material never enters the thread.** A large paste files into the
