@@ -28,6 +28,29 @@ finished shelf, PWA completion, the design reckoning, the V1 walk).
 
 ## The log (newest first)
 
+### July 24, 2026 — Provenance of the thread is absolute (redline) · M6 green-lit
+Supersedes the "the tap authors the line" judgment call (below, same date).
+- **Nothing synthesizes Chris's voice, ever, in any future feature.** The
+  permanent record may only contain words he actually wrote or said. No
+  tap, shortcut, or automation composes a turn attributed to CHRIS.
+- **The margin door, reworked to the letter:** tapping a note opens Reflect
+  with the note carried in as a QUOTED OBJECT — visibly hers, styled as
+  what it is (from the margin · kind · day), session-ephemeral — and Deb
+  picks it up and says more. Server-side, a margin tap writes NO user row;
+  the tap is framed to her as context (never persisted), and only her
+  reply enters the record. Her speaking is a response to his deliberate
+  act — the no-proactivity law is untouched.
+- **M6 green-lit as ticketed** (Arc · the finished shelf · PWA completion ·
+  the design reckoning · the V1 walk), with the walk's done-gate now
+  explicitly including **Chris's two device passes: the M4 drag physics +
+  live why layer, and the full M5 loop (paste → distillate → margins →
+  cards dealt) on desk and phone. Neither has happened; v1.0 does not tag
+  until both have.**
+- **The Plaud spike is parked as recommended** — decision deferred to V2
+  Pillar 5, Resend as the standing lean. The identity change (a
+  service-role key entering a codebase that currently holds no privileged
+  key) gets its own security ruling when productionized, not a footnote.
+
 ### July 24, 2026 — M5 T5–T7: the Book, the margins, the spike
 - The Read room ships per the design target: days as pages, chapter
   numbering derived from the record's own spine, raw one tap beneath

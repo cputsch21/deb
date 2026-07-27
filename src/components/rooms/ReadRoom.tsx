@@ -206,7 +206,9 @@ function MarginNote({ note, day }: { note: EntryNote; day: string }) {
   const { knock } = useDoor()
   const { setRoom } = useRoom()
   const open = () => {
-    knock(`About your margin note from ${shortDay(day)} — "${note.content}" — say more.`)
+    // Provenance law: the tap carries HER note as a quoted object — it never
+    // composes words in Chris's voice.
+    knock({ content: note.content, noteKind: note.kind, day: shortDay(day) })
     setRoom('reflect')
   }
   const body = (

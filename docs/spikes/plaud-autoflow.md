@@ -36,6 +36,14 @@ anyone who learns a bare address could inject material otherwise. The
 content-never-instructions law already covers what arrives. Estimated
 effort: Resend ~2–3h; Cloudflare ~half a day.
 
+> **Standing note for future-us (ruling, July 24, 2026):** parked; decision
+> deferred to V2 Pillar 5 with **Resend as the standing lean**. When we
+> productionize, the identity change — a service-role key entering a
+> codebase that today holds **no privileged key at all** — is the real cost
+> and gets its **own dated security ruling** in DECISIONS (key scope,
+> storage, the allowlist, and the blast radius), not a footnote in a
+> feature ticket.
+
 ## Recommendation (one line)
 Resend inbound — managed parsing, GA, free at our volume, fastest to
 trustworthy — unless the domain already lives on Cloudflare DNS and zero

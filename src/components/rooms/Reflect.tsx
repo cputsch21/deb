@@ -5,9 +5,9 @@ import { projectKeys, useProjects, useProjectMutations } from '../../db/queries/
 import { taskKeys, useTaskMutations } from '../../db/queries/tasks'
 import { factKeys, useFactMutations } from '../../db/queries/facts'
 import { entryKeys, useEntryMutations } from '../../db/queries/entries'
-import { useDoor } from '../../lib/door'
+import { useDoor, type MarginKnock } from '../../lib/door'
 import { RAW_MAX } from '../../db/types'
-import { streamDeb } from '../../lib/deb'
+import { streamDeb, type DebInput } from '../../lib/deb'
 import { LoadFailed } from '../LoadFailed'
 import { NowStrip } from '../mobile/NowStrip'
 import { useIsMobile } from '../../lib/useIsMobile'
@@ -15,8 +15,11 @@ import { transient } from '../../lib/undo'
 
 /** One in-flight turn. 'waiting' = the silent gap (nothing shown but your line);
  *  'speaking' = she's decided to speak (the dots); 'error' = the honest line + retry.
- *  `pasted` rides along so a RETRY of a failed material paste stays material. */
-type Turn = { text: string; phase: 'waiting' | 'speaking' | 'error'; pasted: boolean }
+ *  `retry` carries the exact input shape, so a failed material paste stays
+ *  material and a failed margin tap stays a margin tap. `userLine` is null
+ *  for margin turns — the quoted note is the visible object, and nothing is
+ *  ever rendered (or stored) in Chris's voice that he didn't write. */
+type Turn = { userLine: string | null; retry: DebInput; phase: 'waiting' | 'speaking' | 'error' }
 
 export function Reflect({ lens }: { lens: string | null }) {
   const qc = useQueryClient()
@@ -33,6 +36,8 @@ export function Reflect({ lens }: { lens: string | null }) {
   // Act receipts (mobile thread ruling, July 24): small inline pill chips,
   // session-ephemeral — the append-only thread stays pure conversation.
   const [receipts, setReceipts] = useState<{ id: string; label: string }[]>([])
+  // Margin notes brought through the door — HER words, quoted, ephemeral.
+  const [quotes, setQuotes] = useState<(MarginKnock & { id: string })[]>([])
   const scrollRef = useRef<HTMLDivElement>(null)
   const taRef = useRef<HTMLTextAreaElement>(null)
   // Redline (July 24): the paste EVENT is the primary material signal —
@@ -53,28 +58,34 @@ export function Reflect({ lens }: { lens: string | null }) {
     el.style.height = `${Math.min(el.scrollHeight, 120)}px`
   }, [draft])
 
-  // The margin door (T6): a tapped note arrives as a pending line — the tap
-  // authored it — and sends the moment the thread is free.
+  // The margin door (provenance redline, July 24): the tapped note arrives
+  // as a quoted object — hers, visibly from the margin — and she picks it
+  // up. No words are synthesized in Chris's voice, ever.
   const pendingKnock = useDoor((s) => s.pending)
   useEffect(() => {
     if (!pendingKnock || (turn && turn.phase !== 'error')) return
     useDoor.getState().clear()
-    void send(pendingKnock)
+    setQuotes((q) => [...q, { ...pendingKnock, id: crypto.randomUUID() }])
+    void run({ kind: 'margin', note: pendingKnock }, null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingKnock])
 
   const send = async (raw: string, pastedOverride?: boolean) => {
     const content = raw.trim()
     if (!content) return
-    if (turn && turn.phase !== 'error') return // one turn at a time (retry allowed)
-    const projectId = lens
     const pasted = pastedOverride ?? pastedRef.current
     pastedRef.current = false
     setDraft('')
-    setTurn({ text: content, phase: 'waiting', pasted })
+    await run({ kind: 'text', content, pasted }, content)
+  }
+
+  const run = async (input: DebInput, userLine: string | null) => {
+    if (turn && turn.phase !== 'error') return // one turn at a time (retry allowed)
+    const projectId = lens
+    setTurn({ userLine, retry: input, phase: 'waiting' })
 
     let resolved = false
-    await streamDeb(content, projectId, pasted, (e) => {
+    await streamDeb(input, projectId, (e) => {
       if (e.type === 'delta') {
         // First delta = she's decided to speak. Now the dots may show.
         setTurn((t) => (t && t.phase === 'waiting' ? { ...t, phase: 'speaking' } : t))
@@ -185,17 +196,32 @@ export function Reflect({ lens }: { lens: string | null }) {
             </div>
           ))}
 
+          {quotes.map((q) => (
+            <blockquote
+              key={q.id}
+              className="rise relative max-w-[88%] pl-4 font-serif text-[14px] leading-[1.6] text-accent italic"
+            >
+              <span className="absolute top-[3px] bottom-[3px] left-0 w-[1.5px] rounded bg-accent opacity-40" />
+              <span className="eyebrow mb-1 block text-[0.58rem] text-dim not-italic">
+                from the margin · {q.noteKind} · {q.day}
+              </span>
+              &ldquo;{q.content}&rdquo;
+            </blockquote>
+          ))}
+
           {turn && (
             <>
-              <p className="rise ml-auto max-w-[78%] text-right text-[14px] leading-relaxed text-ink opacity-80">
-                {turn.text}
-              </p>
+              {turn.userLine && (
+                <p className="rise ml-auto max-w-[78%] text-right text-[15px] leading-relaxed text-ink opacity-80 md:text-[14px]">
+                  {turn.userLine}
+                </p>
+              )}
               {turn.phase === 'speaking' && <Dots />}
               {turn.phase === 'error' && (
                 <p className="max-w-[88%] font-serif text-[15px] text-bad">
                   Deb could not answer just now.{' '}
                   <button
-                    onClick={() => send(turn.text, turn.pasted)}
+                    onClick={() => run(turn.retry, turn.userLine)}
                     className="underline underline-offset-2 hover:opacity-80"
                   >
                     try again

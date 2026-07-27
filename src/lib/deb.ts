@@ -26,10 +26,19 @@ export type DebEvent =
 
 const CANT_ANSWER = 'Deb could not answer just now.'
 
+/**
+ * What a turn can be (provenance law, July 24): a TEXT turn is words Chris
+ * actually wrote; a MARGIN turn is a tap on one of Deb's own notes — no
+ * words are synthesized in his voice, ever. The server frames the tap for
+ * her and persists only HER reply.
+ */
+export type DebInput =
+  | { kind: 'text'; content: string; pasted: boolean }
+  | { kind: 'margin'; note: { content: string; noteKind: string; day: string } }
+
 export async function streamDeb(
-  content: string,
+  input: DebInput,
   projectId: string | null,
-  pasted: boolean,
   onEvent: (event: DebEvent) => void,
 ): Promise<void> {
   const { data } = await supabase.auth.getSession()
@@ -45,7 +54,19 @@ export async function streamDeb(
     res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
-      body: JSON.stringify({ content, projectId, tz, pasted }),
+      body: JSON.stringify(
+        input.kind === 'text'
+          ? { content: input.content, pasted: input.pasted, projectId, tz }
+          : {
+              marginNote: {
+                content: input.note.content,
+                kind: input.note.noteKind,
+                day: input.note.day,
+              },
+              projectId,
+              tz,
+            },
+      ),
     })
   } catch {
     onEvent({ type: 'error', message: CANT_ANSWER })

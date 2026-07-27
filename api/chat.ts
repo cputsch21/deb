@@ -138,38 +138,54 @@ export async function POST(request: Request): Promise<Response> {
   const { data: userData, error: authError } = await db.auth.getUser(token)
   if (authError || !userData?.user) return json({ error: 'Not signed in.' }, 401)
 
-  let body: { content?: unknown; projectId?: unknown; tz?: unknown; pasted?: unknown }
+  let body: {
+    content?: unknown
+    projectId?: unknown
+    tz?: unknown
+    pasted?: unknown
+    marginNote?: unknown
+  }
   try {
     body = await request.json()
   } catch {
     return json({ error: 'Bad request.' }, 400)
   }
-  const rawInput = String(body.content ?? '').trim()
-  if (!rawInput) return json({ error: 'Nothing to say.' }, 400)
   const projectId = typeof body.projectId === 'string' ? body.projectId : null
   const tz = typeof body.tz === 'string' && body.tz ? body.tz : 'UTC'
+
+  // The margin door (provenance redline, July 24): a tap on one of Deb's
+  // own notes. NOTHING is written in Chris's voice — no user row at all;
+  // the tap is framed to her as his deliberate ask, and only HER reply
+  // enters the record.
+  const margin = parseMargin(body.marginNote)
+
+  const rawInput = margin ? '' : String(body.content ?? '').trim()
+  if (!margin && !rawInput) return json({ error: 'Nothing to say.' }, 400)
   const pasted = body.pasted === true
 
   // THE DOOR (M5 T2, redline law): the paste EVENT is the primary signal,
   // size the secondary confirmation. A large paste is material — it files
   // into the record and never enters the thread. Typed text of any length
   // is conversation.
-  if (pasted && rawInput.length >= MATERIAL_MIN) {
+  if (!margin && pasted && rawInput.length >= MATERIAL_MIN) {
     return fileMaterial(db, rawInput.slice(0, RAW_MAX), projectId, tz)
   }
 
   const content = capText(rawInput, MESSAGE_MAX)
 
   // The user's line joins the thread first — the thread is truth even if
-  // the model call fails after this point.
-  const userMessageId = randomUUID()
-  const { error: insertError } = await db.from('messages').insert({
-    id: userMessageId,
-    role: 'user',
-    content,
-    project_id: projectId,
-  })
-  if (insertError) return json({ error: 'Your message could not be saved.' }, 500)
+  // the model call fails after this point. (A margin tap writes nothing:
+  // the record may only ever hold words Chris actually wrote or said.)
+  const userMessageId = margin ? '' : randomUUID()
+  if (!margin) {
+    const { error: insertError } = await db.from('messages').insert({
+      id: userMessageId,
+      role: 'user',
+      content,
+      project_id: projectId,
+    })
+    if (insertError) return json({ error: 'Your message could not be saved.' }, 500)
+  }
 
   const ctx = await loadContext(db)
 
@@ -183,7 +199,7 @@ export async function POST(request: Request): Promise<Response> {
       role: 'user',
       content: [
         { type: 'text', text: stateBlock(ctx, projectId, tz) },
-        { type: 'text', text: content },
+        { type: 'text', text: margin ? marginFrame(margin) : content },
       ],
     },
   ]
@@ -637,4 +653,36 @@ async function fileEntryTool(
     console.error('[chat] file_entry', err)
     return { content: 'The filing failed — tell Chris plainly.', is_error: true }
   }
+}
+
+
+/** The four margin kinds — mirrors entry_notes' schema check. */
+const MARGIN_KINDS = ['receipt', 'read', 'keep', 'question']
+
+function parseMargin(
+  value: unknown,
+): { content: string; kind: string; day: string } | null {
+  if (!value || typeof value !== 'object') return null
+  const v = value as { content?: unknown; kind?: unknown; day?: unknown }
+  const content = capText(String(v.content ?? ''), 200)
+  const kind = String(v.kind ?? '')
+  const day = capText(String(v.day ?? ''), 16)
+  if (!content || !MARGIN_KINDS.includes(kind)) return null
+  return { content, kind, day }
+}
+
+/**
+ * The tap, framed for her. This text is CONTEXT for the model only — it is
+ * never persisted; the thread's provenance stays absolute.
+ */
+function marginFrame(m: { content: string; kind: string; day: string }): string {
+  return [
+    '<margin-tap>',
+    `Chris tapped your margin note from ${m.day} (a ${m.kind}): "${m.content}"`,
+    'The tap is him asking YOU to say more about YOUR OWN note — the context',
+    'behind it, the receipt under it, what he might do with it. He is',
+    'addressing you, so answer (this is not a moment for silence). He typed',
+    'no words — never quote or paraphrase him; speak from the note.',
+    '</margin-tap>',
+  ].join('\n')
 }
