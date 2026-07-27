@@ -4,31 +4,37 @@ import { useTasks, useTaskMutations } from '../../db/queries/tasks'
 import { useDoor } from '../../lib/door'
 import { useRoom } from '../../lib/rooms'
 import { applyDebOrder, deriveLine, todayKey } from '../../lib/line'
+import { useIsMobile } from '../../lib/useIsMobile'
 import { useLineWhys } from '../../lib/lineWhys'
 import { transient } from '../../lib/undo'
 import type { Task } from '../../db/types'
 
 /**
- * The Now strip (mobile, above the composer in Reflect): the Line's glance
- * level — the same one queue React deals, top first, as horizontally
- * scrolling soft cards. World dot + tag, title, Deb's why when her ranking
- * has landed (an honest "on the line" until then), and the done circle.
- * Momentum scroll, no pagination dots. `data-own-touch`: a touch starting
- * here scrolls the strip, never the pager.
+ * The Now strip (above the composer in Reflect): the Line's glance level —
+ * the same one queue React deals, top first, as soft cards. World dot +
+ * tag, title, Deb's why when her ranking has landed (an honest "on the
+ * line" until then), and the done circle. Mobile: up to six, momentum
+ * scroll, no pagination dots; `data-own-touch` so a touch starting here
+ * scrolls the strip, never the pager. Desktop: the two-chip window onto
+ * the Line, per the one-queue law (T4 ruling 3 closed the gap).
  */
 export function NowStrip({ lens }: { lens: string | null }) {
   const { data: tasks = [] } = useTasks()
   const { data: projects = [] } = useProjects()
   const { setDone } = useTaskMutations()
+  const isMobile = useIsMobile()
   const whys = useLineWhys(true)
 
-  const line = applyDebOrder(deriveLine(tasks, lens, todayKey()), whys.order).slice(0, 6)
+  const line = applyDebOrder(deriveLine(tasks, lens, todayKey()), whys.order).slice(
+    0,
+    isMobile ? 6 : 2,
+  )
   if (line.length === 0) return null
 
   return (
     <div
       data-own-touch
-      className="momentum mx-auto flex w-full max-w-[640px] gap-2.5 overflow-x-auto px-5 pb-2 md:hidden"
+      className="momentum mx-auto flex w-full max-w-[640px] gap-2.5 overflow-x-auto px-5 pb-2 md:overflow-visible md:px-8 md:pb-3"
       style={{ touchAction: 'pan-x pan-y', scrollbarWidth: 'none' }}
     >
       {line.map((t) => {

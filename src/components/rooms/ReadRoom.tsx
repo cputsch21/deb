@@ -113,12 +113,12 @@ export function ReadRoom({ lens }: { lens: string | null }) {
           ))
         )}
 
-        {/* the page corners */}
-        <div className="mt-2 flex items-center gap-4.5">
+        {/* the page corners — real hit areas, ≥44px (T4 ruling 5) */}
+        <div className="mt-2 flex items-center gap-1.5">
           {older && (
             <button
               onClick={() => setCursor(older)}
-              className="text-[12.5px] text-dim transition-colors hover:text-ink"
+              className="-ml-2.5 flex min-h-11 items-center px-2.5 text-[12.5px] text-dim transition-colors hover:text-ink"
             >
               ← {older === addDays(day, -1) ? 'yesterday' : shortDay(older)}
             </button>
@@ -126,7 +126,7 @@ export function ReadRoom({ lens }: { lens: string | null }) {
           {day !== today && (
             <button
               onClick={() => setCursor(today)}
-              className="text-[12.5px] text-dim transition-colors hover:text-ink"
+              className="flex min-h-11 items-center px-2.5 text-[12.5px] text-dim transition-colors hover:text-ink"
             >
               today
             </button>
@@ -134,7 +134,7 @@ export function ReadRoom({ lens }: { lens: string | null }) {
           {newer && (
             <button
               onClick={() => setCursor(newer)}
-              className="text-[12.5px] text-dim transition-colors hover:text-ink"
+              className="flex min-h-11 items-center px-2.5 text-[12.5px] text-dim transition-colors hover:text-ink"
             >
               {newer === today ? 'today' : shortDay(newer)} →
             </button>
@@ -173,9 +173,11 @@ function PageEntry({
           </>
         )}
         {'  '}
+        {/* ≥44px hit area (T4 ruling 5): padded out, margined back in so the
+            eyebrow line keeps its type metrics */}
         <button
           onClick={() => setRawOpen((v) => !v)}
-          className="font-mono text-[0.58rem] tracking-[0.12em] text-dim uppercase opacity-70 transition-opacity hover:text-ink hover:opacity-100"
+          className="-my-4 inline-flex min-h-11 items-center px-2 align-middle font-mono text-[0.58rem] tracking-[0.12em] text-dim uppercase opacity-70 transition-opacity hover:text-ink hover:opacity-100"
         >
           raw {rawOpen ? '▴' : '▾'}
         </button>
@@ -240,9 +242,11 @@ function MarginNote({ note, day }: { note: EntryNote; day: string }) {
 /** The raw, one tap beneath — mono, quiet, and honest when it can't load. */
 function RawBlock({ rawId }: { rawId: string }) {
   const rawQ = useEntryRaw(rawId, true)
+  // A deeper tonal well, no edge (T4 ruling 9): where the design system
+  // and a prototype pixel disagree, the system wins — the 2px stripe dies.
   if (rawQ.isError) {
     return (
-      <div className="mt-2.5 rounded-r-xl border-l-2 border-hair bg-fill px-4 py-3 text-[12px] text-muted">
+      <div className="mt-2.5 rounded-xl bg-fill2 px-4 py-3 text-[12px] text-muted">
         The raw couldn&rsquo;t be loaded — it is safe.{' '}
         <button onClick={() => void rawQ.refetch()} className="underline underline-offset-2">
           try again
@@ -251,7 +255,7 @@ function RawBlock({ rawId }: { rawId: string }) {
     )
   }
   return (
-    <div className="mt-2.5 rounded-r-xl border-l-2 border-hair bg-fill px-4 py-3 font-mono text-[11px] leading-[1.85] tracking-[0.01em] whitespace-pre-wrap text-muted">
+    <div className="mt-2.5 rounded-xl bg-fill2 px-4 py-3 font-mono text-[11px] leading-[1.85] tracking-[0.01em] whitespace-pre-wrap text-muted">
       {rawQ.data ?? '…'}
     </div>
   )

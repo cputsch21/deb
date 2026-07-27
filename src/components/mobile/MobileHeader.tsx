@@ -29,7 +29,7 @@ export function MobileHeader({
           style={world ? { backgroundColor: world.color } : undefined}
           data-home={!world || undefined}
         >
-          {!world && <span className="block h-full w-full rounded-full bg-silver" />}
+          {!world && <span className="home-dot block h-full w-full rounded-full" />}
         </span>
         <span className="eyebrow text-ink">{world ? world.name : 'Deb'}</span>
         <span className="text-[10px] text-dim">▾</span>

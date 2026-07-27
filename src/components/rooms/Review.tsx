@@ -311,8 +311,9 @@ function Dossier({ world, goals, tasks }: { world: Project; goals: Goal[]; tasks
           <div className="mt-2">
             {waiting.map((t) => (
               <div key={t.id} className="flex items-center gap-2.5 py-2 text-[13.5px]">
-                <span className="font-semibold text-ink">{t.delegated_to}</span>
-                <span className="min-w-0 flex-1 truncate text-ink">— {t.title}</span>
+                {/* ink vs muted does the work — never bold (T4 ruling 8) */}
+                <span className="text-ink">{t.delegated_to}</span>
+                <span className="min-w-0 flex-1 truncate text-muted">— {t.title}</span>
                 <span className="text-[11px] text-accent">
                   chase {t.chase_on ? lineShortDay(t.chase_on) : ''}
                 </span>

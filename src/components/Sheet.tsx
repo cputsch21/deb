@@ -5,7 +5,8 @@ import * as Dialog from '@radix-ui/react-dialog'
  * The right-side sheet — where every record opens. Never a centered modal
  * (the lone exception, the verdict confirm, has its own component).
  * Motion law: 200ms enter, instant exit. Its soft shadow is the one
- * floating edge allowed in the app.
+ * floating edge allowed in the app. Flush right with the 22px rounded
+ * left edge, per the prototype's polish pass (T4 ruling 6).
  */
 export function Sheet({
   open,
@@ -23,7 +24,7 @@ export function Sheet({
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0" />
         <Dialog.Content
-          className="sheet fixed inset-y-3 right-3 w-[min(420px,calc(100vw-24px))] overflow-y-auto rounded-2xl"
+          className="sheet fixed inset-y-0 right-0 w-[min(420px,calc(100vw-24px))] overflow-y-auto rounded-l-[22px]"
           aria-describedby={undefined}
         >
           <Dialog.Title asChild>
