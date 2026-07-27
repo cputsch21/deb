@@ -27,7 +27,7 @@ export function Reflect({ lens }: { lens: string | null }) {
   const qc = useQueryClient()
   const { data: messages = [], isError, refetch } = useMessages(lens)
   const { data: projects = [] } = useProjects()
-  const { remove: removeTask, update: updateTask } = useTaskMutations()
+  const { remove: removeTask, update: updateTask, setDone: setTaskDone } = useTaskMutations()
   const { forget: forgetFact } = useFactMutations()
   const { update: updateProject } = useProjectMutations()
   const { update: updateGoal, verdict: goalVerdict, remove: removeGoal } = useGoalMutations()
@@ -167,6 +167,13 @@ export function Reflect({ lens }: { lens: string | null }) {
           const prev = e.prev
           transient.undo(e.label.slice(0, 60), () => updateTask(id, prev))
           setReceipts((r) => [...r, { id: `${id}-${crypto.randomUUID()}`, label: 'Task updated' }])
+        } else if (e.kind === 'task_completed') {
+          // The done hand (July 27): his statement was the evidence; the
+          // undo pill is the take-back — identical gravity to the punch.
+          void qc.invalidateQueries({ queryKey: taskKeys.all })
+          const id = e.id
+          transient.undo(`Done · ${e.title.slice(0, 40)}`, () => setTaskDone(id, false))
+          setReceipts((r) => [...r, { id: `${id}-done`, label: `Done — ${e.title.slice(0, 32)}` }])
         } else if (e.kind === 'verdict_staged') {
           // Not a write: she set the pen down in front of Chris. The one
           // solemn confirm renders; only his signature makes the verdict.

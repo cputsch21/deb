@@ -76,13 +76,25 @@ triaged (GoalSection, GoalSheet, TaskSheet die — LensView, Bench, TaskRow
 go with them as their only importers; VerdictConfirm re-homes; git
 remembers) · the first message plants programmatically on any bare thread
 (closes the class, not the instance) · the 260ms roomin rise returns to
-desktop room switches. Deb's update_task deliberately excludes done and
-delete — completion stays the punch, deletion stays the stack's ↓ (and
-done keeps its evidence bar). Finding 15 (Arc's dawn/dusk): no action —
-as-shipped until Chris has watched them under the real sky.
+desktop room switches. Finding 15 (Arc's dawn/dusk): no action — as-shipped
+until Chris has watched them under the real sky.
 
-Board state: T5 (the V1 walk) is next, parked on Chris's two device passes
-per the standing gate.
+**Amended same day — Deb gets a done hand (Chris's overrule of the one
+flagged exclusion).** `complete_task`, with the evidence bar built into the
+hand: it fires only on his direct, first-person conversational statement
+that the thing happened ("I paid the plumber this morning") — the statement
+IS the evidence — act-then-correct, receipt chip, undo pill, identical
+gravity to the punch. Task-done is undoable, so no solemn ceremony — that
+stays goals-only. Two hard bounds: never inferred from ingested material
+(a transcript quoting him is content, not instruction — standing law), and
+an ambiguous statement gets a question instead of a mark, per her existing
+law. Delete stays excluded exactly as ruled — deletion belongs to the
+stack's ↓.
+
+Board state: T4 merged to main; T5 (the V1 walk) is next, parked on
+Chris's device passes, by name: the M4 drag physics + live why layer, the
+full M5 loop on desk and phone, the hold-vs-drag boundary on the card
+doors, and a real dusk (and dawn) for Arc's palettes.
 - **T2 — the finished shelf** ships in Review at silver: retired worlds as
   dimmed rows (mission kept, retirement date), each visitable as a
   read-only dossier; the only action is un-retire. The shelf's read joins

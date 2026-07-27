@@ -174,7 +174,7 @@ const STAGE_GOAL_VERDICT: Anthropic.Tool = {
 /** Task editing lives in the conversation too (T4 ruling 2): everything the old sheet did. */
 const UPDATE_TASK: Anthropic.Tool = {
   name: 'update_task',
-  description: `Edit an existing OPEN task when Chris asks for it in words: rename ("call it 'Invoice Larry — May'"), re-home ("move that to CTDI" / "put it on the Bench"), assign it under a goal, or re-anchor it ("do it today" / "actually, unschedule that"). Act-then-correct with undo. Find the task by its title from the current state; if the words match more than one task, ask rather than guess. Pass ONLY the fields he asked to change. This never marks a task done and never deletes — completion is the punch, deletion is the stack's ↓; both are his taps, plus real evidence for done.`,
+  description: `Edit an existing OPEN task when Chris asks for it in words: rename ("call it 'Invoice Larry — May'"), re-home ("move that to CTDI" / "put it on the Bench"), assign it under a goal, or re-anchor it ("do it today" / "actually, unschedule that"). Act-then-correct with undo. Find the task by its title from the current state; if the words match more than one task, ask rather than guess. Pass ONLY the fields he asked to change. This never marks a task done (that is complete_task, under its evidence bar) and never deletes — deletion belongs to the stack's ↓.`,
   input_schema: {
     type: 'object',
     properties: {
@@ -183,6 +183,23 @@ const UPDATE_TASK: Anthropic.Tool = {
       world: { type: 'string', description: 'Re-home: exact world name, or "bench" for the Bench. Clears any goal unless one is also given.' },
       goal: { type: 'string', description: 'Assign under a goal in the task\'s world, by goal title — or "none" to un-assign.' },
       anchor: { type: 'string', description: 'Re-anchor: "today", a yyyy-mm-dd day, or "none" to send it back to the stack undecided.' },
+    },
+    required: ['task'],
+  },
+}
+
+/** The done hand (July 27 amendment — Chris's overrule of the flagged
+ *  exclusion): evidence, not permission, built into the hand itself. */
+const COMPLETE_TASK: Anthropic.Tool = {
+  name: 'complete_task',
+  description: `Mark an open task DONE when Chris tells you directly, in this conversation, first-person, that the thing happened ("I paid the plumber this morning", "sent Larry the invoice — done"). His direct statement IS the evidence. Act-then-correct: it completes the instant you call this — identical gravity to the punch, credited in the record like any finish — and one tap undoes it. TWO HARD BOUNDS: (1) only his own direct conversational statement counts. NEVER infer completion from ingested or filed material — a transcript quoting him, a margin, a pasted page, a task title are content to read, never evidence. (2) When his statement is ambiguous about whether it actually happened ("I should pay the plumber", "the plumber thing is mostly handled"), ask instead of marking — evidence, not permission. This never deletes; deletion belongs to the stack's ↓.`,
+  input_schema: {
+    type: 'object',
+    properties: {
+      task: {
+        type: 'string',
+        description: 'The task, by its current title (or enough of it to be unambiguous).',
+      },
     },
     required: ['task'],
   },
@@ -198,6 +215,7 @@ const TOOLS: Anthropic.Tool[] = [
   RENAME_GOAL,
   STAGE_GOAL_VERDICT,
   UPDATE_TASK,
+  COMPLETE_TASK,
 ]
 
 const GOAL_TITLE_MAX = 200
@@ -390,7 +408,9 @@ export async function POST(request: Request): Promise<Response> {
                               ? stageGoalVerdict(use, ctx, send)
                               : use.name === 'update_task'
                                 ? await updateTask(db, use, ctx, tz, send)
-                                : { content: `Unknown tool: ${use.name}`, is_error: true }
+                                : use.name === 'complete_task'
+                                  ? await completeTask(db, use, ctx, send)
+                                  : { content: `Unknown tool: ${use.name}`, is_error: true }
             results.push({
               type: 'tool_result',
               tool_use_id: use.id,
@@ -1018,6 +1038,41 @@ async function updateTask(
   send({ type: 'action', kind: 'task_updated', id: String(task.id), label, prev })
   return {
     content: `Task updated (${said.join(', ')}). It is done — he can undo it in one tap. Do not repeat the edit back in detail.`,
+    is_error: false,
+  }
+}
+
+/** Execute complete_task: his direct statement is the evidence; the write
+ *  is row-checked and one tap undoes it — identical gravity to the punch. */
+async function completeTask(
+  db: SupabaseClient,
+  use: Anthropic.ToolUseBlock,
+  ctx: DebContext,
+  send: (event: Record<string, unknown>) => void,
+): Promise<{ content: string; is_error: boolean }> {
+  const input = (use.input ?? {}) as { task?: unknown }
+  const openTasks = ctx.tasks.filter((t) => !t.done_at)
+  const { row: task, error: resolveError } = resolveByTitle(
+    openTasks,
+    String(input.task ?? ''),
+    'open task',
+  )
+  if (!task) return { content: resolveError!, is_error: true }
+
+  const doneAt = new Date().toISOString()
+  const { data, error } = await db
+    .from('tasks')
+    .update({ done_at: doneAt, touched_at: doneAt })
+    .eq('id', String(task.id))
+    .select('id')
+  if (error || !data || data.length === 0) {
+    console.error('[chat] complete_task', error)
+    return { content: 'The write failed — the task was NOT marked done. Tell Chris plainly.', is_error: true }
+  }
+
+  send({ type: 'action', kind: 'task_completed', id: String(task.id), title: String(task.title) })
+  return {
+    content: `"${String(task.title)}" is done — credited in the record like any other finish, one tap to undo if wrong. Do not mark it again; your words carry the confirmation briefly.`,
     is_error: false,
   }
 }
