@@ -4,7 +4,26 @@ import { transient } from '../../lib/undo'
 import { assertRowChanged, capText, optimisticWrite } from '../mutate'
 import { NAME_MAX, type Project } from '../types'
 
-export const projectKeys = { all: ['projects'] as const }
+export const projectKeys = {
+  all: ['projects'] as const,
+  retired: ['projects-retired'] as const,
+}
+
+/** The finished shelf (M6 T2): retired worlds — records intact, missions kept. */
+async function fetchRetired(): Promise<Project[]> {
+  const { data, error } = await supabase
+    .from('projects')
+    .select('id, name, color, mission, created_at, deleted_at')
+    .not('deleted_at', 'is', null)
+    .order('deleted_at', { ascending: false })
+    .limit(50)
+  if (error) throw error
+  return data
+}
+
+export function useRetiredProjects() {
+  return useQuery({ queryKey: projectKeys.retired, queryFn: fetchRetired })
+}
 
 async function fetchProjects(): Promise<Project[]> {
   const { data, error } = await supabase
@@ -87,6 +106,7 @@ export function useProjectMutations() {
       },
       onFail: "Couldn't bring it back — try again.",
     })
+    void qc.invalidateQueries({ queryKey: projectKeys.retired })
   }
 
   /** Retire = soft delete + the undo pill. The record stays; never a confirm, never a hard delete. */
@@ -107,6 +127,7 @@ export function useProjectMutations() {
       onFail: "Couldn't retire that — it's back.",
     })
     if (row) transient.undo(`${row.name} retired — its record is kept`, () => restore(row))
+    void qc.invalidateQueries({ queryKey: projectKeys.retired })
   }
 
   return { create, update, remove, restore }

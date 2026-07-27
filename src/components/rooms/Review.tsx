@@ -1,7 +1,9 @@
 import { useLens } from '../../lib/lens'
 import { LoadFailed } from '../LoadFailed'
 import { dealStack, deriveLine, shortDay as lineShortDay, todayKey } from '../../lib/line'
-import { useProjects } from '../../db/queries/projects'
+import { useState } from 'react'
+import { useProjects, useProjectMutations, useRetiredProjects } from '../../db/queries/projects'
+import { transient } from '../../lib/undo'
 import { useGoals } from '../../db/queries/goals'
 import { useTasks } from '../../db/queries/tasks'
 import type { Goal, Project, Task } from '../../db/types'
@@ -20,29 +22,98 @@ import type { Goal, Project, Task } from '../../db/types'
  */
 export function Review({ lens }: { lens: string | null }) {
   const projectsQ = useProjects()
+  const retiredQ = useRetiredProjects()
   const goalsQ = useGoals()
   const tasksQ = useTasks()
+  const { restore } = useProjectMutations()
   const projects = projectsQ.data ?? []
+  const retired = retiredQ.data ?? []
   const goals = goalsQ.data ?? []
   const tasks = tasksQ.data ?? []
   const world = projects.find((p) => p.id === lens) ?? null
+  // The finished shelf (M6 T2): a retired world being visited, read-only.
+  const [shelfId, setShelfId] = useState<string | null>(null)
+  const shelfWorld = retired.find((p) => p.id === shelfId) ?? null
 
-  // Law: a failed dossier load never renders as an empty study.
-  if (projectsQ.isError || goalsQ.isError || tasksQ.isError) {
+  // Law: a failed dossier load never renders as an empty study — the shelf
+  // included (a missing shelf would be a silent lie about retired worlds).
+  if (projectsQ.isError || goalsQ.isError || tasksQ.isError || retiredQ.isError) {
     const retry = () => {
       void projectsQ.refetch()
       void goalsQ.refetch()
       void tasksQ.refetch()
+      void retiredQ.refetch()
     }
     return <LoadFailed what="The dossiers" onRetry={retry} />
   }
 
   return (
-    <div className="min-h-0 flex-1 overflow-y-auto">
-      {world ? (
+    <div className="momentum min-h-0 flex-1 overflow-y-auto">
+      {shelfWorld ? (
+        <div className="pb-12">
+          {/* the shelf view: a finished thing, visited without being resurrected */}
+          <div className="mx-auto flex max-w-[640px] items-center gap-4 px-8 pt-8 md:pt-21">
+            <button
+              onClick={() => setShelfId(null)}
+              className="text-[12.5px] text-dim transition-colors hover:text-ink"
+            >
+              ← the study
+            </button>
+            <span className="eyebrow text-dim">
+              the shelf{shelfWorld.deleted_at ? ` · retired ${shortDate(shelfWorld.deleted_at)}` : ''}
+            </span>
+            <button
+              onClick={() => {
+                const row = shelfWorld
+                setShelfId(null)
+                restore(row)
+                transient.notice(`${row.name} returned to the rail`)
+              }}
+              className="eyebrow ml-auto text-dim transition-colors hover:text-ink"
+            >
+              un-retire
+            </button>
+          </div>
+          <div className="opacity-80">
+            <Dossier world={shelfWorld} goals={goals} tasks={tasks} />
+          </div>
+        </div>
+      ) : world ? (
         <Dossier world={world} goals={goals} tasks={tasks} />
       ) : (
-        <WorldGrid projects={projects} goals={goals} tasks={tasks} />
+        <>
+          <WorldGrid projects={projects} goals={goals} tasks={tasks} />
+          {retired.length > 0 && (
+            <div className="mx-auto max-w-[860px] px-6 pb-12 md:px-11">
+              <span className="eyebrow block text-dim opacity-70">the finished shelf</span>
+              <div className="mt-3 flex flex-col">
+                {retired.map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => setShelfId(p.id)}
+                    className="flex min-h-11 items-center gap-3 rounded-xl px-2 py-2.5 text-left opacity-55 transition-opacity hover:opacity-90"
+                  >
+                    <span
+                      className="h-2 w-2 flex-none rounded-full"
+                      style={{ backgroundColor: p.color }}
+                    />
+                    <span className="font-serif text-[15px] font-medium text-ink">{p.name}</span>
+                    {p.mission && (
+                      <span className="min-w-0 flex-1 truncate font-serif text-[12.5px] text-muted italic">
+                        &ldquo;{p.mission}&rdquo;
+                      </span>
+                    )}
+                    {p.deleted_at && (
+                      <span className="ml-auto flex-none text-[11px] text-dim">
+                        {shortDate(p.deleted_at)}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   )
@@ -62,7 +133,7 @@ function WorldGrid({
   const { setLens } = useLens()
 
   return (
-    <div className="mx-auto max-w-[860px] px-11 pt-21 pb-10">
+    <div className="mx-auto max-w-[860px] px-6 pt-6 pb-10 md:px-11 md:pt-21">
       <div className="mb-6">
         <h1 className="font-serif text-2xl font-medium text-ink">Review</h1>
         <p className="mt-1 font-serif text-[12.5px] text-dim italic">
@@ -179,7 +250,7 @@ function Dossier({ world, goals, tasks }: { world: Project; goals: Goal[]; tasks
     .slice(0, 7)
 
   return (
-    <div className="mx-auto max-w-[640px] px-8 pt-21 pb-12">
+    <div className="mx-auto max-w-[640px] px-6 pt-6 pb-12 md:px-8 md:pt-21">
       <h1 className="font-serif text-[26px] font-medium text-ink">{world.name}</h1>
       {world.mission && (
         <p className="mt-1.5 font-serif text-[15px] text-muted italic">
