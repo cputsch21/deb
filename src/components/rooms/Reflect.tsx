@@ -4,12 +4,14 @@ import { messageKeys, useMessages } from '../../db/queries/messages'
 import { projectKeys, useProjects, useProjectMutations } from '../../db/queries/projects'
 import { taskKeys, useTaskMutations } from '../../db/queries/tasks'
 import { factKeys, useFactMutations } from '../../db/queries/facts'
+import { goalKeys, useGoalMutations } from '../../db/queries/goals'
 import { entryKeys, useEntryMutations } from '../../db/queries/entries'
-import { useDoor, type MarginKnock } from '../../lib/door'
+import { useDoor, type Knock } from '../../lib/door'
 import { RAW_MAX } from '../../db/types'
 import { streamDeb, type DebInput } from '../../lib/deb'
 import { LoadFailed } from '../LoadFailed'
 import { NowStrip } from '../mobile/NowStrip'
+import { VerdictConfirm } from '../VerdictConfirm'
 import { useIsMobile } from '../../lib/useIsMobile'
 import { transient } from '../../lib/undo'
 
@@ -25,9 +27,10 @@ export function Reflect({ lens }: { lens: string | null }) {
   const qc = useQueryClient()
   const { data: messages = [], isError, refetch } = useMessages(lens)
   const { data: projects = [] } = useProjects()
-  const { remove: removeTask } = useTaskMutations()
+  const { remove: removeTask, update: updateTask, setDone: setTaskDone } = useTaskMutations()
   const { forget: forgetFact } = useFactMutations()
   const { update: updateProject } = useProjectMutations()
+  const { update: updateGoal, verdict: goalVerdict, remove: removeGoal } = useGoalMutations()
   const { hide: hideEntry } = useEntryMutations()
   const world = projects.find((p) => p.id === lens) ?? null
   const isMobile = useIsMobile()
@@ -36,8 +39,17 @@ export function Reflect({ lens }: { lens: string | null }) {
   // Act receipts (mobile thread ruling, July 24): small inline pill chips,
   // session-ephemeral — the append-only thread stays pure conversation.
   const [receipts, setReceipts] = useState<{ id: string; label: string }[]>([])
-  // Margin notes brought through the door — HER words, quoted, ephemeral.
-  const [quotes, setQuotes] = useState<(MarginKnock & { id: string })[]>([])
+  // Things brought through the door — margin notes (her words) and carried
+  // goals/tasks (his objects) — quoted, session-ephemeral.
+  const [quotes, setQuotes] = useState<(Knock & { id: string })[]>([])
+  // The re-homed solemn moment (T4 ruling 1): Deb staged a permanent
+  // verdict; the one centered confirm renders here, and only Chris's
+  // signature makes the write. Cancel is "Not yet" — nothing happens.
+  const [staged, setStaged] = useState<{
+    id: string
+    title: string
+    verdict: 'done' | 'dropped'
+  } | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const taRef = useRef<HTMLTextAreaElement>(null)
   // Redline (July 24): the paste EVENT is the primary material signal —
@@ -58,15 +70,29 @@ export function Reflect({ lens }: { lens: string | null }) {
     el.style.height = `${Math.min(el.scrollHeight, 120)}px`
   }, [draft])
 
-  // The margin door (provenance redline, July 24): the tapped note arrives
-  // as a quoted object — hers, visibly from the margin — and she picks it
-  // up. No words are synthesized in Chris's voice, ever.
+  // The door (provenance redline, July 24; generalized July 27): a tapped
+  // margin note or a carried goal/task arrives as a quoted object and Deb
+  // picks it up. No words are synthesized in Chris's voice, ever.
   const pendingKnock = useDoor((s) => s.pending)
   useEffect(() => {
     if (!pendingKnock || (turn && turn.phase !== 'error')) return
     useDoor.getState().clear()
     setQuotes((q) => [...q, { ...pendingKnock, id: crypto.randomUUID() }])
-    void run({ kind: 'margin', note: pendingKnock }, null)
+    void run(
+      pendingKnock.type === 'margin'
+        ? { kind: 'margin', note: pendingKnock }
+        : {
+            kind: 'object',
+            object: {
+              object: pendingKnock.object,
+              content: pendingKnock.content,
+              from: pendingKnock.from,
+              world: pendingKnock.world,
+              state: pendingKnock.state,
+            },
+          },
+      null,
+    )
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingKnock])
 
@@ -122,6 +148,36 @@ export function Reflect({ lens }: { lens: string | null }) {
             for (const tid of taskIds) removeTask(tid, false)
             setReceipts((r) => r.filter((x) => x.id !== entryId))
           })
+        } else if (e.kind === 'goal_created') {
+          void qc.invalidateQueries({ queryKey: goalKeys.all })
+          const id = e.id
+          transient.undo(`Goal added · ${e.title.slice(0, 40)}`, () => removeGoal(id, false))
+          setReceipts((r) => [...r, { id, label: `Goal added — ${e.worldName}` }])
+        } else if (e.kind === 'goal_renamed') {
+          void qc.invalidateQueries({ queryKey: goalKeys.all })
+          const id = e.id
+          const prevTitle = e.prevTitle
+          transient.undo(`Renamed · ${e.title.slice(0, 40)}`, () =>
+            updateGoal(id, { title: prevTitle }),
+          )
+          setReceipts((r) => [...r, { id, label: 'Goal renamed' }])
+        } else if (e.kind === 'task_updated') {
+          void qc.invalidateQueries({ queryKey: taskKeys.all })
+          const id = e.id
+          const prev = e.prev
+          transient.undo(e.label.slice(0, 60), () => updateTask(id, prev))
+          setReceipts((r) => [...r, { id: `${id}-${crypto.randomUUID()}`, label: 'Task updated' }])
+        } else if (e.kind === 'task_completed') {
+          // The done hand (July 27): his statement was the evidence; the
+          // undo pill is the take-back — identical gravity to the punch.
+          void qc.invalidateQueries({ queryKey: taskKeys.all })
+          const id = e.id
+          transient.undo(`Done · ${e.title.slice(0, 40)}`, () => setTaskDone(id, false))
+          setReceipts((r) => [...r, { id: `${id}-done`, label: `Done — ${e.title.slice(0, 32)}` }])
+        } else if (e.kind === 'verdict_staged') {
+          // Not a write: she set the pen down in front of Chris. The one
+          // solemn confirm renders; only his signature makes the verdict.
+          setStaged({ id: e.id, title: e.title, verdict: e.verdict })
         } else if (e.kind === 'mission_set') {
           // Redo path: undo restores whatever the mission was before (often nothing).
           const prev =
@@ -203,7 +259,9 @@ export function Reflect({ lens }: { lens: string | null }) {
             >
               <span className="absolute top-[3px] bottom-[3px] left-0 w-[1.5px] rounded bg-accent opacity-40" />
               <span className="eyebrow mb-1 block text-[0.58rem] text-dim not-italic">
-                from the margin · {q.noteKind} · {q.day}
+                {q.type === 'margin'
+                  ? `from the margin · ${q.noteKind} · ${q.day}`
+                  : `from ${q.from} · ${q.object}${q.world ? ` · ${q.world}` : ''}`}
               </span>
               &ldquo;{q.content}&rdquo;
             </blockquote>
@@ -235,12 +293,42 @@ export function Reflect({ lens }: { lens: string | null }) {
 
       <NowStrip lens={lens} />
 
+      {/* The solemn moment, re-homed (T4 ruling 1): the app's ONE confirm,
+          reserved for the permanent verdicts, now staged from conversation.
+          Deb set the pen down; the signature — and the write — are Chris's. */}
+      {staged &&
+        (staged.verdict === 'done' ? (
+          <VerdictConfirm
+            question={`"${staged.title}" — done, forever?`}
+            detail="This is the clean yes. It becomes part of the record and never reopens."
+            confirmLabel="Done forever"
+            tone="ok"
+            onConfirm={() => {
+              goalVerdict(staged.id, 'done')
+              setStaged(null)
+            }}
+            onCancel={() => setStaged(null)}
+          />
+        ) : (
+          <VerdictConfirm
+            question={`Drop "${staged.title}" — forever?`}
+            detail="An honest ending, not a failure. It becomes part of the record and never reopens."
+            confirmLabel="Drop forever"
+            tone="bad"
+            onConfirm={() => {
+              goalVerdict(staged.id, 'dropped')
+              setStaged(null)
+            }}
+            onCancel={() => setStaged(null)}
+          />
+        ))}
+
       {/* Deb's door — the one composer. Enter sends; Shift+Enter breaks a line
           (kept for external keyboards); the well grows to ~5 lines, then
           scrolls inside. Focus stays caret-only. Mobile: 16px input (no iOS
           zoom-jump), the round accent send button, safe-area clearance. */}
       <div className="mx-auto w-full max-w-[640px] px-5 pt-2 pb-[max(1.25rem,env(safe-area-inset-bottom))] md:px-8 md:pt-3 md:pb-7">
-        <div className="flex items-end gap-3 rounded-2xl bg-fill2 px-4 py-2.5 backdrop-blur md:items-start md:px-5 md:py-4">
+        <div className="composer flex items-end gap-3 rounded-[18px] px-4 py-2.5 md:items-start md:px-5 md:py-4">
           <span className="hidden text-lg leading-none font-light text-dim opacity-60 md:block">
             +
           </span>

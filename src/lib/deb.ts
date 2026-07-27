@@ -20,6 +20,28 @@ export type DebEvent =
       worldName: string | null
       taskIds: string[]
     }
+  // T4 rulings 1–2 (July 27): her goal hands and task hands. `prev` carries
+  // exactly what the undo puts back — the client never guesses.
+  | { type: 'action'; kind: 'goal_created'; id: string; title: string; worldName: string }
+  | { type: 'action'; kind: 'goal_renamed'; id: string; title: string; prevTitle: string }
+  | {
+      type: 'action'
+      kind: 'task_updated'
+      id: string
+      label: string
+      prev: {
+        title: string
+        project_id: string | null
+        goal_id: string | null
+        anchored_on: string | null
+      }
+    }
+  // The done hand (July 27 amendment): his direct statement is the
+  // evidence; undoable, identical gravity to the punch.
+  | { type: 'action'; kind: 'task_completed'; id: string; title: string }
+  // Not a write: she staged the app's one solemn confirm. The verdict is
+  // Chris's to sign in the thread — or wave off.
+  | { type: 'action'; kind: 'verdict_staged'; id: string; title: string; verdict: 'done' | 'dropped' }
   | { type: 'done'; id: string; content: string; saved: boolean }
   | { type: 'silent' }
   | { type: 'error'; message: string }
@@ -27,14 +49,26 @@ export type DebEvent =
 const CANT_ANSWER = 'Deb could not answer just now.'
 
 /**
- * What a turn can be (provenance law, July 24): a TEXT turn is words Chris
- * actually wrote; a MARGIN turn is a tap on one of Deb's own notes — no
- * words are synthesized in his voice, ever. The server frames the tap for
- * her and persists only HER reply.
+ * What a turn can be (provenance law, July 24; doors generalized July 27):
+ * a TEXT turn is words Chris actually wrote; a MARGIN turn is a tap on one
+ * of Deb's own notes; an OBJECT turn is a goal or task he carried onto the
+ * table (long-press, right-click, or a dossier goal's door). No words are
+ * synthesized in his voice, ever — the server frames the tap for her and
+ * persists only HER reply.
  */
 export type DebInput =
   | { kind: 'text'; content: string; pasted: boolean }
   | { kind: 'margin'; note: { content: string; noteKind: string; day: string } }
+  | {
+      kind: 'object'
+      object: {
+        object: 'goal' | 'task'
+        content: string
+        from: string
+        world: string | null
+        state: string
+      }
+    }
 
 export async function streamDeb(
   input: DebInput,
@@ -57,15 +91,17 @@ export async function streamDeb(
       body: JSON.stringify(
         input.kind === 'text'
           ? { content: input.content, pasted: input.pasted, projectId, tz }
-          : {
-              marginNote: {
-                content: input.note.content,
-                kind: input.note.noteKind,
-                day: input.note.day,
-              },
-              projectId,
-              tz,
-            },
+          : input.kind === 'margin'
+            ? {
+                marginNote: {
+                  content: input.note.content,
+                  kind: input.note.noteKind,
+                  day: input.note.day,
+                },
+                projectId,
+                tz,
+              }
+            : { tableObject: input.object, projectId, tz },
       ),
     })
   } catch {

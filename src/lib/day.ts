@@ -53,6 +53,11 @@ export function cadenceLabel(r: {
  * The Bench fade (ruling, July 22 2026): full presence until 14 days
  * untouched, then an honest dimming to a floor at 30 days — always
  * readable, never a nag.
+ *
+ * PARKED, not cut (DECISIONS.md, July 27 2026 — T4 ruling 13): no Bench
+ * surface renders in V1, so nothing calls this today. The law stays
+ * written here; the Bench goes by name on the move-in findings agenda —
+ * if three weeks of real use never misses it, it takes the formal cut.
  */
 export function benchOpacity(touchedAt: string): number {
   const days = (Date.now() - new Date(touchedAt).getTime()) / 86_400_000

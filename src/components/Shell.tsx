@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { cycleTheme, getTheme } from '../lib/theme'
 import { useSunTimes } from '../lib/sun'
 import { supabase } from '../lib/supabase'
@@ -8,6 +9,7 @@ import { useIsMobile } from '../lib/useIsMobile'
 import { useMaterializer } from '../lib/materialize'
 import { paintWorld } from '../lib/worldTheme'
 import { useProjects } from '../db/queries/projects'
+import { messageKeys, plantFirstMessage } from '../db/queries/messages'
 import { LensRail } from './LensRail'
 import { LoadFailed } from './LoadFailed'
 import { RoomsNav } from './rooms/RoomsNav'
@@ -49,6 +51,15 @@ export function Shell(_props: { email: string }) {
 
   // rhythms materialize as normal tasks at app open + on return
   useMaterializer()
+
+  // A brand-new account's thread is never silent (T4 ruling 12): her first
+  // message plants programmatically on day one — a no-op ever after.
+  const qc = useQueryClient()
+  useEffect(() => {
+    void plantFirstMessage().then((planted) => {
+      if (planted) void qc.invalidateQueries({ queryKey: messageKeys.all })
+    })
+  }, [qc])
 
   // If the active project disappears (deleted, rolled back), come home.
   useEffect(() => {
@@ -164,7 +175,10 @@ export function Shell(_props: { email: string }) {
         ) : isMobile ? (
           <RoomsPager>{[rooms.read, rooms.review, rooms.react, rooms.reflect]}</RoomsPager>
         ) : (
-          rooms[room]
+          /* the 260ms roomin rise (T4 ruling 14) — keyed so each switch replays it */
+          <div key={room} className="roomin flex min-h-0 flex-1 flex-col">
+            {rooms[room]}
+          </div>
         )}
       </main>
 

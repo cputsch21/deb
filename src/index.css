@@ -21,6 +21,9 @@
   --t-ok: #5f7f5c;
   --t-bad: #a84b3a;
   --t-card: #ffffff; /* the deck card — lifted above the paper */
+  /* the delegate purple — minted from the prototype (T4 ruling 7, July 27);
+     one value, both schemes, exactly as the design target has it */
+  --t-purple: #8a6ea8;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -53,6 +56,7 @@
   --color-accent: var(--t-accent);
   --color-ok: var(--t-ok);
   --color-bad: var(--t-bad);
+  --color-purple: var(--t-purple);
 
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
   --font-serif: 'Fraunces', Georgia, serif;
@@ -126,12 +130,12 @@ body::after {
   opacity: 1;
 }
 
-/* The sheet — the one floating edge in the app. 200ms enter, instant exit. */
+/* The sheet — the one floating edge in the app. 200ms enter, instant exit.
+   Polish pass (T4 ruling 6): the prototype's line applied — flush right,
+   the 22px rounded left edge, the shadow cast left off that edge. */
 .sheet {
   background: var(--t-bg);
-  box-shadow:
-    0 24px 80px rgba(0, 0, 0, 0.16),
-    0 2px 12px rgba(0, 0, 0, 0.07);
+  box-shadow: -30px 0 60px -30px rgba(30, 24, 18, 0.3);
   animation: sheet-in 200ms ease-out;
 }
 
@@ -179,6 +183,68 @@ body::after {
   from {
     opacity: 0;
     transform: translateY(6px);
+  }
+}
+
+/*
+  Keyboard focus — a Warm Glass amendment (DECISIONS.md, July 27 2026).
+  Inputs stay caret-only, as ever. Everything else interactive renders
+  :focus-visible (keyboard-originated only, never plain :focus) as the
+  DEEPENED WELL — the exact hover treatment, honoring hover-deepens-
+  never-recolors. No rings, no outlines, anywhere. Pointer and touch
+  users never see focus styling.
+*/
+:focus {
+  outline: none;
+}
+:where(button, [role='button'], a, select, summary):focus-visible {
+  background-color: var(--t-fill2);
+}
+/* text buttons that carry no radius of their own get the well's corner */
+:where(button, [role='button'], a):focus-visible:not([class*='rounded']) {
+  border-radius: 10px;
+}
+
+/* The composer floats (T4 ruling 6, per the prototype's polish pass):
+   glass blur + its sanctioned soft shadow. */
+.composer {
+  background: color-mix(in oklab, var(--t-fill2) 55%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 10px 34px -18px rgba(40, 32, 25, 0.28);
+}
+:root.dark .composer {
+  box-shadow: 0 10px 34px -18px rgba(0, 0, 0, 0.5);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) .composer {
+    box-shadow: 0 10px 34px -18px rgba(0, 0, 0, 0.5);
+  }
+}
+
+/* The home dot — the Mentor's silver as the prototype's gradient
+   (T4 ruling 10): presence, not a flat color. */
+.home-dot {
+  background: linear-gradient(135deg, #c8ccd4, #8a8f98);
+}
+:root.dark .home-dot {
+  background: linear-gradient(135deg, #d8dce2, #9ba1ac);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) .home-dot {
+    background: linear-gradient(135deg, #d8dce2, #9ba1ac);
+  }
+}
+
+/* Desktop room switches rise in (T4 ruling 14): the prototype's 260ms
+   roomin — the last row of the motion table. Enter only, exit instant. */
+.roomin {
+  animation: roomin 260ms ease both;
+}
+@keyframes roomin {
+  from {
+    opacity: 0;
+    transform: translateY(7px);
   }
 }
 
