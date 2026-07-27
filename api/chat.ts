@@ -122,7 +122,78 @@ const FILE_ENTRY: Anthropic.Tool = {
   },
 }
 
-const TOOLS: Anthropic.Tool[] = [CREATE_TASK, REMEMBER, RECALL, SET_MISSION, FILE_ENTRY]
+/** Goal hands (ruling, July 24): goals live in the conversation. */
+const CREATE_GOAL: Anthropic.Tool = {
+  name: 'create_goal',
+  description: `Create a goal — a finishable outcome — when Chris states one ("the goal for ISO is closing the audit by September"). Act-then-correct: it exists the instant you call this; your words confirm briefly. Goals LIVE IN WORLDS (the schema requires it): use the world he's speaking from or the one he names; from home with no world named, ask which world first — one short question. Never re-create a goal already in the current state.`,
+  input_schema: {
+    type: 'object',
+    properties: {
+      title: { type: 'string', description: 'The outcome, clean, under 200 characters.' },
+      world: { type: 'string', description: 'Exact world name; omit to use the lens.' },
+    },
+    required: ['title'],
+  },
+}
+
+const RENAME_GOAL: Anthropic.Tool = {
+  name: 'rename_goal',
+  description: `Rename an existing ACTIVE goal when Chris rewords it. Refer to it by its current title (from the current state). Act-then-correct with undo; verify against the current state first.`,
+  input_schema: {
+    type: 'object',
+    properties: {
+      goal: { type: 'string', description: 'The current title, as shown in the state.' },
+      title: { type: 'string', description: 'The new title, under 200 characters.' },
+      world: { type: 'string', description: 'Optional world name to disambiguate.' },
+    },
+    required: ['goal', 'title'],
+  },
+}
+
+const STAGE_GOAL_VERDICT: Anthropic.Tool = {
+  name: 'stage_goal_verdict',
+  description: `Stage the app's ONE solemn confirm when Chris declares a goal finished forever or dropped forever. This does NOT write the verdict — the signing belongs to Chris alone: calling this places the solemn confirm in front of him, inline in the thread. Never claim the verdict happened; after staging, acknowledge in one short line and stop. Only for the two permanent verdicts; nothing else ever uses this.`,
+  input_schema: {
+    type: 'object',
+    properties: {
+      goal: { type: 'string', description: 'The goal title, as shown in the state.' },
+      verdict: { type: 'string', enum: ['done', 'dropped'] },
+      world: { type: 'string', description: 'Optional world name to disambiguate.' },
+    },
+    required: ['goal', 'verdict'],
+  },
+}
+
+/** Task update hand (ruling, July 24): rename · re-world · re-anchor. */
+const UPDATE_TASK: Anthropic.Tool = {
+  name: 'update_task',
+  description: `Update an OPEN task when Chris asks — rename it, move it to another world, or change its anchor ("push the invoice to Friday", "that one belongs to ISO", "rename it to X"). Refer to it by its current title from the state. anchor: "today", "none" (back to undecided — the stack re-deals it), or a YYYY-MM-DD day. Act-then-correct with undo. Never invent a task; verify it in the state first.`,
+  input_schema: {
+    type: 'object',
+    properties: {
+      task: { type: 'string', description: 'The current title, as shown in the state.' },
+      title: { type: 'string', description: 'New title, under 200 characters (omit to keep).' },
+      world: { type: 'string', description: 'New world by exact name (omit to keep).' },
+      anchor: {
+        type: 'string',
+        description: '"today", "none", or YYYY-MM-DD (omit to keep).',
+      },
+    },
+    required: ['task'],
+  },
+}
+
+const TOOLS: Anthropic.Tool[] = [
+  CREATE_TASK,
+  UPDATE_TASK,
+  REMEMBER,
+  RECALL,
+  SET_MISSION,
+  FILE_ENTRY,
+  CREATE_GOAL,
+  RENAME_GOAL,
+  STAGE_GOAL_VERDICT,
+]
 
 const json = (body: unknown, status: number) =>
   new Response(JSON.stringify(body), {
@@ -143,7 +214,7 @@ export async function POST(request: Request): Promise<Response> {
     projectId?: unknown
     tz?: unknown
     pasted?: unknown
-    marginNote?: unknown
+    tap?: unknown
   }
   try {
     body = await request.json()
@@ -153,11 +224,11 @@ export async function POST(request: Request): Promise<Response> {
   const projectId = typeof body.projectId === 'string' ? body.projectId : null
   const tz = typeof body.tz === 'string' && body.tz ? body.tz : 'UTC'
 
-  // The margin door (provenance redline, July 24): a tap on one of Deb's
-  // own notes. NOTHING is written in Chris's voice — no user row at all;
-  // the tap is framed to her as his deliberate ask, and only HER reply
-  // enters the record.
-  const margin = parseMargin(body.marginNote)
+  // The object door (provenance redline, July 24): a tapped margin note,
+  // goal, or card. NOTHING is written in Chris's voice — no user row at
+  // all; the tap is framed to her as his deliberate ask, and only HER
+  // reply enters the record.
+  const margin = parseTap(body.tap)
 
   const rawInput = margin ? '' : String(body.content ?? '').trim()
   if (!margin && !rawInput) return json({ error: 'Nothing to say.' }, 400)
@@ -293,7 +364,15 @@ export async function POST(request: Request): Promise<Response> {
                       ? await setMission(db, use, projectId, ctx.projects, send)
                       : use.name === 'file_entry'
                         ? await fileEntryTool(db, use, content, ctx, tz, send)
-                        : { content: `Unknown tool: ${use.name}`, is_error: true }
+                        : use.name === 'create_goal'
+                          ? await createGoal(db, use, projectId, ctx, send)
+                          : use.name === 'rename_goal'
+                            ? await renameGoal(db, use, projectId, ctx, send)
+                            : use.name === 'stage_goal_verdict'
+                              ? stageGoalVerdict(use, projectId, ctx, send)
+                              : use.name === 'update_task'
+                                ? await updateTask(db, use, projectId, ctx, tz, send)
+                                : { content: `Unknown tool: ${use.name}`, is_error: true }
             results.push({
               type: 'tool_result',
               tool_use_id: use.id,
@@ -656,33 +735,220 @@ async function fileEntryTool(
 }
 
 
-/** The four margin kinds — mirrors entry_notes' schema check. */
-const MARGIN_KINDS = ['receipt', 'read', 'keep', 'question']
-
-function parseMargin(
+function parseTap(
   value: unknown,
-): { content: string; kind: string; day: string } | null {
+): { label: string; source: string; content: string } | null {
   if (!value || typeof value !== 'object') return null
-  const v = value as { content?: unknown; kind?: unknown; day?: unknown }
-  const content = capText(String(v.content ?? ''), 200)
-  const kind = String(v.kind ?? '')
-  const day = capText(String(v.day ?? ''), 16)
-  if (!content || !MARGIN_KINDS.includes(kind)) return null
-  return { content, kind, day }
+  const v = value as { label?: unknown; source?: unknown; content?: unknown }
+  const label = capText(String(v.label ?? ''), 40)
+  const source = capText(String(v.source ?? ''), 80)
+  const content = capText(String(v.content ?? ''), 300)
+  if (!label || !content) return null
+  return { label, source, content }
 }
 
 /**
  * The tap, framed for her. This text is CONTEXT for the model only — it is
  * never persisted; the thread's provenance stays absolute.
  */
-function marginFrame(m: { content: string; kind: string; day: string }): string {
+function marginFrame(m: { label: string; source: string; content: string }): string {
   return [
-    '<margin-tap>',
-    `Chris tapped your margin note from ${m.day} (a ${m.kind}): "${m.content}"`,
-    'The tap is him asking YOU to say more about YOUR OWN note — the context',
-    'behind it, the receipt under it, what he might do with it. He is',
-    'addressing you, so answer (this is not a moment for silence). He typed',
-    'no words — never quote or paraphrase him; speak from the note.',
-    '</margin-tap>',
+    '<object-tap>',
+    `Chris tapped a ${m.label} — "${m.content}" (${m.source}) — bringing it to the table.`,
+    'The tap is him asking YOU to pick it up: say more — the state of it,',
+    "what's under it, what he might do with it. If it is a goal or a task,",
+    'its live state is in <current-state>; if it is your own margin note,',
+    'speak from the note. He is addressing you, so answer (this is not a',
+    'moment for silence). He typed no words — never quote or paraphrase him.',
+    '</object-tap>',
   ].join('\n')
+}
+
+
+/* ============ the goal + task hands (rulings 1–2, July 24) ============ */
+
+function worldByName(ctx: DebContext, name: string) {
+  return ctx.projects.find((p) => String(p.name).toLowerCase() === name.toLowerCase())
+}
+
+/** Resolve a goal by title (CI), optionally scoped; ambiguity is an honest error. */
+function findGoal(ctx: DebContext, title: string, worldId: string | null) {
+  const t = title.trim().toLowerCase()
+  const hits = ctx.goals.filter(
+    (g) =>
+      String(g.title).toLowerCase() === t && (worldId === null || g.project_id === worldId),
+  )
+  return hits
+}
+
+async function createGoal(
+  db: SupabaseClient,
+  use: Anthropic.ToolUseBlock,
+  lensProjectId: string | null,
+  ctx: DebContext,
+  send: (event: Record<string, unknown>) => void,
+): Promise<{ content: string; is_error: boolean }> {
+  const input = (use.input ?? {}) as { title?: unknown; world?: unknown }
+  const title = capText(String(input.title ?? ''), TASK_TITLE_MAX)
+  if (!title) return { content: 'No title given — nothing was created.', is_error: true }
+  const worldName = String(input.world ?? '').trim()
+  const target = worldName ? worldByName(ctx, worldName) : ctx.projects.find((p) => p.id === lensProjectId)
+  if (!target) {
+    return {
+      content: worldName
+        ? `No world named "${worldName}".`
+        : 'Goals live in worlds and no world is in focus — ask Chris which world this goal belongs to (one short question).',
+      is_error: true,
+    }
+  }
+  const id = randomUUID()
+  const { error } = await db
+    .from('goals')
+    .insert({ id, project_id: String(target.id), title })
+  if (error) {
+    console.error('[chat] create_goal', error)
+    return { content: 'The write failed — the goal was NOT created. Tell Chris plainly.', is_error: true }
+  }
+  send({ type: 'action', kind: 'goal_created', id, title, worldName: String(target.name) })
+  return { content: `Goal set in ${String(target.name)}: "${title}".`, is_error: false }
+}
+
+async function renameGoal(
+  db: SupabaseClient,
+  use: Anthropic.ToolUseBlock,
+  lensProjectId: string | null,
+  ctx: DebContext,
+  send: (event: Record<string, unknown>) => void,
+): Promise<{ content: string; is_error: boolean }> {
+  const input = (use.input ?? {}) as { goal?: unknown; title?: unknown; world?: unknown }
+  const from = String(input.goal ?? '').trim()
+  const title = capText(String(input.title ?? ''), TASK_TITLE_MAX)
+  if (!from || !title) return { content: 'Need the current title and the new one.', is_error: true }
+  const worldName = String(input.world ?? '').trim()
+  const scope = worldName ? (worldByName(ctx, worldName)?.id ?? null) : lensProjectId
+  let hits = findGoal(ctx, from, typeof scope === 'string' ? scope : null)
+  if (hits.length === 0 && !worldName && !lensProjectId) hits = findGoal(ctx, from, null)
+  if (hits.length === 0) return { content: `No goal titled "${from}" — check the state.`, is_error: true }
+  if (hits.length > 1)
+    return { content: `"${from}" exists in more than one world — name the world.`, is_error: true }
+  const goal = hits[0]
+  const { data, error } = await db
+    .from('goals')
+    .update({ title })
+    .eq('id', String(goal.id))
+    .select('id')
+  if (error || !data || data.length === 0) {
+    console.error('[chat] rename_goal', error)
+    return { content: 'The rename failed — nothing changed. Tell Chris plainly.', is_error: true }
+  }
+  send({ type: 'action', kind: 'goal_renamed', id: String(goal.id), title, prev: String(goal.title) })
+  return { content: `Renamed to "${title}".`, is_error: false }
+}
+
+/** Stage only — the signing is Chris's alone (the one solemn confirm). */
+function stageGoalVerdict(
+  use: Anthropic.ToolUseBlock,
+  lensProjectId: string | null,
+  ctx: DebContext,
+  send: (event: Record<string, unknown>) => void,
+): { content: string; is_error: boolean } {
+  const input = (use.input ?? {}) as { goal?: unknown; verdict?: unknown; world?: unknown }
+  const title = String(input.goal ?? '').trim()
+  const verdict = String(input.verdict ?? '')
+  if (!title || (verdict !== 'done' && verdict !== 'dropped'))
+    return { content: 'Need the goal and a verdict of done or dropped.', is_error: true }
+  const worldName = String(input.world ?? '').trim()
+  const scope = worldName ? (worldByName(ctx, worldName)?.id ?? null) : lensProjectId
+  let hits = findGoal(ctx, title, typeof scope === 'string' ? scope : null).filter(
+    (g) => g.status === 'active',
+  )
+  if (hits.length === 0 && !worldName && !lensProjectId)
+    hits = findGoal(ctx, title, null).filter((g) => g.status === 'active')
+  if (hits.length === 0)
+    return { content: `No ACTIVE goal titled "${title}" — check the state.`, is_error: true }
+  if (hits.length > 1)
+    return { content: `"${title}" is active in more than one world — name the world.`, is_error: true }
+  const goal = hits[0]
+  send({
+    type: 'action',
+    kind: 'goal_verdict_staged',
+    id: String(goal.id),
+    title: String(goal.title),
+    verdict,
+  })
+  return {
+    content: `Staged. The solemn confirm is in front of him now — the signing is HIS. Do not claim the verdict happened; acknowledge in one short line and stop.`,
+    is_error: false,
+  }
+}
+
+async function updateTask(
+  db: SupabaseClient,
+  use: Anthropic.ToolUseBlock,
+  lensProjectId: string | null,
+  ctx: DebContext,
+  tz: string,
+  send: (event: Record<string, unknown>) => void,
+): Promise<{ content: string; is_error: boolean }> {
+  const input = (use.input ?? {}) as {
+    task?: unknown
+    title?: unknown
+    world?: unknown
+    anchor?: unknown
+  }
+  const from = String(input.task ?? '').trim().toLowerCase()
+  if (!from) return { content: 'Which task? Give its current title.', is_error: true }
+  const open = ctx.tasks.filter((t) => !t.done_at)
+  let hits = open.filter(
+    (t) =>
+      String(t.title).toLowerCase() === from &&
+      (lensProjectId === null || t.project_id === lensProjectId),
+  )
+  if (hits.length === 0) hits = open.filter((t) => String(t.title).toLowerCase() === from)
+  if (hits.length === 0) return { content: `No open task titled "${String(input.task)}".`, is_error: true }
+  if (hits.length > 1)
+    return { content: `More than one open task is titled that — narrow it (which world?).`, is_error: true }
+  const task = hits[0]
+
+  const fields: Record<string, unknown> = {}
+  if (typeof input.title === 'string' && input.title.trim()) {
+    fields.title = capText(input.title, TASK_TITLE_MAX)
+  }
+  if (typeof input.world === 'string' && input.world.trim()) {
+    const w = worldByName(ctx, input.world.trim())
+    if (!w) return { content: `No world named "${input.world}".`, is_error: true }
+    fields.project_id = String(w.id)
+  }
+  if (typeof input.anchor === 'string' && input.anchor.trim()) {
+    const a = input.anchor.trim().toLowerCase()
+    if (a === 'today') fields.anchored_on = todayKeyInTz(tz)
+    else if (a === 'none') fields.anchored_on = null
+    else if (/^\d{4}-\d{2}-\d{2}$/.test(a)) fields.anchored_on = a
+    else return { content: 'anchor must be "today", "none", or YYYY-MM-DD.', is_error: true }
+  }
+  if (Object.keys(fields).length === 0)
+    return { content: 'Nothing to change — give a new title, world, or anchor.', is_error: true }
+
+  const { data, error } = await db
+    .from('tasks')
+    .update(fields)
+    .eq('id', String(task.id))
+    .select('id')
+  if (error || !data || data.length === 0) {
+    console.error('[chat] update_task', error)
+    return { content: 'The update failed — nothing changed. Tell Chris plainly.', is_error: true }
+  }
+  send({
+    type: 'action',
+    kind: 'task_updated',
+    id: String(task.id),
+    title: String(fields.title ?? task.title),
+    prev: {
+      title: String(task.title),
+      project_id: task.project_id ?? null,
+      anchored_on: task.anchored_on ?? null,
+    },
+    changed: Object.keys(fields),
+  })
+  return { content: `Updated "${String(fields.title ?? task.title)}".`, is_error: false }
 }

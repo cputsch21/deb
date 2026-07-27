@@ -6,6 +6,7 @@ import { useEntryMeta } from '../../db/queries/entries'
 import { supabase } from '../../lib/supabase'
 import { DELEGATE_MAX, type EntryMeta, type Task } from '../../db/types'
 import { useRoom } from '../../lib/rooms'
+import { useDoor } from '../../lib/door'
 import { transient } from '../../lib/undo'
 import { useLineWhys } from '../../lib/lineWhys'
 import {
@@ -47,7 +48,8 @@ type Chooser =
 type Exiting = { task: Task; kind: CardKind; dir: 'right' | 'left' | 'up' | 'down' }
 
 export function ReactRoom({ lens }: { lens: string | null }) {
-  const { room } = useRoom()
+  const { room, setRoom } = useRoom()
+  const { knock } = useDoor()
   const tasksQ = useTasks()
   const projectsQ = useProjects()
   const tasks = tasksQ.data ?? NO_TASKS
@@ -255,6 +257,7 @@ export function ReactRoom({ lens }: { lens: string | null }) {
       <Dir pos="left" label="← delegate" />
       <Dir pos="bottom" label="↓ delete" />
 
+      {/* door plumbing for the front card (ruling 2) */}
       {chooser ? (
         chooser.mode === 'delay' ? (
           <DelayChooser
@@ -283,6 +286,18 @@ export function ReactRoom({ lens }: { lens: string | null }) {
           why={why}
           exitingDir={exiting?.dir ?? null}
           onFly={fly}
+          onDoor={() => {
+            // Ruling 2: long-press / right-click brings the card to the table.
+            knock({
+              label: 'task',
+              source:
+                show.kind === 'line'
+                  ? `the Line · ${world?.name ?? 'the Bench'}`
+                  : `the stack · ${world?.name ?? 'the Bench'}`,
+              content: show.task.title,
+            })
+            setRoom('reflect')
+          }}
         />
       )}
 
@@ -319,6 +334,7 @@ function Card({
   why,
   exitingDir,
   onFly,
+  onDoor,
 }: {
   task: Task
   kind: CardKind
@@ -329,10 +345,19 @@ function Card({
   why: string | undefined
   exitingDir: Exiting['dir'] | null
   onFly: (dir: Exiting['dir']) => void
+  onDoor: () => void
 }) {
   const el = useRef<HTMLDivElement>(null)
   const drag = useRef<{ x: number; y: number } | null>(null)
+  const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [dxy, setDxy] = useState<{ dx: number; dy: number } | null>(null)
+
+  const clearPress = () => {
+    if (pressTimer.current) {
+      clearTimeout(pressTimer.current)
+      pressTimer.current = null
+    }
+  }
 
   const lit =
     dxy && Math.max(Math.abs(dxy.dx), Math.abs(dxy.dy)) > 16
@@ -370,15 +395,35 @@ function Card({
         transform,
         opacity: exitingDir ? 0 : 1,
       }}
+      onContextMenu={(e) => {
+        e.preventDefault() // desktop right-click: the door (ruling 2)
+        clearPress()
+        drag.current = null
+        setDxy(null)
+        onDoor()
+      }}
       onPointerDown={(e) => {
         drag.current = { x: e.clientX, y: e.clientY }
         el.current?.setPointerCapture(e.pointerId)
+        // mobile long-press (550ms, still) = the door; movement cancels
+        clearPress()
+        if (e.pointerType === 'touch') {
+          pressTimer.current = setTimeout(() => {
+            drag.current = null
+            setDxy(null)
+            onDoor()
+          }, 550)
+        }
       }}
       onPointerMove={(e) => {
         if (!drag.current) return
-        setDxy({ dx: e.clientX - drag.current.x, dy: e.clientY - drag.current.y })
+        const dx = e.clientX - drag.current.x
+        const dy = e.clientY - drag.current.y
+        if (Math.max(Math.abs(dx), Math.abs(dy)) > 8) clearPress()
+        setDxy({ dx, dy })
       }}
       onPointerUp={() => {
+        clearPress()
         const d = dxy
         drag.current = null
         setDxy(null)
@@ -390,6 +435,7 @@ function Card({
         }
       }}
       onPointerCancel={() => {
+        clearPress()
         drag.current = null
         setDxy(null)
       }}

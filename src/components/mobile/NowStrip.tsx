@@ -3,6 +3,9 @@ import { useTasks, useTaskMutations } from '../../db/queries/tasks'
 import { applyDebOrder, deriveLine, todayKey } from '../../lib/line'
 import { useLineWhys } from '../../lib/lineWhys'
 import { transient } from '../../lib/undo'
+import { useDoor } from '../../lib/door'
+import { useRoom } from '../../lib/rooms'
+import { useRef } from 'react'
 
 /**
  * The Now strip (mobile, above the composer in Reflect): the Line's glance
@@ -17,6 +20,14 @@ export function NowStrip({ lens }: { lens: string | null }) {
   const { data: projects = [] } = useProjects()
   const { setDone } = useTaskMutations()
   const whys = useLineWhys(true)
+  const { knock } = useDoor()
+  const { setRoom } = useRoom()
+  const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const door = (title: string, worldName: string | null) => {
+    knock({ label: 'task', source: `the Line · ${worldName ?? 'the Bench'}`, content: title })
+    setRoom('reflect')
+  }
 
   const line = applyDebOrder(deriveLine(tasks, lens, todayKey()), whys.order).slice(0, 6)
   if (line.length === 0) return null
@@ -33,6 +44,20 @@ export function NowStrip({ lens }: { lens: string | null }) {
         return (
           <div
             key={t.id}
+            onContextMenu={(e) => {
+              e.preventDefault()
+              door(t.title, p?.name ?? null)
+            }}
+            onPointerDown={(e) => {
+              if (e.pointerType !== 'touch') return
+              pressTimer.current = setTimeout(() => door(t.title, p?.name ?? null), 550)
+            }}
+            onPointerMove={() => {
+              if (pressTimer.current) clearTimeout(pressTimer.current)
+            }}
+            onPointerUp={() => {
+              if (pressTimer.current) clearTimeout(pressTimer.current)
+            }}
             className="flex w-[220px] flex-none items-center gap-2 rounded-2xl bg-fill py-3 pr-1 pl-4"
           >
             <div className="min-w-0 flex-1">

@@ -28,6 +28,33 @@ finished shelf, PWA completion, the design reckoning, the V1 walk).
 
 ## The log (newest first)
 
+### July 24, 2026 — T4 rulings executed I: the conversation is where structure changes
+Rulings 1, 2, and 12 of the design reckoning, built as ruled.
+- **The conversation is where structure changes; rooms are where it is
+  seen.** No goal or task-detail surface exists or will be resurrected.
+  Deb gains the hands: create_goal · rename_goal · update_task (rename,
+  re-world, re-anchor) — same laws as her task hands (act-then-correct,
+  row-checked writes, undo pills).
+- **The two permanent verdicts happen in the thread.** When Chris declares
+  one, she STAGES the app's one solemn confirm inline (stage_goal_verdict
+  writes nothing); his signature completes it via the M1 verdict mutation
+  with its database guard (.eq status active — re-verdicting is impossible
+  even by accident). This is the sanctioned exception to no-confirms;
+  nothing else may ever use it. Staging is session-ephemeral by design —
+  a refresh drops the staged block, nothing half-writes; say it again.
+- **Every goal in a dossier is a door** (Review stays read-only; the tap
+  carries the goal in as a quoted object — provenance law). **Every card
+  is a door too:** right-click on desktop, long-press (550ms, still) on
+  mobile — stack, Line, or Now strip — brings the task to the table.
+- The door generalized to one object wire (label · source · content);
+  margin notes, goals, and cards all knock the same way.
+- **Ruling 12 (bug): the canonical first message self-plants** client-side
+  the first time a truly empty whole-life thread loads — a fresh account
+  never meets a silent Deb.
+- Flagged and accepted: goals cannot live at silver (schema law — she asks
+  for the world); the soul doc carries the staging law (mirrored in her
+  prompt).
+
 ### July 24, 2026 — M6 T2–T4: the shelf · the offline shell · the reckoning
 - **T2 — the finished shelf** ships in Review at silver: retired worlds as
   dimmed rows (mission kept, retirement date), each visitable as a

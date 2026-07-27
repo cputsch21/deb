@@ -1,4 +1,6 @@
 import { useLens } from '../../lib/lens'
+import { useDoor } from '../../lib/door'
+import { useRoom } from '../../lib/rooms'
 import { LoadFailed } from '../LoadFailed'
 import { dealStack, deriveLine, shortDay as lineShortDay, todayKey } from '../../lib/line'
 import { useState } from 'react'
@@ -223,6 +225,15 @@ function statusLine(activeGoals: number, openTasks: number, done: Task[]): strin
 /* ---------- a world: the dossier ---------- */
 
 function Dossier({ world, goals, tasks }: { world: Project; goals: Goal[]; tasks: Task[] }) {
+  const { knock } = useDoor()
+  const { setRoom } = useRoom()
+  // Ruling 1: Review stays read-only, but a goal is a DOOR — tap it and
+  // Reflect opens with it quoted on the table (provenance law: her pickup,
+  // never words in his voice). The conversation is the editor.
+  const openGoal = (g: Goal) => {
+    knock({ label: 'goal', source: `Review · ${world.name}`, content: g.title })
+    setRoom('reflect')
+  }
   const wGoals = goals.filter((g) => g.project_id === world.id)
   const wTasks = tasks.filter((t) => t.project_id === world.id)
   // Next = the same queue React deals (the one-queue law): the Line's moves,
@@ -263,15 +274,16 @@ function Dossier({ world, goals, tasks }: { world: Project; goals: Goal[]; tasks
           <span className="eyebrow block text-dim">Goals</span>
           <div className="mt-2">
             {wGoals.map((g) => (
-              <div
+              <button
                 key={g.id}
-                className="flex items-baseline gap-3 border-b border-hair py-2.5 last:border-b-0"
+                onClick={() => openGoal(g)}
+                className="flex min-h-11 w-full items-baseline gap-3 border-b border-hair py-2.5 text-left transition-colors duration-150 last:border-b-0 hover:bg-fill"
               >
                 <span className="flex-1 font-serif text-[16.5px] font-medium text-ink">
                   {g.title}
                 </span>
                 <span className="text-[11px] text-dim">{goalStatus(g)}</span>
-              </div>
+              </button>
             ))}
           </div>
         </section>

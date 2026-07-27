@@ -1,20 +1,27 @@
 import { create } from 'zustand'
 
 /**
- * The margin door (T6, reworked under the provenance redline, July 24):
- * tapping one of Deb's margin notes opens Reflect with the note carried in
- * as a QUOTED OBJECT — visibly hers, brought from the margin — and she
- * picks it up and says more. Nothing is ever composed in Chris's voice:
- * the permanent record only holds words he actually wrote or said.
+ * The object door (July 24 rulings): margin notes, goals, and cards all
+ * open Reflect the same way — the tapped thing is carried in as a QUOTED
+ * OBJECT, visibly what it is, and Deb picks it up. Provenance law is
+ * absolute: nothing is ever composed in Chris's voice; the server writes
+ * no user row for a tap, and only her reply enters the record.
  */
-export type MarginKnock = { content: string; noteKind: string; day: string }
+export type DoorKnock = {
+  /** what kind of thing this is, for her and the chip: "margin note" · "goal" · "task" */
+  label: string
+  /** where it was tapped: "the margin · receipt · Jul 24" · "Review · ISO" · "the Line" */
+  source: string
+  /** the thing itself, verbatim */
+  content: string
+}
 
 export const useDoor = create<{
-  pending: MarginKnock | null
-  knock: (note: MarginKnock) => void
+  pending: DoorKnock | null
+  knock: (k: DoorKnock) => void
   clear: () => void
 }>((set) => ({
   pending: null,
-  knock: (note) => set({ pending: note }),
+  knock: (k) => set({ pending: k }),
   clear: () => set({ pending: null }),
 }))

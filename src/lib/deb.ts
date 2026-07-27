@@ -20,6 +20,16 @@ export type DebEvent =
       worldName: string | null
       taskIds: string[]
     }
+  | { type: 'action'; kind: 'goal_created'; id: string; title: string; worldName: string }
+  | { type: 'action'; kind: 'goal_renamed'; id: string; title: string; prev: string }
+  | { type: 'action'; kind: 'goal_verdict_staged'; id: string; title: string; verdict: 'done' | 'dropped' }
+  | {
+      type: 'action'
+      kind: 'task_updated'
+      id: string
+      title: string
+      prev: { title: string; project_id: string | null; anchored_on: string | null }
+    }
   | { type: 'done'; id: string; content: string; saved: boolean }
   | { type: 'silent' }
   | { type: 'error'; message: string }
@@ -28,13 +38,13 @@ const CANT_ANSWER = 'Deb could not answer just now.'
 
 /**
  * What a turn can be (provenance law, July 24): a TEXT turn is words Chris
- * actually wrote; a MARGIN turn is a tap on one of Deb's own notes — no
- * words are synthesized in his voice, ever. The server frames the tap for
- * her and persists only HER reply.
+ * actually wrote; a TAP turn is a tapped object (margin note, goal, card)
+ * brought to the table — no words are synthesized in his voice, ever. The
+ * server frames the tap for her and persists only HER reply.
  */
 export type DebInput =
   | { kind: 'text'; content: string; pasted: boolean }
-  | { kind: 'margin'; note: { content: string; noteKind: string; day: string } }
+  | { kind: 'tap'; knock: { label: string; source: string; content: string } }
 
 export async function streamDeb(
   input: DebInput,
@@ -57,15 +67,7 @@ export async function streamDeb(
       body: JSON.stringify(
         input.kind === 'text'
           ? { content: input.content, pasted: input.pasted, projectId, tz }
-          : {
-              marginNote: {
-                content: input.note.content,
-                kind: input.note.noteKind,
-                day: input.note.day,
-              },
-              projectId,
-              tz,
-            },
+          : { tap: input.knock, projectId, tz },
       ),
     })
   } catch {

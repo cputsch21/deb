@@ -3,9 +3,12 @@ import { useQueryClient } from '@tanstack/react-query'
 import { messageKeys, useMessages } from '../../db/queries/messages'
 import { projectKeys, useProjects, useProjectMutations } from '../../db/queries/projects'
 import { taskKeys, useTaskMutations } from '../../db/queries/tasks'
+import { goalKeys, useGoalMutations } from '../../db/queries/goals'
+import { FIRST_MESSAGE } from '../../lib/firstMessage'
+import { supabase } from '../../lib/supabase'
 import { factKeys, useFactMutations } from '../../db/queries/facts'
 import { entryKeys, useEntryMutations } from '../../db/queries/entries'
-import { useDoor, type MarginKnock } from '../../lib/door'
+import { useDoor, type DoorKnock } from '../../lib/door'
 import { RAW_MAX } from '../../db/types'
 import { streamDeb, type DebInput } from '../../lib/deb'
 import { LoadFailed } from '../LoadFailed'
@@ -25,9 +28,10 @@ export function Reflect({ lens }: { lens: string | null }) {
   const qc = useQueryClient()
   const { data: messages = [], isError, refetch } = useMessages(lens)
   const { data: projects = [] } = useProjects()
-  const { remove: removeTask } = useTaskMutations()
+  const { remove: removeTask, update: updateTaskFields } = useTaskMutations()
   const { forget: forgetFact } = useFactMutations()
   const { update: updateProject } = useProjectMutations()
+  const { remove: removeGoal, update: updateGoal, verdict: signVerdict } = useGoalMutations()
   const { hide: hideEntry } = useEntryMutations()
   const world = projects.find((p) => p.id === lens) ?? null
   const isMobile = useIsMobile()
@@ -36,8 +40,10 @@ export function Reflect({ lens }: { lens: string | null }) {
   // Act receipts (mobile thread ruling, July 24): small inline pill chips,
   // session-ephemeral — the append-only thread stays pure conversation.
   const [receipts, setReceipts] = useState<{ id: string; label: string }[]>([])
-  // Margin notes brought through the door — HER words, quoted, ephemeral.
-  const [quotes, setQuotes] = useState<(MarginKnock & { id: string })[]>([])
+  // Objects brought through the door — quoted, ephemeral, never his voice.
+  const [quotes, setQuotes] = useState<(DoorKnock & { id: string })[]>([])
+  // The one solemn confirm, staged inline by her, signed only by Chris.
+  const [solemn, setSolemn] = useState<{ id: string; title: string; verdict: 'done' | 'dropped' } | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const taRef = useRef<HTMLTextAreaElement>(null)
   // Redline (July 24): the paste EVENT is the primary material signal —
@@ -49,6 +55,24 @@ export function Reflect({ lens }: { lens: string | null }) {
     const el = scrollRef.current
     if (el) el.scrollTop = el.scrollHeight
   }, [messages, turn])
+
+  // Ruling 12 (a bug, not polish): a fresh account must meet the canonical
+  // first message — a silent Deb on day one is the worst first impression.
+  // Planted once, client-side, only when the WHOLE thread is truly empty.
+  const seedTried = useRef(false)
+  const { isFetched: messagesFetched } = useMessages(null)
+  useEffect(() => {
+    if (seedTried.current || lens !== null || !messagesFetched || messages.length > 0) return
+    seedTried.current = true
+    void supabase
+      .from('messages')
+      .insert({ role: 'deb', content: FIRST_MESSAGE, project_id: null })
+      .then(({ error }) => {
+        if (!error) void qc.invalidateQueries({ queryKey: messageKeys.all })
+        else console.error('[first message]', error)
+      })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lens, messagesFetched, messages.length])
 
   // The composer grows with the draft (to ~5 lines, then scrolls inside).
   useEffect(() => {
@@ -66,7 +90,7 @@ export function Reflect({ lens }: { lens: string | null }) {
     if (!pendingKnock || (turn && turn.phase !== 'error')) return
     useDoor.getState().clear()
     setQuotes((q) => [...q, { ...pendingKnock, id: crypto.randomUUID() }])
-    void run({ kind: 'margin', note: pendingKnock }, null)
+    void run({ kind: 'tap', knock: pendingKnock }, null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingKnock])
 
@@ -122,6 +146,31 @@ export function Reflect({ lens }: { lens: string | null }) {
             for (const tid of taskIds) removeTask(tid, false)
             setReceipts((r) => r.filter((x) => x.id !== entryId))
           })
+        } else if (e.kind === 'goal_created') {
+          void qc.invalidateQueries({ queryKey: goalKeys.all })
+          const id = e.id
+          transient.undo(`Goal set · ${e.title.slice(0, 36)}`, () => removeGoal(id, false))
+          setReceipts((r) => [...r, { id, label: `Goal set — ${e.worldName}` }])
+        } else if (e.kind === 'goal_renamed') {
+          void qc.invalidateQueries({ queryKey: goalKeys.all })
+          const id = e.id
+          const prev = e.prev
+          transient.undo(`Renamed · ${e.title.slice(0, 36)}`, () => updateGoal(id, { title: prev }))
+        } else if (e.kind === 'goal_verdict_staged') {
+          // She staged; the signing is his alone. Session-ephemeral by design.
+          setSolemn({ id: e.id, title: e.title, verdict: e.verdict })
+        } else if (e.kind === 'task_updated') {
+          void qc.invalidateQueries({ queryKey: taskKeys.all })
+          void qc.invalidateQueries({ queryKey: ['line-whys'] })
+          const id = e.id
+          const prev = e.prev
+          transient.undo(`Updated · ${e.title.slice(0, 36)}`, () =>
+            updateTaskFields(id, {
+              title: prev.title,
+              project_id: prev.project_id,
+              anchored_on: prev.anchored_on,
+            }),
+          )
         } else if (e.kind === 'mission_set') {
           // Redo path: undo restores whatever the mission was before (often nothing).
           const prev =
@@ -203,7 +252,7 @@ export function Reflect({ lens }: { lens: string | null }) {
             >
               <span className="absolute top-[3px] bottom-[3px] left-0 w-[1.5px] rounded bg-accent opacity-40" />
               <span className="eyebrow mb-1 block text-[0.58rem] text-dim not-italic">
-                from the margin · {q.noteKind} · {q.day}
+                {q.label} · {q.source}
               </span>
               &ldquo;{q.content}&rdquo;
             </blockquote>
@@ -232,6 +281,52 @@ export function Reflect({ lens }: { lens: string | null }) {
           )}
         </div>
       </div>
+
+      {/* The one solemn confirm — the sanctioned exception to no-confirms.
+          Staged by her, signed only by Chris; it should feel like signing. */}
+      {solemn && (
+        <div className="mx-auto w-full max-w-[640px] px-5 pb-3 md:px-8">
+          <div className="rise rounded-2xl bg-fill2 px-6 py-5">
+            <span className="eyebrow block text-dim">a permanent verdict</span>
+            <p className="mt-2 font-serif text-[19px] leading-snug font-medium text-ink">
+              {solemn.title}
+            </p>
+            <p className="eyebrow mt-1.5 text-dim">
+              {solemn.verdict === 'done' ? 'done · forever' : 'dropped · forever'}
+            </p>
+            <p className="mt-3 text-sm leading-relaxed text-muted">
+              This is permanent. There is no undo.
+            </p>
+            <div className="mt-5 flex items-center justify-end gap-5">
+              <button
+                onClick={() => setSolemn(null)}
+                className="min-h-11 text-sm text-muted transition-colors duration-150 hover:text-ink"
+              >
+                Not yet
+              </button>
+              <button
+                onClick={() => {
+                  const s = solemn
+                  setSolemn(null)
+                  signVerdict(s.id, s.verdict)
+                  setReceipts((r) => [
+                    ...r,
+                    {
+                      id: s.id,
+                      label: `Signed — ${s.title.slice(0, 30)} · ${s.verdict} forever`,
+                    },
+                  ])
+                }}
+                className={`min-h-11 rounded-xl bg-fill px-5 font-serif text-[15px] italic transition-colors duration-150 ${
+                  solemn.verdict === 'done' ? 'text-ok' : 'text-bad'
+                }`}
+              >
+                Sign it — {solemn.verdict} forever
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <NowStrip lens={lens} />
 
