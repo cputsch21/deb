@@ -88,7 +88,7 @@ export function ReadRoom({ lens }: { lens: string | null }) {
 
   return (
     <div className="momentum min-h-0 flex-1 overflow-y-auto">
-      <div className="mx-auto max-w-[720px] px-5 pt-19 pb-14 md:pr-[110px] md:pl-11">
+      <div className="mx-auto max-w-[720px] px-5 pt-6 pb-14 md:pt-19 md:pr-[110px] md:pl-11">
         <h1 className="font-serif text-[34px] font-medium tracking-[-0.015em] text-ink">
           {dateLabel}
         </h1>

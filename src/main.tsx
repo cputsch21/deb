@@ -7,6 +7,14 @@ import App from './App.tsx'
 
 initTheme()
 
+// The offline shell (M6 T3): a dropped connection shows the honest page,
+// never a broken white one. Prod only — dev stays uncached.
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  window.addEventListener('load', () => {
+    void navigator.serviceWorker.register('/sw.js')
+  })
+}
+
 const queryClient = new QueryClient()
 
 createRoot(document.getElementById('root')!).render(
