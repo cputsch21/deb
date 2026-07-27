@@ -5,6 +5,7 @@ import { projectKeys, useProjects, useProjectMutations } from '../../db/queries/
 import { taskKeys, useTaskMutations } from '../../db/queries/tasks'
 import { factKeys, useFactMutations } from '../../db/queries/facts'
 import { entryKeys, useEntryMutations } from '../../db/queries/entries'
+import { useDoor } from '../../lib/door'
 import { RAW_MAX } from '../../db/types'
 import { streamDeb } from '../../lib/deb'
 import { LoadFailed } from '../LoadFailed'
@@ -52,6 +53,16 @@ export function Reflect({ lens }: { lens: string | null }) {
     el.style.height = `${Math.min(el.scrollHeight, 120)}px`
   }, [draft])
 
+  // The margin door (T6): a tapped note arrives as a pending line — the tap
+  // authored it — and sends the moment the thread is free.
+  const pendingKnock = useDoor((s) => s.pending)
+  useEffect(() => {
+    if (!pendingKnock || (turn && turn.phase !== 'error')) return
+    useDoor.getState().clear()
+    void send(pendingKnock)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingKnock])
+
   const send = async (raw: string, pastedOverride?: boolean) => {
     const content = raw.trim()
     if (!content) return
@@ -84,6 +95,8 @@ export function Reflect({ lens }: { lens: string | null }) {
           // the entry surface hides, minted cards go with it. The raw
           // beneath stays kept, as law.
           void qc.invalidateQueries({ queryKey: entryKeys.meta })
+          void qc.invalidateQueries({ queryKey: entryKeys.pages })
+          void qc.invalidateQueries({ queryKey: entryKeys.notes })
           void qc.invalidateQueries({ queryKey: taskKeys.all })
           const entryId = e.id
           const taskIds = e.taskIds

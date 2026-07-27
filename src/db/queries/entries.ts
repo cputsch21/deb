@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { assertRowChanged } from '../mutate'
-import type { EntryMeta } from '../types'
+import type { Entry, EntryMeta, EntryNote } from '../types'
 
 /**
  * The record's surface, client side (M5). Only the meta the rooms need:
@@ -9,7 +9,12 @@ import type { EntryMeta } from '../types'
  * filing undo. The raw is never fetched here — it stays beneath the
  * distillate, one tap away, in the Read room (T5).
  */
-export const entryKeys = { meta: ['entries-meta'] as const }
+export const entryKeys = {
+  meta: ['entries-meta'] as const,
+  pages: ['entries-pages'] as const,
+  notes: ['entry-notes'] as const,
+  raw: (rawId: string) => ['entry-raw', rawId] as const,
+}
 
 async function fetchEntryMeta(): Promise<EntryMeta[]> {
   const { data, error } = await supabase
@@ -52,4 +57,56 @@ export function useEntryMutations() {
   }
 
   return { hide, unhide }
+}
+
+
+/** The pages: recent entries in full (distillate included; raw stays behind). */
+async function fetchEntries(): Promise<Entry[]> {
+  const { data, error } = await supabase
+    .from('entries')
+    .select('id, raw_id, project_id, source, distillate, entry_day, created_at')
+    .is('deleted_at', null)
+    .order('entry_day', { ascending: false })
+    .order('created_at', { ascending: true })
+    .limit(120)
+  if (error) throw error
+  return data as Entry[]
+}
+
+export function useEntries() {
+  return useQuery({ queryKey: entryKeys.pages, queryFn: fetchEntries })
+}
+
+/** Deb's margin notes for the recent pages. */
+async function fetchEntryNotes(): Promise<EntryNote[]> {
+  const { data, error } = await supabase
+    .from('entry_notes')
+    .select('id, entry_id, kind, content, created_at')
+    .is('deleted_at', null)
+    .order('created_at')
+    .limit(300)
+  if (error) throw error
+  return data as EntryNote[]
+}
+
+export function useEntryNotes() {
+  return useQuery({ queryKey: entryKeys.notes, queryFn: fetchEntryNotes })
+}
+
+/** The raw beneath — fetched only when the tap asks for it. */
+export function useEntryRaw(rawId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: entryKeys.raw(rawId),
+    enabled,
+    staleTime: Infinity, // the raw is immutable by law — it cannot change
+    queryFn: async (): Promise<string> => {
+      const { data, error } = await supabase
+        .from('entry_raw')
+        .select('content')
+        .eq('id', rawId)
+        .single()
+      if (error) throw error
+      return String(data.content)
+    },
+  })
 }

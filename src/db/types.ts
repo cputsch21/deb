@@ -25,6 +25,28 @@ export type EntryMeta = {
   entry_day: string
 }
 
+/** A page's entry: the distillate on the page, the raw one tap beneath. */
+export type Entry = {
+  id: string
+  raw_id: string
+  project_id: string | null
+  source: EntrySource
+  distillate: string | null
+  entry_day: string
+  created_at: string
+}
+
+/** Deb's margin notes — four hands only (T6). */
+export type NoteKind = 'receipt' | 'read' | 'keep' | 'question'
+
+export type EntryNote = {
+  id: string
+  entry_id: string
+  kind: NoteKind
+  content: string
+  created_at: string
+}
+
 /** Everything Deb knows — visible, editable, forgettable. Never hard-deleted. */
 export type FactSource = 'conversation' | 'chris' | 'seed'
 

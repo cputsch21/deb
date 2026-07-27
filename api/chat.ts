@@ -523,6 +523,15 @@ async function fileMaterial(
           if (!mintError) taskIds.push(taskId)
           else console.error('[chat] mint', mintError)
         }
+        // Her margin notes (T6): restraint already applied by the engine.
+        for (const note of result?.notes ?? []) {
+          const { error: noteError } = await db.from('entry_notes').insert({
+            entry_id: entryId,
+            kind: note.kind,
+            content: note.content,
+          })
+          if (noteError) console.error('[chat] margin note', noteError)
+        }
         send({ type: 'action', kind: 'entry_filed', id: entryId, worldName, taskIds })
 
         const say = result?.say ?? null

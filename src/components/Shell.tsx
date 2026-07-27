@@ -12,7 +12,7 @@ import { RoomsNav } from './rooms/RoomsNav'
 import { Reflect } from './rooms/Reflect'
 import { Review } from './rooms/Review'
 import { ReactRoom } from './rooms/ReactRoom'
-import { Stub } from './rooms/Stub'
+import { ReadRoom } from './rooms/ReadRoom'
 import { MobileHeader } from './mobile/MobileHeader'
 import { RoomsPager } from './mobile/RoomsPager'
 import { WorldSheet } from './mobile/WorldSheet'
@@ -74,7 +74,7 @@ export function Shell(_props: { email: string }) {
 
   // The four rooms, canonical order — shared by both shells.
   const rooms = {
-    read: <Stub eyebrow="Read" line="Your days will land here." />,
+    read: <ReadRoom lens={lens} />,
     review: <Review lens={lens} />,
     react: <ReactRoom lens={lens} />,
     reflect: <Reflect lens={lens} />,
