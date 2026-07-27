@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { supabase } from '../../lib/supabase'
-import { toggleTheme } from '../../lib/theme'
+import { cycleTheme, getTheme } from '../../lib/theme'
 import type { Project } from '../../db/types'
 
 /**
@@ -31,6 +31,7 @@ export function WorldSheet({
 }) {
   const startY = useRef<number | null>(null)
   const [dy, setDy] = useState(0)
+  const [theme, setTheme] = useState(getTheme())
   if (!open) return null
 
   const pick = (id: string | null) => {
@@ -124,11 +125,12 @@ export function WorldSheet({
         {/* the quiet bottom row */}
         <div className="flex items-center justify-between pt-2">
           <button
-            onClick={toggleTheme}
-            aria-label="Light or dark"
-            className="flex min-h-11 min-w-11 items-center justify-center text-lg text-dim active:text-ink"
+            onClick={() => setTheme(cycleTheme())}
+            aria-label="Theme: arc, light, or dark"
+            className="flex min-h-11 items-center gap-2 px-2 text-dim active:text-ink"
           >
-            ◐
+            <span className="text-lg">◐</span>
+            <span className="eyebrow">{theme}</span>
           </button>
           <button
             onClick={() => {

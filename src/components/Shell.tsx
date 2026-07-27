@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { cycleTheme, getTheme } from '../lib/theme'
+import { useSunTimes } from '../lib/sun'
 import { supabase } from '../lib/supabase'
 import { useLens } from '../lib/lens'
 import { useRoom, type Room } from '../lib/rooms'
@@ -20,6 +22,12 @@ import { ProjectSheet } from './ProjectSheet'
 import { MemorySheet } from './MemorySheet'
 import { UndoPill } from './UndoPill'
 
+function sunLabel(ms: number): string {
+  return new Date(ms)
+    .toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+    .replace(/\s?[AP]M$/i, '')
+}
+
 /**
  * The app shell: one codebase, two arrangements. Desktop: the lens rail +
  * the rooms nav, one room at a time. Below the mobile breakpoint: the world
@@ -36,6 +44,8 @@ export function Shell(_props: { email: string }) {
   const [sheet, setSheet] = useState<'closed' | 'create' | 'edit'>('closed')
   const [memoryOpen, setMemoryOpen] = useState(false)
   const [worldsOpen, setWorldsOpen] = useState(false)
+  const [theme, setTheme] = useState(getTheme())
+  const sun = useSunTimes()
 
   // rhythms materialize as normal tasks at app open + on return
   useMaterializer()
@@ -113,9 +123,14 @@ export function Shell(_props: { email: string }) {
               </div>
             )}
 
-            {/* the margin date — the notepad's edge */}
-            <div className="absolute top-6 right-8 z-10 text-right">
+            {/* the margin date — the notepad's edge; the sun on hover (Arc) */}
+            <div className="group absolute top-6 right-8 z-10 text-right">
               <div className="font-serif text-[15px] font-medium text-ink opacity-90">{today}</div>
+              {sun.sunrise && sun.sunset && (
+                <div className="mt-0.5 text-[10px] tracking-[0.06em] text-dim opacity-0 transition-opacity duration-250 group-hover:opacity-85">
+                  ↑ {sunLabel(sun.sunrise)} &nbsp; ↓ {sunLabel(sun.sunset)}
+                </div>
+              )}
             </div>
 
             {/* the memory whisper — the visible half of memory, one tap away */}
@@ -126,10 +141,17 @@ export function Shell(_props: { email: string }) {
               memory
             </button>
 
-            {/* sign out — a quiet corner */}
+            {/* the quiet corner: theme + sign out */}
+            <button
+              onClick={() => setTheme(cycleTheme())}
+              title="Theme: arc · light · dark"
+              className="absolute bottom-6 left-5 z-10 flex items-center gap-1.5 text-xs text-dim opacity-40 transition-opacity hover:opacity-90"
+            >
+              ◐ <span className="eyebrow text-[0.58rem]">{theme}</span>
+            </button>
             <button
               onClick={() => supabase.auth.signOut()}
-              className="absolute bottom-6 left-5 z-10 text-xs text-dim opacity-40 transition-opacity hover:opacity-90"
+              className="absolute bottom-6 left-24 z-10 text-xs text-dim opacity-40 transition-opacity hover:opacity-90"
             >
               sign out
             </button>

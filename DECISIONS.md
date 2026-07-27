@@ -28,6 +28,26 @@ finished shelf, PWA completion, the design reckoning, the V1 walk).
 
 ## The log (newest first)
 
+### July 24, 2026 — M6 T1: Arc — the app lit by the real sun
+Arc ships as the DEFAULT theme (three-way toggle: arc · light · dark, in
+the world sheet on mobile and the quiet corner on desktop). Rulings:
+- **Arc moves the Warm Glass token VALUES, never the system:** four keyframe
+  palettes (dawn warmth · full paper · amber dusk · charcoal night)
+  interpolated continuously on a one-minute tick, applied inline on :root.
+  The sky's schedule: night → dawn across sunrise−40m‥+20m, dawn → day to
+  sunrise+90m, day until sunset−90m, day → dusk to sunset−15m, dusk →
+  night to sunset+45m. Scheme-dependent bits (the card's shadow) follow
+  the darker half (nightness > 0.5 wears the dark class).
+- **Location is asked for once** (cached, ~city precision); denied or
+  unavailable falls back to a quiet 6:30/19:30 approximation — the sky
+  still breathes, just not to the minute. No blocking, no nagging.
+- **One-time migration:** the old two-way toggle's stored choice is cleared
+  once so Arc genuinely becomes the default it was ruled to be; a fresh
+  manual choice persists as before.
+- The margin date gains the sun line on hover (↑ sunrise ↓ sunset), per
+  the design target. Verified live: tokens painted inline at the root,
+  correct day palette at build time, migration flag set, no console noise.
+
 ### July 24, 2026 — Provenance of the thread is absolute (redline) · M6 green-lit
 Supersedes the "the tap authors the line" judgment call (below, same date).
 - **Nothing synthesizes Chris's voice, ever, in any future feature.** The
