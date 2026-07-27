@@ -1,4 +1,6 @@
 import { useLens } from '../../lib/lens'
+import { useDoor } from '../../lib/door'
+import { useRoom } from '../../lib/rooms'
 import { LoadFailed } from '../LoadFailed'
 import { dealStack, deriveLine, shortDay as lineShortDay, todayKey } from '../../lib/line'
 import { useState } from 'react'
@@ -263,15 +265,7 @@ function Dossier({ world, goals, tasks }: { world: Project; goals: Goal[]; tasks
           <span className="eyebrow block text-dim">Goals</span>
           <div className="mt-2">
             {wGoals.map((g) => (
-              <div
-                key={g.id}
-                className="flex items-baseline gap-3 border-b border-hair py-2.5 last:border-b-0"
-              >
-                <span className="flex-1 font-serif text-[16.5px] font-medium text-ink">
-                  {g.title}
-                </span>
-                <span className="text-[11px] text-dim">{goalStatus(g)}</span>
-              </div>
+              <GoalDoor key={g.id} goal={g} world={world} />
             ))}
           </div>
         </section>
@@ -334,6 +328,36 @@ function Dossier({ world, goals, tasks }: { world: Project; goals: Goal[]; tasks
         </p>
       )}
     </div>
+  )
+}
+
+/**
+ * A goal in the dossier is a DOOR (T4 ruling 1): Review stays read-only —
+ * the tap is navigation, exactly the margin-door pattern. Reflect opens
+ * with the goal carried in as a quoted object, provenance law included;
+ * anything that changes it happens in the conversation.
+ */
+function GoalDoor({ goal, world }: { goal: Goal; world: Project }) {
+  const { knock } = useDoor()
+  const { setRoom } = useRoom()
+  return (
+    <button
+      onClick={() => {
+        knock({
+          type: 'object',
+          object: 'goal',
+          content: goal.title,
+          from: 'the dossier',
+          world: world.name,
+          state: goalStatus(goal),
+        })
+        setRoom('reflect')
+      }}
+      className="flex w-full items-baseline gap-3 border-b border-hair py-2.5 text-left transition-colors duration-150 last:border-b-0 hover:bg-fill"
+    >
+      <span className="flex-1 font-serif text-[16.5px] font-medium text-ink">{goal.title}</span>
+      <span className="text-[11px] text-dim">{goalStatus(goal)}</span>
+    </button>
   )
 }
 

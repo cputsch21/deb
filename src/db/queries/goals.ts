@@ -116,8 +116,10 @@ export function useGoalMutations() {
     })
   }
 
-  /** Soft delete + the undo pill (deleting a goal ≠ a verdict on it). */
-  const remove = (id: string) => {
+  /** Soft delete + the undo pill (deleting a goal ≠ a verdict on it).
+   *  Deb's act-then-correct undo passes announce=false — the "Goal added"
+   *  pill is already the safety net; undoing it shouldn't chain a second. */
+  const remove = (id: string, announce = true) => {
     const row = qc.getQueryData<Goal[]>(goalKeys.all)?.find((g) => g.id === id)
     void optimisticWrite(qc, {
       keys: [goalKeys.all],
@@ -133,7 +135,7 @@ export function useGoalMutations() {
       },
       onFail: "Couldn't delete that — it's back.",
     })
-    if (row) transient.undo(`"${row.title}" deleted`, () => restore(row))
+    if (announce && row) transient.undo(`"${row.title}" deleted`, () => restore(row))
   }
 
   return { create, update, verdict, remove, restore }

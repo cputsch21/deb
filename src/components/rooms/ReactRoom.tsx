@@ -5,6 +5,7 @@ import { taskKeys, useTasks, useTaskMutations } from '../../db/queries/tasks'
 import { useEntryMeta } from '../../db/queries/entries'
 import { supabase } from '../../lib/supabase'
 import { DELEGATE_MAX, type EntryMeta, type Task } from '../../db/types'
+import { useDoor } from '../../lib/door'
 import { useRoom } from '../../lib/rooms'
 import { transient } from '../../lib/undo'
 import { useLineWhys } from '../../lib/lineWhys'
@@ -334,6 +335,32 @@ function Card({
   const drag = useRef<{ x: number; y: number } | null>(null)
   const [dxy, setDxy] = useState<{ dx: number; dy: number } | null>(null)
 
+  // The table door (T4 ruling 2): long-press (mobile) / right-click
+  // (desktop) carries this card into Reflect as a quoted object — the
+  // margin-door pattern, provenance law included. A held touch that
+  // hasn't moved is a carry, not a drag.
+  const { knock } = useDoor()
+  const { setRoom } = useRoom()
+  const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const clearHold = () => {
+    if (holdTimer.current) clearTimeout(holdTimer.current)
+    holdTimer.current = null
+  }
+  const carry = () => {
+    clearHold()
+    drag.current = null
+    setDxy(null)
+    knock({
+      type: 'object',
+      object: 'task',
+      content: task.title,
+      from: kind === 'line' ? 'the Line' : 'the stack',
+      world: worldName,
+      state: provenance(task, kind, entry),
+    })
+    setRoom('reflect')
+  }
+
   const lit =
     dxy && Math.max(Math.abs(dxy.dx), Math.abs(dxy.dy)) > 16
       ? Math.abs(dxy.dx) > Math.abs(dxy.dy)
@@ -370,15 +397,28 @@ function Card({
         transform,
         opacity: exitingDir ? 0 : 1,
       }}
+      onContextMenu={(e) => {
+        e.preventDefault()
+        carry()
+      }}
       onPointerDown={(e) => {
         drag.current = { x: e.clientX, y: e.clientY }
         el.current?.setPointerCapture(e.pointerId)
+        // a 500ms hold with no real movement = the carry, for touch
+        if (e.pointerType === 'touch') {
+          clearHold()
+          holdTimer.current = setTimeout(carry, 500)
+        }
       }}
       onPointerMove={(e) => {
         if (!drag.current) return
-        setDxy({ dx: e.clientX - drag.current.x, dy: e.clientY - drag.current.y })
+        const dx = e.clientX - drag.current.x
+        const dy = e.clientY - drag.current.y
+        if (Math.max(Math.abs(dx), Math.abs(dy)) > 12) clearHold()
+        setDxy({ dx, dy })
       }}
       onPointerUp={() => {
+        clearHold()
         const d = dxy
         drag.current = null
         setDxy(null)
@@ -390,6 +430,7 @@ function Card({
         }
       }}
       onPointerCancel={() => {
+        clearHold()
         drag.current = null
         setDxy(null)
       }}

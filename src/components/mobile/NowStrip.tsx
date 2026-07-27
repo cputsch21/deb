@@ -1,8 +1,12 @@
+import { useRef, type ReactNode } from 'react'
 import { useProjects } from '../../db/queries/projects'
 import { useTasks, useTaskMutations } from '../../db/queries/tasks'
+import { useDoor } from '../../lib/door'
+import { useRoom } from '../../lib/rooms'
 import { applyDebOrder, deriveLine, todayKey } from '../../lib/line'
 import { useLineWhys } from '../../lib/lineWhys'
 import { transient } from '../../lib/undo'
+import type { Task } from '../../db/types'
 
 /**
  * The Now strip (mobile, above the composer in Reflect): the Line's glance
@@ -31,10 +35,7 @@ export function NowStrip({ lens }: { lens: string | null }) {
         const p = projects.find((pp) => pp.id === t.project_id) ?? null
         const why = whys.byId.get(t.id)
         return (
-          <div
-            key={t.id}
-            className="flex w-[220px] flex-none items-center gap-2 rounded-2xl bg-fill py-3 pr-1 pl-4"
-          >
+          <Chip key={t.id} task={t} worldName={p?.name ?? null}>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
                 <span
@@ -63,9 +64,73 @@ export function NowStrip({ lens }: { lens: string | null }) {
                 style={{ backgroundColor: p?.color ?? 'var(--t-accent)' }}
               />
             </button>
-          </div>
+          </Chip>
         )
       })}
+    </div>
+  )
+}
+
+/**
+ * One chip — and a door (T4 ruling 2): long-press / right-click carries
+ * the task onto Reflect's table as a quoted object. A touch that scrolls
+ * the strip cancels the hold; the tap targets inside stay taps.
+ */
+function Chip({
+  task,
+  worldName,
+  children,
+}: {
+  task: Task
+  worldName: string | null
+  children: ReactNode
+}) {
+  const { knock } = useDoor()
+  const { setRoom } = useRoom()
+  const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const start = useRef<{ x: number; y: number } | null>(null)
+  const clearHold = () => {
+    if (holdTimer.current) clearTimeout(holdTimer.current)
+    holdTimer.current = null
+  }
+  const carry = () => {
+    clearHold()
+    knock({
+      type: 'object',
+      object: 'task',
+      content: task.title,
+      from: 'the Line',
+      world: worldName,
+      state: 'on the Line',
+    })
+    setRoom('reflect')
+  }
+  return (
+    <div
+      className="flex w-[220px] flex-none items-center gap-2 rounded-2xl bg-fill py-3 pr-1 pl-4"
+      onContextMenu={(e) => {
+        e.preventDefault()
+        carry()
+      }}
+      onPointerDown={(e) => {
+        if (e.pointerType !== 'touch') return
+        start.current = { x: e.clientX, y: e.clientY }
+        clearHold()
+        holdTimer.current = setTimeout(carry, 500)
+      }}
+      onPointerMove={(e) => {
+        // a scroll is a scroll — real movement cancels the hold
+        if (!start.current) return
+        if (
+          Math.max(Math.abs(e.clientX - start.current.x), Math.abs(e.clientY - start.current.y)) >
+          12
+        )
+          clearHold()
+      }}
+      onPointerUp={clearHold}
+      onPointerCancel={clearHold}
+    >
+      {children}
     </div>
   )
 }

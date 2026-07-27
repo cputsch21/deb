@@ -122,7 +122,85 @@ const FILE_ENTRY: Anthropic.Tool = {
   },
 }
 
-const TOOLS: Anthropic.Tool[] = [CREATE_TASK, REMEMBER, RECALL, SET_MISSION, FILE_ENTRY]
+/** Goals live in the conversation (T4 ruling 1, July 27): create by telling her. */
+const CREATE_GOAL: Anthropic.Tool = {
+  name: 'create_goal',
+  description: `Create a goal — a FINISHABLE OUTCOME inside one of Chris's worlds — when he names one ("the goal for CTDI is passing the ISO audit", "add a goal: launch the beta"). Act-then-correct: it exists the instant you call this; your words carry the confirmation, and he can undo it in one tap. A goal always belongs to a world: it lands in the world he is speaking from unless he clearly names another. If he is at home and no world is clear, ask — never guess a world and never create a goal on the Bench. Do NOT call this for tasks (single actions), musings, or a goal that already exists in the current state.`,
+  input_schema: {
+    type: 'object',
+    properties: {
+      title: {
+        type: 'string',
+        description: 'The goal as a finishable outcome, in his words. Under 200 characters.',
+      },
+      world: {
+        type: 'string',
+        description: 'Optional: the exact world name. Omit to use the lens he is speaking from.',
+      },
+    },
+    required: ['title'],
+  },
+}
+
+const RENAME_GOAL: Anthropic.Tool = {
+  name: 'rename_goal',
+  description: `Rename an existing ACTIVE goal when Chris rewords it ("call that goal X instead"). Act-then-correct with undo. Find the goal by its current title from the state block; if the name he used matches more than one goal, ask rather than guess.`,
+  input_schema: {
+    type: 'object',
+    properties: {
+      goal: { type: 'string', description: 'The goal to rename, by its current title (or enough of it to be unambiguous).' },
+      title: { type: 'string', description: 'The new title. Under 200 characters.' },
+      world: { type: 'string', description: 'Optional: the world it lives in, to disambiguate.' },
+    },
+    required: ['goal', 'title'],
+  },
+}
+
+/** The permanent verdicts stay Chris's alone — this only sets the signing moment in front of him. */
+const STAGE_GOAL_VERDICT: Anthropic.Tool = {
+  name: 'stage_goal_verdict',
+  description: `Stage the app's ONE solemn confirm for a goal's permanent verdict — done forever or dropped forever — when CHRIS HIMSELF declares it finished for good or dead for good ("that goal is done, forever", "drop the beta goal — it's over"). This writes NOTHING: it places the signing moment in front of him in the thread, and the verdict lands only if he confirms it there. It should feel like handing him the pen. NEVER call it on your own read of the record, never for a pause or a maybe, and never claim the verdict is settled — it is his to sign or wave off.`,
+  input_schema: {
+    type: 'object',
+    properties: {
+      goal: { type: 'string', description: 'The goal, by its current title.' },
+      verdict: { type: 'string', enum: ['done', 'dropped'], description: 'done = finished forever; dropped = ended forever.' },
+      world: { type: 'string', description: 'Optional: the world it lives in, to disambiguate.' },
+    },
+    required: ['goal', 'verdict'],
+  },
+}
+
+/** Task editing lives in the conversation too (T4 ruling 2): everything the old sheet did. */
+const UPDATE_TASK: Anthropic.Tool = {
+  name: 'update_task',
+  description: `Edit an existing OPEN task when Chris asks for it in words: rename ("call it 'Invoice Larry — May'"), re-home ("move that to CTDI" / "put it on the Bench"), assign it under a goal, or re-anchor it ("do it today" / "actually, unschedule that"). Act-then-correct with undo. Find the task by its title from the current state; if the words match more than one task, ask rather than guess. Pass ONLY the fields he asked to change. This never marks a task done and never deletes — completion is the punch, deletion is the stack's ↓; both are his taps, plus real evidence for done.`,
+  input_schema: {
+    type: 'object',
+    properties: {
+      task: { type: 'string', description: 'The task to edit, by its current title (or enough of it to be unambiguous).' },
+      title: { type: 'string', description: 'New title (rename). Under 200 characters.' },
+      world: { type: 'string', description: 'Re-home: exact world name, or "bench" for the Bench. Clears any goal unless one is also given.' },
+      goal: { type: 'string', description: 'Assign under a goal in the task\'s world, by goal title — or "none" to un-assign.' },
+      anchor: { type: 'string', description: 'Re-anchor: "today", a yyyy-mm-dd day, or "none" to send it back to the stack undecided.' },
+    },
+    required: ['task'],
+  },
+}
+
+const TOOLS: Anthropic.Tool[] = [
+  CREATE_TASK,
+  REMEMBER,
+  RECALL,
+  SET_MISSION,
+  FILE_ENTRY,
+  CREATE_GOAL,
+  RENAME_GOAL,
+  STAGE_GOAL_VERDICT,
+  UPDATE_TASK,
+]
+
+const GOAL_TITLE_MAX = 200
 
 const json = (body: unknown, status: number) =>
   new Response(JSON.stringify(body), {
@@ -144,6 +222,7 @@ export async function POST(request: Request): Promise<Response> {
     tz?: unknown
     pasted?: unknown
     marginNote?: unknown
+    tableObject?: unknown
   }
   try {
     body = await request.json()
@@ -159,25 +238,32 @@ export async function POST(request: Request): Promise<Response> {
   // enters the record.
   const margin = parseMargin(body.marginNote)
 
-  const rawInput = margin ? '' : String(body.content ?? '').trim()
-  if (!margin && !rawInput) return json({ error: 'Nothing to say.' }, 400)
+  // The table door (T4 rulings 1–2, July 27): a goal carried in from a
+  // dossier, or a task from a card. Same provenance law as the margin tap:
+  // NO user row — the carry is framed to her as his deliberate act, and
+  // only her reply enters the record.
+  const table = margin ? null : parseTableObject(body.tableObject)
+  const tap = margin !== null || table !== null
+
+  const rawInput = tap ? '' : String(body.content ?? '').trim()
+  if (!tap && !rawInput) return json({ error: 'Nothing to say.' }, 400)
   const pasted = body.pasted === true
 
   // THE DOOR (M5 T2, redline law): the paste EVENT is the primary signal,
   // size the secondary confirmation. A large paste is material — it files
   // into the record and never enters the thread. Typed text of any length
   // is conversation.
-  if (!margin && pasted && rawInput.length >= MATERIAL_MIN) {
+  if (!tap && pasted && rawInput.length >= MATERIAL_MIN) {
     return fileMaterial(db, rawInput.slice(0, RAW_MAX), projectId, tz)
   }
 
   const content = capText(rawInput, MESSAGE_MAX)
 
   // The user's line joins the thread first — the thread is truth even if
-  // the model call fails after this point. (A margin tap writes nothing:
-  // the record may only ever hold words Chris actually wrote or said.)
-  const userMessageId = margin ? '' : randomUUID()
-  if (!margin) {
+  // the model call fails after this point. (A margin or table tap writes
+  // nothing: the record may only hold words Chris actually wrote or said.)
+  const userMessageId = tap ? '' : randomUUID()
+  if (!tap) {
     const { error: insertError } = await db.from('messages').insert({
       id: userMessageId,
       role: 'user',
@@ -199,7 +285,10 @@ export async function POST(request: Request): Promise<Response> {
       role: 'user',
       content: [
         { type: 'text', text: stateBlock(ctx, projectId, tz) },
-        { type: 'text', text: margin ? marginFrame(margin) : content },
+        {
+          type: 'text',
+          text: margin ? marginFrame(margin) : table ? tableFrame(table) : content,
+        },
       ],
     },
   ]
@@ -293,7 +382,15 @@ export async function POST(request: Request): Promise<Response> {
                       ? await setMission(db, use, projectId, ctx.projects, send)
                       : use.name === 'file_entry'
                         ? await fileEntryTool(db, use, content, ctx, tz, send)
-                        : { content: `Unknown tool: ${use.name}`, is_error: true }
+                        : use.name === 'create_goal'
+                          ? await createGoal(db, use, projectId, ctx, send)
+                          : use.name === 'rename_goal'
+                            ? await renameGoal(db, use, ctx, send)
+                            : use.name === 'stage_goal_verdict'
+                              ? stageGoalVerdict(use, ctx, send)
+                              : use.name === 'update_task'
+                                ? await updateTask(db, use, ctx, tz, send)
+                                : { content: `Unknown tool: ${use.name}`, is_error: true }
             results.push({
               type: 'tool_result',
               tool_use_id: use.id,
@@ -656,6 +753,275 @@ async function fileEntryTool(
 }
 
 
+/* ================= the goal + task hands (T4 rulings 1–2, July 27) ================= */
+
+type Row = Record<string, unknown>
+
+/**
+ * Resolve a row by title — exact (case-insensitive) first, then a unique
+ * substring. Ambiguity and misses come back as honest errors for her to
+ * ask about, never a guess.
+ */
+function resolveByTitle(rows: Row[], q: string, what: string): { row?: Row; error?: string } {
+  const needle = q.trim().toLowerCase()
+  if (!needle) return { error: `No ${what} named — say which one.` }
+  const exact = rows.filter((r) => String(r.title).toLowerCase() === needle)
+  const pool =
+    exact.length > 0
+      ? exact
+      : rows.filter((r) => String(r.title).toLowerCase().includes(needle))
+  if (pool.length === 0) {
+    return { error: `No ${what} matches "${q}" — check the current state and use its real title.` }
+  }
+  if (pool.length > 1) {
+    const names = pool
+      .slice(0, 4)
+      .map((r) => `"${String(r.title)}"`)
+      .join(', ')
+    return { error: `"${q}" matches ${pool.length} ${what}s (${names}) — ask Chris which one.` }
+  }
+  return { row: pool[0] }
+}
+
+/** Execute create_goal: a finishable outcome lands in its world, act-then-correct. */
+async function createGoal(
+  db: SupabaseClient,
+  use: Anthropic.ToolUseBlock,
+  lensProjectId: string | null,
+  ctx: DebContext,
+  send: (event: Record<string, unknown>) => void,
+): Promise<{ content: string; is_error: boolean }> {
+  const input = (use.input ?? {}) as { title?: unknown; world?: unknown }
+  const title = capText(String(input.title ?? ''), GOAL_TITLE_MAX)
+  if (!title) return { content: 'No title given — nothing was created.', is_error: true }
+
+  const worldName = String(input.world ?? '').trim()
+  const target = worldName
+    ? ctx.projects.find((p) => String(p.name).toLowerCase() === worldName.toLowerCase())
+    : ctx.projects.find((p) => p.id === lensProjectId)
+  if (!target) {
+    return {
+      content: worldName
+        ? `No world named "${worldName}" exists — use a real one or ask Chris.`
+        : 'A goal always belongs to a world, and none is in focus — ask Chris which world this goal is for.',
+      is_error: true,
+    }
+  }
+
+  const id = randomUUID()
+  const { error } = await db
+    .from('goals')
+    .insert({ id, project_id: String(target.id), title })
+  if (error) {
+    console.error('[chat] create_goal', error)
+    return { content: 'The write failed — the goal was NOT created. Tell Chris plainly.', is_error: true }
+  }
+
+  send({ type: 'action', kind: 'goal_created', id, title, worldName: String(target.name) })
+  return {
+    content: `Goal "${title}" created in ${String(target.name)} (id ${id}). It exists now — do not create it again.`,
+    is_error: false,
+  }
+}
+
+/** Execute rename_goal: row-checked update on an active goal, undo carried to the client. */
+async function renameGoal(
+  db: SupabaseClient,
+  use: Anthropic.ToolUseBlock,
+  ctx: DebContext,
+  send: (event: Record<string, unknown>) => void,
+): Promise<{ content: string; is_error: boolean }> {
+  const input = (use.input ?? {}) as { goal?: unknown; title?: unknown; world?: unknown }
+  const title = capText(String(input.title ?? ''), GOAL_TITLE_MAX)
+  if (!title) return { content: 'No new title given — nothing changed.', is_error: true }
+
+  const worldName = String(input.world ?? '').trim()
+  const world = worldName
+    ? ctx.projects.find((p) => String(p.name).toLowerCase() === worldName.toLowerCase())
+    : null
+  const pool = ctx.goals.filter(
+    (g) => g.status === 'active' && (!world || g.project_id === world.id),
+  )
+  const { row, error: resolveError } = resolveByTitle(pool, String(input.goal ?? ''), 'active goal')
+  if (!row) return { content: resolveError!, is_error: true }
+
+  const prevTitle = String(row.title)
+  const { data, error } = await db
+    .from('goals')
+    .update({ title })
+    .eq('id', String(row.id))
+    .select('id')
+  if (error || !data || data.length === 0) {
+    console.error('[chat] rename_goal', error)
+    return { content: 'The write failed — the goal was NOT renamed. Tell Chris plainly.', is_error: true }
+  }
+
+  send({ type: 'action', kind: 'goal_renamed', id: String(row.id), title, prevTitle })
+  return {
+    content: `Renamed "${prevTitle}" → "${title}". It is done — he can undo it in one tap.`,
+    is_error: false,
+  }
+}
+
+/**
+ * Execute stage_goal_verdict: NO write. The app's one solemn confirm is
+ * placed in front of Chris in the thread; the verdict lands only when he
+ * signs it there. The two permanent verdicts are his alone — law.
+ */
+function stageGoalVerdict(
+  use: Anthropic.ToolUseBlock,
+  ctx: DebContext,
+  send: (event: Record<string, unknown>) => void,
+): { content: string; is_error: boolean } {
+  const input = (use.input ?? {}) as { goal?: unknown; verdict?: unknown; world?: unknown }
+  const verdict = String(input.verdict ?? '')
+  if (verdict !== 'done' && verdict !== 'dropped') {
+    return { content: 'The verdict must be "done" or "dropped".', is_error: true }
+  }
+
+  const worldName = String(input.world ?? '').trim()
+  const world = worldName
+    ? ctx.projects.find((p) => String(p.name).toLowerCase() === worldName.toLowerCase())
+    : null
+  const pool = ctx.goals.filter(
+    (g) => g.status === 'active' && (!world || g.project_id === world.id),
+  )
+  const { row, error: resolveError } = resolveByTitle(pool, String(input.goal ?? ''), 'active goal')
+  if (!row) return { content: resolveError!, is_error: true }
+
+  send({
+    type: 'action',
+    kind: 'verdict_staged',
+    id: String(row.id),
+    title: String(row.title),
+    verdict,
+  })
+  return {
+    content: `The solemn confirm for "${String(row.title)}" (${verdict} forever) is now in front of Chris. NOTHING is settled — he signs it or waves it off. Do not claim the verdict has happened; if you speak, keep it brief and let the moment be his.`,
+    is_error: false,
+  }
+}
+
+/** Execute update_task: rename · re-home · goal assignment · re-anchor — row-checked, undo carried. */
+async function updateTask(
+  db: SupabaseClient,
+  use: Anthropic.ToolUseBlock,
+  ctx: DebContext,
+  tz: string,
+  send: (event: Record<string, unknown>) => void,
+): Promise<{ content: string; is_error: boolean }> {
+  const input = (use.input ?? {}) as {
+    task?: unknown
+    title?: unknown
+    world?: unknown
+    goal?: unknown
+    anchor?: unknown
+  }
+
+  const openTasks = ctx.tasks.filter((t) => !t.done_at)
+  const { row: task, error: resolveError } = resolveByTitle(
+    openTasks,
+    String(input.task ?? ''),
+    'open task',
+  )
+  if (!task) return { content: resolveError!, is_error: true }
+
+  const next: Record<string, unknown> = {}
+  const said: string[] = []
+
+  if (input.title !== undefined) {
+    const title = capText(String(input.title), TASK_TITLE_MAX)
+    if (!title) return { content: 'The new title is empty — nothing changed.', is_error: true }
+    next.title = title
+    said.push('renamed')
+  }
+
+  let homeProjectId = task.project_id as string | null
+  if (input.world !== undefined) {
+    const worldName = String(input.world).trim()
+    if (worldName.toLowerCase() === 'bench' || worldName.toLowerCase() === 'the bench') {
+      next.project_id = null
+      next.goal_id = null
+      homeProjectId = null
+      said.push('moved to the Bench')
+    } else {
+      const target = ctx.projects.find(
+        (p) => String(p.name).toLowerCase() === worldName.toLowerCase(),
+      )
+      if (!target) {
+        return { content: `No world named "${worldName}" exists — use a real one or ask.`, is_error: true }
+      }
+      next.project_id = String(target.id)
+      next.goal_id = null // re-homing clears the goal unless one is also given
+      homeProjectId = String(target.id)
+      said.push(`moved to ${String(target.name)}`)
+    }
+  }
+
+  if (input.goal !== undefined) {
+    const goalName = String(input.goal).trim()
+    if (goalName.toLowerCase() === 'none') {
+      next.goal_id = null
+      said.push('goal cleared')
+    } else {
+      if (homeProjectId === null) {
+        return { content: 'A Bench task has no world, so it cannot sit under a goal — re-home it first.', is_error: true }
+      }
+      const pool = ctx.goals.filter(
+        (g) => g.status === 'active' && g.project_id === homeProjectId,
+      )
+      const { row: goal, error: goalError } = resolveByTitle(pool, goalName, 'active goal')
+      if (!goal) return { content: goalError!, is_error: true }
+      next.goal_id = String(goal.id)
+      said.push(`under "${String(goal.title)}"`)
+    }
+  }
+
+  if (input.anchor !== undefined) {
+    const anchor = String(input.anchor).trim().toLowerCase()
+    if (anchor === 'none') {
+      next.anchored_on = null
+      said.push('back to undecided')
+    } else if (anchor === 'today') {
+      next.anchored_on = todayKeyInTz(tz)
+      said.push('anchored today')
+    } else if (/^\d{4}-\d{2}-\d{2}$/.test(anchor)) {
+      next.anchored_on = anchor
+      said.push(`anchored ${anchor}`)
+    } else {
+      return { content: 'The anchor must be "today", a yyyy-mm-dd day, or "none".', is_error: true }
+    }
+  }
+
+  if (Object.keys(next).length === 0) {
+    return { content: 'No change was given — pass the field Chris asked to change.', is_error: true }
+  }
+
+  const prev = {
+    title: String(task.title),
+    project_id: (task.project_id as string | null) ?? null,
+    goal_id: (task.goal_id as string | null) ?? null,
+    anchored_on: (task.anchored_on as string | null) ?? null,
+  }
+
+  const { data, error } = await db
+    .from('tasks')
+    .update({ ...next, touched_at: new Date().toISOString() })
+    .eq('id', String(task.id))
+    .select('id')
+  if (error || !data || data.length === 0) {
+    console.error('[chat] update_task', error)
+    return { content: 'The write failed — the task was NOT changed. Tell Chris plainly.', is_error: true }
+  }
+
+  const label = `${String(next.title ?? task.title).slice(0, 40)} — ${said.join(' · ')}`
+  send({ type: 'action', kind: 'task_updated', id: String(task.id), label, prev })
+  return {
+    content: `Task updated (${said.join(', ')}). It is done — he can undo it in one tap. Do not repeat the edit back in detail.`,
+    is_error: false,
+  }
+}
+
 /** The four margin kinds — mirrors entry_notes' schema check. */
 const MARGIN_KINDS = ['receipt', 'read', 'keep', 'question']
 
@@ -669,6 +1035,58 @@ function parseMargin(
   const day = capText(String(v.day ?? ''), 16)
   if (!content || !MARGIN_KINDS.includes(kind)) return null
   return { content, kind, day }
+}
+
+/** A goal or task carried onto the table (T4 rulings 1–2). */
+function parseTableObject(
+  value: unknown,
+): { object: 'goal' | 'task'; content: string; from: string; world: string | null; state: string } | null {
+  if (!value || typeof value !== 'object') return null
+  const v = value as {
+    object?: unknown
+    content?: unknown
+    from?: unknown
+    world?: unknown
+    state?: unknown
+  }
+  const object = String(v.object ?? '')
+  if (object !== 'goal' && object !== 'task') return null
+  const content = capText(String(v.content ?? ''), 200)
+  if (!content) return null
+  return {
+    object,
+    content,
+    from: capText(String(v.from ?? ''), 60) || 'the app',
+    world: v.world == null ? null : capText(String(v.world), 80) || null,
+    state: capText(String(v.state ?? ''), 200),
+  }
+}
+
+/**
+ * The carry, framed for her. Like the margin frame: CONTEXT only, never
+ * persisted — the thread's provenance stays absolute.
+ */
+function tableFrame(t: {
+  object: 'goal' | 'task'
+  content: string
+  from: string
+  world: string | null
+  state: string
+}): string {
+  return [
+    '<table-carry>',
+    `Chris carried a ${t.object} onto the table from ${t.from}: "${t.content}"`,
+    `(${t.world ?? 'the Bench'}${t.state ? ` · ${t.state}` : ''})`,
+    'He put it in front of you deliberately — he wants to look at it with',
+    'you: talk it through, rename it, re-home it, or settle it. He is',
+    'addressing you, so answer (this is not a moment for silence), briefly —',
+    'what the record honestly shows about it, or the one question that moves',
+    'it. He typed no words — never quote or paraphrase him. If he then asks',
+    'for a change, use your hands. A goal\'s permanent verdict is his alone:',
+    'stage_goal_verdict puts the signing moment in front of him; never claim',
+    'it is settled until he confirms it in the app.',
+    '</table-carry>',
+  ].join('\n')
 }
 
 /**
