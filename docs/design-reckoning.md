@@ -4,6 +4,10 @@ the design target + the dated rulings). Findings only — nothing fixed
 silently; the rulings are Chris's. Includes the amnesty round: things
 noticed and left alone during M4–M6.*
 
+> **Ruled July 27, 2026 — all fifteen; 1–14 executed, 15 deliberately
+> untouched.** The rulings live in `DECISIONS.md` (which always wins);
+> these findings stand as the audit record.
+
 **Severity: HIGH = functional gap or law breach with real cost · MED = law
 tension needing a ruling · LOW = divergence or debt, cheap either way.**
 

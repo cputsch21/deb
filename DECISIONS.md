@@ -21,14 +21,68 @@ from). M2 (Reflect: voice, hands, memory, first message) closed · M3 (Review +
 the intake interview) live · M4 (React: the stack + the Line) shipped, device
 pass pending · **M5 (Read: ingestion + the record) complete** — the spine, the one door,
 the distillation, minting + the learning loop, the Read room, the margins,
-and the Plaud spike report. Next: **M6 — presence & polish** (Arc, the
-finished shelf, PWA completion, the design reckoning, the V1 walk).
+and the Plaud spike report. M6 T1–T3 shipped (Arc · the shelf · PWA);
+**T4's fifteen rulings are ruled and executed (July 27)** — goals and task
+edits live in the conversation now, with the doors and the re-homed solemn
+confirm. Next: **T5 — the V1 walk**, gated on Chris's two device passes.
 
 ---
 
 ## The log (newest first)
 
-### July 24, 2026 — M6 T2–T4: the shelf · the offline shell · the reckoning
+### July 27, 2026 — The T4 rulings: all fifteen, ruled and executed
+Chris ruled on every finding of the design reckoning; 1–14 are built, 15 is
+deliberately untouched. Four rulings are standing law:
+
+- **The conversation is where structure changes; rooms are where it is
+  seen.** No goal surface returns. Deb grows goal hands (`create_goal`,
+  `rename_goal`) and task-update hands (`update_task`: rename · re-home ·
+  goal assignment · re-anchor — everything TaskSheet did, done by saying
+  it), under the same laws as her task hands: act-then-correct, row-checked,
+  one-tap undo. The permanent verdicts happen in the thread: when Chris
+  declares done-forever/dropped-forever, `stage_goal_verdict` writes
+  NOTHING — it places the re-homed VerdictConfirm (the app's one solemn
+  confirm, forever the only confirm) in front of him; only his signature
+  makes the write. Doors: every goal in a Review dossier, and long-press /
+  right-click on any card (stack · Line · Now strip), carries the object
+  into Reflect as a quoted, session-ephemeral thing on the table — the
+  margin-door pattern exactly, provenance law included (a carry writes no
+  user row; the record only ever holds words Chris wrote or said). Review
+  stays read-only; the door is navigation.
+- **Warm Glass amendment — keyboard focus is the deepened well.**
+  `:focus-visible` (keyboard-originated only, never plain `:focus`) renders
+  as the exact hover treatment: the deepened well, honoring
+  hover-deepens-never-recolors. No rings, no outlines, anywhere, ever.
+  Inputs stay caret-only; pointer and touch users never see focus styling.
+- **Standing tiebreaker — the system beats the prototype pixel.** Where the
+  design system's own laws and a prototype detail disagree, the system
+  wins; the prototype is law only where it doesn't contradict the system.
+  (First application: the raw block's 2px edge dies; it is a deeper tonal
+  well now.)
+- **The Bench is formally parked, law intact.** No Bench surface and no
+  fade rendering in V1 — BENCH-tagged cards remain the only sighting. The
+  14→30-day dimming law stays written (`benchOpacity` kept in code, marked
+  parked). The Bench goes by name on the move-in findings agenda: if three
+  weeks of real use never misses it, it takes the formal cut.
+  Finish-or-formally-cut, the formally path, scheduled.
+
+The rest of the execution, recorded: the desktop two-chip Line glance ships
+(three zooms is law; mobile-only was a gap) · Book tap targets to ≥44px ·
+the composer floats and the sheet takes the 22px rounded left edge (the
+prototype's unapplied polish lines) · the delegate purple is a minted token
+(#8a6ea8) and ← DELEGATE lights it · the Waiting-on semibold dies (ink vs
+muted is the tool) · the home dot wears the silver gradient · dead code
+triaged (GoalSection, GoalSheet, TaskSheet die — LensView, Bench, TaskRow
+go with them as their only importers; VerdictConfirm re-homes; git
+remembers) · the first message plants programmatically on any bare thread
+(closes the class, not the instance) · the 260ms roomin rise returns to
+desktop room switches. Deb's update_task deliberately excludes done and
+delete — completion stays the punch, deletion stays the stack's ↓ (and
+done keeps its evidence bar). Finding 15 (Arc's dawn/dusk): no action —
+as-shipped until Chris has watched them under the real sky.
+
+Board state: T5 (the V1 walk) is next, parked on Chris's two device passes
+per the standing gate.
 - **T2 — the finished shelf** ships in Review at silver: retired worlds as
   dimmed rows (mission kept, retirement date), each visitable as a
   read-only dossier; the only action is un-retire. The shelf's read joins
