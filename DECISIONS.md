@@ -28,6 +28,25 @@ finished shelf, PWA completion, the design reckoning, the V1 walk).
 
 ## The log (newest first)
 
+### July 24, 2026 — M6 T2–T4: the shelf · the offline shell · the reckoning
+- **T2 — the finished shelf** ships in Review at silver: retired worlds as
+  dimmed rows (mission kept, retirement date), each visitable as a
+  read-only dossier; the only action is un-retire. The shelf's read joins
+  the honest-failure group.
+- **T3 — PWA completion:** the one-job service worker answers failed
+  navigations with the honest offline page ("Deb needs a connection.
+  Nothing is lost — the record is safe on the server") — never a white
+  page; iOS splash set in the house hand; status bar goes
+  black-translucent behind the safe-area padding; the mobile rooms'
+  double top-spacing under the in-flow header is corrected.
+- **T4 — the design reckoning is DELIVERED AS FINDINGS, nothing fixed
+  silently:** 15 numbered findings with severity at
+  `docs/design-reckoning.md` (2 HIGH — goals and task-detail orphaned by
+  the rooms shell; 4 MED — desktop Line glance, invisible keyboard focus,
+  Book tap targets, composer polish divergence; 9 LOW incl. the amnesty
+  round). The rulings are Chris's; T5 (the V1 walk) waits on his two
+  device passes per the standing gate.
+
 ### July 24, 2026 — M6 T1: Arc — the app lit by the real sun
 Arc ships as the DEFAULT theme (three-way toggle: arc · light · dark, in
 the world sheet on mobile and the quiet corner on desktop). Rulings:
