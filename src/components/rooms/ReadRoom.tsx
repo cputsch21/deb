@@ -3,6 +3,7 @@ import { useProjects } from '../../db/queries/projects'
 import { useEntries, useEntryNotes, useEntryRaw } from '../../db/queries/entries'
 import { useBook } from '../../lib/book'
 import { useDoor } from '../../lib/door'
+import { useLens } from '../../lib/lens'
 import { useRoom } from '../../lib/rooms'
 import { addDays, shortDay, todayKey } from '../../lib/line'
 import { LoadFailed } from '../LoadFailed'
@@ -207,19 +208,30 @@ function PageEntry({
 
       {/* Deb's hand — desktop: in the actual margin; mobile: inline below */}
       {notes.map((n) => (
-        <MarginNote key={n.id} note={n} day={day} />
+        <MarginNote key={n.id} note={n} day={day} worldId={entry.project_id} />
       ))}
     </div>
   )
 }
 
 /** The margin note — accent serif italic, a hairline of her own. A door. */
-function MarginNote({ note, day }: { note: EntryNote; day: string }) {
+function MarginNote({
+  note,
+  day,
+  worldId,
+}: {
+  note: EntryNote
+  day: string
+  worldId: string | null
+}) {
   const { knock } = useDoor()
   const { setRoom } = useRoom()
+  const { setLens } = useLens()
   const open = () => {
     // Provenance law: the tap carries HER note as a quoted object — it never
-    // composes words in Chris's voice.
+    // composes words in Chris's voice. The door lands in the world the
+    // note's entry belongs to (thread ruling, July 28; silver = whole-life).
+    setLens(worldId)
     knock({ type: 'margin', content: note.content, noteKind: note.kind, day: shortDay(day) })
     setRoom('reflect')
   }
