@@ -52,6 +52,8 @@ export type DebEvent =
   // The done hand (July 27 amendment): his direct statement is the
   // evidence; undoable, identical gravity to the punch.
   | { type: 'action'; kind: 'task_completed'; id: string; title: string }
+  // The brief was (re)built server-side — the page pin needs a re-read.
+  | { type: 'action'; kind: 'brief_generated' }
   // Not a write: she staged the app's one solemn confirm. The verdict is
   // Chris's to sign in the thread — or wave off.
   | { type: 'action'; kind: 'verdict_staged'; id: string; title: string; verdict: 'done' | 'dropped' }

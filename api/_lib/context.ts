@@ -232,9 +232,12 @@ export function stateBlock(ctx: DebContext, lensProjectId: string | null, tz: st
           .map((t) => `  - ${t.delegated_to} — ${t.title} (chase ${t.chase_on})`)
           .join('\n')}`
       : '',
-    // Two zooms, one truth (V1.5, July 28): when he says "brief me", speak
-    // THIS — the same brief already waiting on Read's today page — in your
-    // voice, compressed. Never claim more than it holds.
+    // Two zooms, one truth (V1.5; ritual ruling 1, July 28): the brief
+    // follows the pages. When it exists, "brief me" means speak THIS —
+    // the same brief pinned on Read's today page — compressed, your
+    // voice. When it doesn't: the pages haven't arrived; reason once,
+    // generate_brief on his "anyway", zero friction, never a word about
+    // skipped days.
     ctx.brief && ctx.brief.app_day === appDay && Array.isArray(ctx.brief.items) && ctx.brief.items.length
       ? `THIS MORNING'S BRIEF (already on Read's today page — "brief me" means speak this, compressed, your voice):\n${ctx.brief.items
           .map(
@@ -242,7 +245,7 @@ export function stateBlock(ctx: DebContext, lensProjectId: string | null, tz: st
               `  - ${String(i.title)} (${String(i.world ?? 'the Bench')}) — ${String(i.detail ?? '')}${i.note ? ` — your note: ${String(i.note)}` : ''}`,
           )
           .join('\n')}`
-      : '',
+      : `THE MORNING BRIEF: not built yet today — his pages haven't arrived. If he asks to be briefed: your reason, once (the brief is better informed after the pages; the thread shows if you already said so today), then generate_brief the moment he says anyway — zero friction, no guilt, and never mention skipped days.`,
     `</current-state>`,
   ].join('\n')
 }

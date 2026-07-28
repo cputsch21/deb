@@ -2,15 +2,15 @@ import { useQuery } from '@tanstack/react-query'
 import { supabase } from './supabase'
 
 /**
- * The V1.5 morning brief (July 28 ruling) — today's shape from the spine,
- * her note where she has one. The server derives, gates by signature, and
- * caches per app-day; this hook only asks. Waiting-on-arrival by law: it
- * runs on load, never on a timer, and nothing here tracks whether the
- * brief was read.
+ * The morning brief (V1.5; ritual ruling 1, July 28 — the brief follows
+ * the pages). This hook only READS: generation is drop-driven (her reply
+ * to the morning pages) or asked for through her generate_brief hand.
+ * `invited: true` means no brief exists today — the page opens with the
+ * one warm line. Nothing here tracks whether anything was read.
  */
 export type BriefItem = {
   id: string
-  kind: 'line' | 'chase' | 'goal' | 'keep'
+  kind: 'today' | 'line' | 'chase' | 'goal' | 'keep'
   title: string
   world: string | null
   projectId: string | null
@@ -18,12 +18,11 @@ export type BriefItem = {
   note: string | null
 }
 
-export type Brief = { appDay: string | null; items: BriefItem[] | null; noted: boolean }
-
-/** The brief belongs to the morning: it generates on first load after 4am
- *  local. Before that, today's page simply opens plain. */
-export function afterDawn(): boolean {
-  return new Date().getHours() >= 4
+export type Brief = {
+  appDay: string | null
+  items: BriefItem[] | null
+  noted: boolean
+  invited?: boolean
 }
 
 async function fetchBrief(): Promise<Brief> {

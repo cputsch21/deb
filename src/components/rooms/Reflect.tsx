@@ -7,6 +7,7 @@ import { factKeys, useFactMutations } from '../../db/queries/facts'
 import { goalKeys, useGoalMutations } from '../../db/queries/goals'
 import { entryKeys, useEntries, useEntryMutations } from '../../db/queries/entries'
 import { useBook } from '../../lib/book'
+import { briefKey } from '../../lib/brief'
 import { useLens } from '../../lib/lens'
 import { Markdown } from '../../lib/markdown'
 import { useDoor, type Knock } from '../../lib/door'
@@ -162,6 +163,7 @@ export function Reflect({ lens }: { lens: string | null }) {
           void qc.invalidateQueries({ queryKey: entryKeys.pages })
           void qc.invalidateQueries({ queryKey: entryKeys.notes })
           void qc.invalidateQueries({ queryKey: taskKeys.all })
+          void qc.invalidateQueries({ queryKey: briefKey }) // the drop refreshed the pin
           const entryId = e.id
           const taskIds = e.taskIds
           const where = e.worldName ?? 'silver'
@@ -180,6 +182,7 @@ export function Reflect({ lens }: { lens: string | null }) {
           void qc.invalidateQueries({ queryKey: entryKeys.pages })
           void qc.invalidateQueries({ queryKey: entryKeys.notes })
           void qc.invalidateQueries({ queryKey: taskKeys.all })
+          void qc.invalidateQueries({ queryKey: briefKey }) // the drop refreshed the pin
           const v = e
           const where = e.worldName ?? 'silver'
           const label =
@@ -222,6 +225,9 @@ export function Reflect({ lens }: { lens: string | null }) {
           const id = e.id
           transient.undo(`Done · ${e.title.slice(0, 40)}`, () => setTaskDone(id, false))
           setReceipts((r) => [...r, { id: `${id}-done`, label: `Done — ${e.title.slice(0, 32)}` }])
+        } else if (e.kind === 'brief_generated') {
+          // she built the brief on his word — the page pin re-reads
+          void qc.invalidateQueries({ queryKey: briefKey })
         } else if (e.kind === 'verdict_staged') {
           // Not a write: she set the pen down in front of Chris. The one
           // solemn confirm renders; only his signature makes the verdict.
