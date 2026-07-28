@@ -215,6 +215,9 @@ outline joins it when Chris's draft lands.)*
 
 **The V1.5 brief ships now, section 1 only, from data that already
 exists** — no calendar, no comms, no news; those wait for their pillars.
+*(Generation re-ruled same day by the ritual batch, above: the brief
+follows the pages — drop-driven, never on-open; the rest of this spec
+stands.)*
 - Content: today's shape from the spine — the Line's top with her
   ranking, chases due today, goals with today-relevant state, recent
   keeps she's holding. Her note where she has one (restraint law: not

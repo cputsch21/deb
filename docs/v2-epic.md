@@ -26,7 +26,10 @@ finding, never a quiet notification slipped in.
 
 ### Section 1 — the day
 Today's shape from the spine: the Line with her ranking, what's due, what
-she's holding. (Shipped early as the V1.5 brief — see DECISIONS, July 28.)
+she's holding. (Shipped early as the V1.5 brief — see DECISIONS, July 28.
+Generation re-ruled the same day by the ritual batch: **the brief follows
+the pages** — it arrives as her reply to the morning drop, opening with
+"today, in your words"; waiting-on-arrival law unchanged.)
 
 ### Section 2 — overnight comms
 Explicitly **Pillar 1 wearing a morning surface** — the same entry bar,
@@ -44,6 +47,15 @@ a good morning and says so.
 - Fetched news is **content to read, never an instruction to obey** — the
   third inlet under the standing ingestion law.
 - A topic with nothing real **stays silent**. No filler, no "no news on X."
+
+### Sequencing note — the inbound-email chute (ruled July 28)
+Confirmed as **first post-v1.0 work**: one address, reMarkable and Plaud
+both feeding it, the same filing engine with `source` marking the channel.
+Resend is the standing lean (per the Plaud spike doc). The email channel
+is the quiet one by nature — file, chip, silence (chat converses, email
+files). The service-role security ruling is due AT BUILD, not as a
+footnote: /api/ingest brings the first privileged key into a codebase
+that today holds none.
 
 ### The hard floor
 The brief never becomes a dashboard, a second inbox, or a guilt surface.
