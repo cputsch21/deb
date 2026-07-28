@@ -30,6 +30,18 @@ confirm. Next: **T5 — the V1 walk**, gated on Chris's two device passes.
 
 ## The log (newest first)
 
+### July 28, 2026 — The mark, final form: "d." with the dawn period
+The sunrise as punctuation. Upright Fraunces at the mark's own axes —
+opsz 144 / wght 500 / SOFT 60 / WONK 1 — the whole "d." unit rotated 2°
+counterclockwise. The period drops silver for the DAWN gradient: rose
+`#cd735a` at the rim to warm gold `#eebe78` at the offset highlight
+(dark variant slightly brighter, to `#f0c37d`). Light on paper, dark on
+charcoal; full set regenerated from the instanced face — icons,
+maskable, favicon (embedded outlines, dark via media query), all
+splashes. **Silver stays the in-app home-dot accent, unchanged** — the
+dawn belongs to the mark. (Supersedes the same-day silver-period mark;
+the OFL face for these axes is kept beside the generator.)
+
 ### July 28, 2026 — The daily ritual batch: five rulings (cut R1–R6 approved)
 Ingestion reshaped around Chris's actual day: morning pages + goals on the
 reMarkable at dawn, notes dropped mid-day to discuss, a written close-out
