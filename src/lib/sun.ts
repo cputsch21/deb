@@ -24,12 +24,14 @@ type Palette = Record<string, RGBA>
 /* ---------- the contract: fixed floors, enforced every tick ---------- */
 
 /** Text tokens and the contrast each must hold against EVERY surface it
- *  can sit on (bg, the wells over it, the card). Ruled July 28. `dim`
- *  carries the eyebrow's 4.5 floor (it is the eyebrow token; placeholders
- *  ride the same token and land above their 3:1 floor for free). */
+ *  can sit on (bg, the wells over it, the card). Ruled July 28; floors
+ *  separated same day (Chris's call) so the muted/dim hierarchy is real
+ *  lightness, not hue alone — floors are minimums, separation costs no
+ *  legibility. `dim` carries the eyebrow's 4.5 floor (it is the eyebrow
+ *  token; placeholders ride it and land above their 3:1 floor for free). */
 export const TEXT_TARGETS = {
   ink: 7,
-  muted: 4.5,
+  muted: 5.5,
   dim: 4.5,
   silver: 4.5, // the accent's text-bearing uses
   ok: 4.5,
@@ -46,7 +48,7 @@ export const TEXT_TARGETS = {
 const DAY: Palette = {
   bg: [250, 248, 244, 1],
   ink: [43, 40, 35, 1],
-  muted: [109, 105, 97, 1],
+  muted: [95, 92, 84, 1],
   dim: [110, 105, 96, 1],
   fill: [43, 40, 35, 0.045],
   fill2: [43, 40, 35, 0.07],
@@ -78,7 +80,7 @@ const DAWN: Palette = {
   ...DAY,
   bg: [250, 245, 237, 1],
   ink: [46, 40, 35, 1],
-  muted: [112, 104, 95, 1],
+  muted: [97, 91, 83, 1],
   dim: [113, 104, 94, 1],
   fill: [60, 40, 30, 0.05],
   fill2: [60, 40, 30, 0.075],
@@ -93,7 +95,7 @@ const DUSK: Palette = {
   ...DAY,
   bg: [250, 244, 232, 1],
   ink: [44, 38, 32, 1],
-  muted: [110, 101, 89, 1],
+  muted: [96, 89, 78, 1],
   dim: [111, 102, 90, 1],
   fill: [70, 50, 25, 0.05],
   fill2: [70, 50, 25, 0.075],

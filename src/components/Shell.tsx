@@ -112,16 +112,21 @@ export function Shell(_props: { email: string }) {
           <>
             <RoomsNav />
 
-            {/* the world chip — top-left, only when scoped */}
+            {/* the world chip — top-left, only when scoped. The chip IS the
+                door to world settings (rename · color · rhythms · retire);
+                the whisper on hover makes the door visible. */}
             {world && (
               <div className="absolute top-6 left-8 z-10 flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: world.color }} />
                 <button
                   onClick={() => setSheet('edit')}
-                  title="Project settings"
-                  className="font-serif text-[15px] font-medium text-ink"
+                  title="World settings"
+                  className="group flex items-center gap-2"
                 >
-                  {world.name}
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: world.color }} />
+                  <span className="font-serif text-[15px] font-medium text-ink">{world.name}</span>
+                  <span className="eyebrow text-dim opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+                    settings
+                  </span>
                 </button>
                 <button
                   onClick={() => setLens(null)}

@@ -8,12 +8,13 @@
 
 :root {
   /* light — warm paper. Text tokens sit AT the ruled contrast floors
-     (July 28 legibility ruling: ink ≥7:1, muted/dim/eyebrow ≥4.5:1,
-     accent's text uses ≥4.5:1 — against every surface incl. the white
-     card), byte-equal to Arc's noon so the system stays one. */
+     (July 28 legibility ruling, floors separated same day: ink ≥7:1,
+     muted ≥5.5:1, dim/eyebrow ≥4.5:1, accent's text uses ≥4.5:1 —
+     against every surface incl. the white card), byte-equal to Arc's
+     noon so the system stays one. */
   --t-bg: #faf8f4;
   --t-ink: #2b2823;
-  --t-muted: #6d6961;
+  --t-muted: #5f5c54;
   --t-dim: #6e6960;
   --t-fill: rgba(43, 40, 35, 0.045);
   --t-fill2: rgba(43, 40, 35, 0.07);
