@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useProjects } from '../../db/queries/projects'
-import { useEntries, useEntryNotes, useEntryRaw } from '../../db/queries/entries'
+import { useEntries, useEntryNotes, useEntryRaw, useEntryRevisions } from '../../db/queries/entries'
 import { useBook } from '../../lib/book'
 import { useDoor } from '../../lib/door'
 import { useLens } from '../../lib/lens'
 import { useRoom } from '../../lib/rooms'
 import { addDays, shortDay, todayKey } from '../../lib/line'
 import { LoadFailed } from '../LoadFailed'
+import { DaysDealings } from './DaysDealings'
+import { MorningBrief } from './MorningBrief'
 import type { Entry, EntryNote, EntrySource, Project } from '../../db/types'
 
 /**
@@ -107,6 +109,10 @@ export function ReadRoom({ lens }: { lens: string | null }) {
           {subtitle}
         </p>
 
+        {/* the morning face (V1.5 brief): today's page simply begins with
+            it — whole-life only, after 4am; a world's journal stays journal */}
+        {day === today && lens === null && <MorningBrief />}
+
         {pageEntries.length === 0 ? (
           <p className="py-10 font-serif text-[15px] text-muted">
             Nothing landed on this page.
@@ -123,6 +129,9 @@ export function ReadRoom({ lens }: { lens: string | null }) {
             />
           ))
         )}
+
+        {/* the colophon: how the day's page closes (thread ruling pt 5) */}
+        <DaysDealings day={day} lens={lens} />
 
         {/* the page corners — real hit areas, ≥44px (T4 ruling 5) */}
         <div className="mt-2 flex items-center gap-1.5">
@@ -204,7 +213,14 @@ function PageEntry({
         )}
       </div>
 
-      {rawOpen && <RawBlock rawId={entry.raw_id} />}
+      {rawOpen && (
+        <>
+          <RawBlock rawId={entry.raw_id} />
+          {/* the living page's history (ritual ruling 3): every prior
+              version kept, one lift beneath the current raw */}
+          <PriorVersions entryId={entry.id} />
+        </>
+      )}
 
       {/* Deb's hand — desktop: in the actual margin; mobile: inline below */}
       {notes.map((n) => (
@@ -231,13 +247,26 @@ function MarginNote({
     // Provenance law: the tap carries HER note as a quoted object — it never
     // composes words in Chris's voice. The door lands in the world the
     // note's entry belongs to (thread ruling, July 28; silver = whole-life).
+    // An ANSWER note (ritual ruling 4) carries its question through the door.
     setLens(worldId)
-    knock({ type: 'margin', content: note.content, noteKind: note.kind, day: shortDay(day) })
+    knock({
+      type: 'margin',
+      content: note.content,
+      noteKind: note.kind,
+      day: shortDay(day),
+      question: note.question ?? undefined,
+    })
     setRoom('reflect')
   }
   const body = (
     <>
       <span className="absolute top-[3px] bottom-[3px] left-[-10px] w-[1.5px] rounded bg-accent opacity-40" />
+      {/* the answer's anchor: the question it serves, in his register, dim */}
+      {note.kind === 'answer' && note.question && (
+        <span className="mb-0.5 block truncate text-dim not-italic">
+          {note.question}
+        </span>
+      )}
       {note.content}
     </>
   )
@@ -258,6 +287,25 @@ function MarginNote({
         <span className="relative block pl-1">{body}</span>
       </button>
     </>
+  )
+}
+
+/** Prior versions of a living page — quiet history under the raw. */
+function PriorVersions({ entryId }: { entryId: string }) {
+  const revisionsQ = useEntryRevisions(entryId, true)
+  const revisions = revisionsQ.data ?? []
+  if (revisions.length === 0) return null
+  return (
+    <div className="mt-2.5">
+      {revisions.map((r) => (
+        <div key={r.id} className="mt-2">
+          <span className="eyebrow block text-[0.58rem] text-dim opacity-70">
+            earlier that day · {timeOf(r.created_at)}
+          </span>
+          <RawBlock rawId={r.raw_id} />
+        </div>
+      ))}
+    </div>
   )
 }
 

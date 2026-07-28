@@ -8,7 +8,15 @@ import { create } from 'zustand'
  * nothing is ever composed in Chris's voice; the permanent record only
  * holds words he actually wrote or said. The tap writes NO user row.
  */
-export type MarginKnock = { type: 'margin'; content: string; noteKind: string; day: string }
+/** `question` rides along on THE ANSWER notes (ritual ruling 4): the door
+ *  opens with question and answer both on the table. */
+export type MarginKnock = {
+  type: 'margin'
+  content: string
+  noteKind: string
+  day: string
+  question?: string
+}
 
 /** A goal or task carried onto the table. `from` names where it was picked
  *  up ("the dossier", "the stack", "the Line"); `state` is its honest

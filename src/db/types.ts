@@ -40,14 +40,27 @@ export type Entry = {
   created_at: string
 }
 
-/** Deb's margin notes — four hands only (T6). */
-export type NoteKind = 'receipt' | 'read' | 'keep' | 'question'
+/** Deb's margin notes — five kinds (T6 + the ritual batch, July 28).
+ *  'answer' carries `question`: the detected question it serves, anchored
+ *  beside it on the page. */
+export type NoteKind = 'receipt' | 'read' | 'keep' | 'question' | 'answer'
 
 export type EntryNote = {
   id: string
   entry_id: string
   kind: NoteKind
   content: string
+  question: string | null
+  created_at: string
+}
+
+/** A living entry's superseded versions (ritual ruling 3): append-only —
+ *  every raw snapshot kept, the surface beside it, immutability by RLS. */
+export type EntryRevision = {
+  id: string
+  entry_id: string
+  raw_id: string
+  distillate: string | null
   created_at: string
 }
 

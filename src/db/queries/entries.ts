@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { assertRowChanged } from '../mutate'
-import type { Entry, EntryMeta, EntryNote } from '../types'
+import type { Entry, EntryMeta, EntryNote, EntryRevision } from '../types'
 
 /**
  * The record's surface, client side (M5). Only the meta the rooms need:
@@ -14,6 +14,7 @@ export const entryKeys = {
   pages: ['entries-pages'] as const,
   notes: ['entry-notes'] as const,
   raw: (rawId: string) => ['entry-raw', rawId] as const,
+  revisions: (entryId: string) => ['entry-revisions', entryId] as const,
 }
 
 async function fetchEntryMeta(): Promise<EntryMeta[]> {
@@ -58,7 +59,40 @@ export function useEntryMutations() {
     void qc.invalidateQueries({ queryKey: entryKeys.pages })
   }
 
-  return { hide, unhide }
+  /**
+   * Undo of a version drop (ritual ruling 3, approved JC): restore the
+   * prior version — surface back, new notes aside, old notes returned.
+   * Never deletes the entry; the appended revision row stays (append-only
+   * history tolerates a superseded snapshot that came back).
+   */
+  const revertVersion = async (input: {
+    entryId: string
+    prevRawId: string
+    prevDistillate: string | null
+    newNoteIds: string[]
+    oldNoteIds: string[]
+  }) => {
+    const { data, error } = await supabase
+      .from('entries')
+      .update({ raw_id: input.prevRawId, distillate: input.prevDistillate })
+      .eq('id', input.entryId)
+      .select('id')
+    assertRowChanged(data, error, `revert entry ${input.entryId}`)
+    if (input.newNoteIds.length > 0) {
+      await supabase
+        .from('entry_notes')
+        .update({ deleted_at: new Date().toISOString() })
+        .in('id', input.newNoteIds)
+    }
+    if (input.oldNoteIds.length > 0) {
+      await supabase.from('entry_notes').update({ deleted_at: null }).in('id', input.oldNoteIds)
+    }
+    void qc.invalidateQueries({ queryKey: entryKeys.meta })
+    void qc.invalidateQueries({ queryKey: entryKeys.pages })
+    void qc.invalidateQueries({ queryKey: entryKeys.notes })
+  }
+
+  return { hide, unhide, revertVersion }
 }
 
 
@@ -83,7 +117,7 @@ export function useEntries() {
 async function fetchEntryNotes(): Promise<EntryNote[]> {
   const { data, error } = await supabase
     .from('entry_notes')
-    .select('id, entry_id, kind, content, created_at')
+    .select('id, entry_id, kind, content, question, created_at')
     .is('deleted_at', null)
     .order('created_at')
     .limit(300)
@@ -93,6 +127,24 @@ async function fetchEntryNotes(): Promise<EntryNote[]> {
 
 export function useEntryNotes() {
   return useQuery({ queryKey: entryKeys.notes, queryFn: fetchEntryNotes })
+}
+
+/** A living entry's prior versions (ritual ruling 3), newest first —
+ *  fetched only when the reader lifts the page. */
+export function useEntryRevisions(entryId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: entryKeys.revisions(entryId),
+    enabled,
+    queryFn: async (): Promise<EntryRevision[]> => {
+      const { data, error } = await supabase
+        .from('entry_revisions')
+        .select('id, entry_id, raw_id, distillate, created_at')
+        .eq('entry_id', entryId)
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      return data as EntryRevision[]
+    },
+  })
 }
 
 /** The raw beneath — fetched only when the tap asks for it. */

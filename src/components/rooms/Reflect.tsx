@@ -7,6 +7,7 @@ import { factKeys, useFactMutations } from '../../db/queries/facts'
 import { goalKeys, useGoalMutations } from '../../db/queries/goals'
 import { entryKeys, useEntries, useEntryMutations } from '../../db/queries/entries'
 import { useBook } from '../../lib/book'
+import { briefKey } from '../../lib/brief'
 import { useLens } from '../../lib/lens'
 import { Markdown } from '../../lib/markdown'
 import { useDoor, type Knock } from '../../lib/door'
@@ -38,7 +39,7 @@ export function Reflect({ lens }: { lens: string | null }) {
   const { forget: forgetFact } = useFactMutations()
   const { update: updateProject } = useProjectMutations()
   const { update: updateGoal, verdict: goalVerdict, remove: removeGoal } = useGoalMutations()
-  const { hide: hideEntry } = useEntryMutations()
+  const { hide: hideEntry, revertVersion: revertEntryVersion } = useEntryMutations()
   const world = projects.find((p) => p.id === lens) ?? null
   const isMobile = useIsMobile()
   const [turn, setTurn] = useState<Turn | null>(null)
@@ -162,6 +163,7 @@ export function Reflect({ lens }: { lens: string | null }) {
           void qc.invalidateQueries({ queryKey: entryKeys.pages })
           void qc.invalidateQueries({ queryKey: entryKeys.notes })
           void qc.invalidateQueries({ queryKey: taskKeys.all })
+          void qc.invalidateQueries({ queryKey: briefKey }) // the drop refreshed the pin
           const entryId = e.id
           const taskIds = e.taskIds
           const where = e.worldName ?? 'silver'
@@ -172,6 +174,30 @@ export function Reflect({ lens }: { lens: string | null }) {
           transient.undo(label, () => {
             void hideEntry(entryId)
             for (const tid of taskIds) removeTask(tid, false)
+          })
+        } else if (e.kind === 'entry_versioned') {
+          // The living page grew (ritual ruling 3). The undo restores the
+          // prior version — never deletes the entry.
+          void qc.invalidateQueries({ queryKey: entryKeys.meta })
+          void qc.invalidateQueries({ queryKey: entryKeys.pages })
+          void qc.invalidateQueries({ queryKey: entryKeys.notes })
+          void qc.invalidateQueries({ queryKey: taskKeys.all })
+          void qc.invalidateQueries({ queryKey: briefKey }) // the drop refreshed the pin
+          const v = e
+          const where = e.worldName ?? 'silver'
+          const label =
+            v.taskIds.length > 0
+              ? `Page grown (${where}) — ${v.taskIds.length} new card${v.taskIds.length === 1 ? '' : 's'}`
+              : `Page grown (${where})`
+          transient.undo(label, () => {
+            void revertEntryVersion({
+              entryId: v.id,
+              prevRawId: v.prevRawId,
+              prevDistillate: v.prevDistillate,
+              newNoteIds: v.newNoteIds,
+              oldNoteIds: v.oldNoteIds,
+            })
+            for (const tid of v.taskIds) removeTask(tid, false)
           })
         } else if (e.kind === 'goal_created') {
           void qc.invalidateQueries({ queryKey: goalKeys.all })
@@ -199,6 +225,9 @@ export function Reflect({ lens }: { lens: string | null }) {
           const id = e.id
           transient.undo(`Done · ${e.title.slice(0, 40)}`, () => setTaskDone(id, false))
           setReceipts((r) => [...r, { id: `${id}-done`, label: `Done — ${e.title.slice(0, 32)}` }])
+        } else if (e.kind === 'brief_generated') {
+          // she built the brief on his word — the page pin re-reads
+          void qc.invalidateQueries({ queryKey: briefKey })
         } else if (e.kind === 'verdict_staged') {
           // Not a write: she set the pen down in front of Chris. The one
           // solemn confirm renders; only his signature makes the verdict.
@@ -297,6 +326,11 @@ export function Reflect({ lens }: { lens: string | null }) {
                   ? `from the margin · ${q.noteKind} · ${q.day}`
                   : `from ${q.from} · ${q.object}${q.world ? ` · ${q.world}` : ''}`}
               </span>
+              {q.type === 'margin' && q.question && (
+                <span className="mb-1 block text-[13px] text-muted not-italic">
+                  {q.question}
+                </span>
+              )}
               &ldquo;{q.content}&rdquo;
             </blockquote>
           ))}

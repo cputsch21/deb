@@ -20,6 +20,19 @@ export type DebEvent =
       worldName: string | null
       taskIds: string[]
     }
+  // The living day-entry (ritual ruling 3): a drop grew today's page.
+  // Everything the undo needs to restore the prior version rides along.
+  | {
+      type: 'action'
+      kind: 'entry_versioned'
+      id: string
+      worldName: string | null
+      taskIds: string[]
+      prevRawId: string
+      prevDistillate: string | null
+      newNoteIds: string[]
+      oldNoteIds: string[]
+    }
   // T4 rulings 1–2 (July 27): her goal hands and task hands. `prev` carries
   // exactly what the undo puts back — the client never guesses.
   | { type: 'action'; kind: 'goal_created'; id: string; title: string; worldName: string }
@@ -39,6 +52,8 @@ export type DebEvent =
   // The done hand (July 27 amendment): his direct statement is the
   // evidence; undoable, identical gravity to the punch.
   | { type: 'action'; kind: 'task_completed'; id: string; title: string }
+  // The brief was (re)built server-side — the page pin needs a re-read.
+  | { type: 'action'; kind: 'brief_generated' }
   // Not a write: she staged the app's one solemn confirm. The verdict is
   // Chris's to sign in the thread — or wave off.
   | { type: 'action'; kind: 'verdict_staged'; id: string; title: string; verdict: 'done' | 'dropped' }
@@ -58,7 +73,10 @@ const CANT_ANSWER = 'Deb could not answer just now.'
  */
 export type DebInput =
   | { kind: 'text'; content: string; pasted: boolean }
-  | { kind: 'margin'; note: { content: string; noteKind: string; day: string } }
+  | {
+      kind: 'margin'
+      note: { content: string; noteKind: string; day: string; question?: string }
+    }
   | {
       kind: 'object'
       object: {
@@ -97,6 +115,7 @@ export async function streamDeb(
                   content: input.note.content,
                   kind: input.note.noteKind,
                   day: input.note.day,
+                  question: input.note.question,
                 },
                 projectId,
                 tz,

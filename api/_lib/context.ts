@@ -39,6 +39,8 @@ export type DebContext = {
   tasks: Row[]
   facts: Row[]
   entries: Row[]
+  /** Today's cached morning brief, if one was generated (V1.5, July 28). */
+  brief: { app_day: string; items: Row[] } | null
   history: { id: string; role: string; content: string; created_at: string }[]
 }
 
@@ -46,7 +48,7 @@ const HISTORY_WINDOW = 100
 
 /** One read pass for everything Deb's mind needs this turn. */
 export async function loadContext(db: SupabaseClient): Promise<DebContext> {
-  const [projects, goals, tasks, facts, entries, history] = await Promise.all([
+  const [projects, goals, tasks, facts, entries, brief, history] = await Promise.all([
     db.from('projects').select('id, name, color, mission, created_at').is('deleted_at', null).order('created_at'),
     db.from('goals').select('id, project_id, title, status, resolved_at, created_at').is('deleted_at', null).order('created_at'),
     db.from('tasks').select('id, project_id, goal_id, title, done_at, touched_at, anchored_on, delegated_to, chase_on, created_at').is('deleted_at', null).order('created_at'),
@@ -57,12 +59,15 @@ export async function loadContext(db: SupabaseClient): Promise<DebContext> {
       .is('deleted_at', null)
       .order('entry_day', { ascending: false })
       .limit(8),
+    db.from('brief_cache').select('app_day, items').maybeSingle(),
     db
       .from('messages')
       .select('id, role, content, created_at')
       .order('created_at', { ascending: false })
       .limit(HISTORY_WINDOW),
   ])
+  // The brief is additive context: a missing table or failed read must
+  // never break her turn (the cache ships after this code — expand first).
   const firstError =
     projects.error ?? goals.error ?? tasks.error ?? facts.error ?? entries.error ?? history.error
   if (firstError) throw new Error(`context load failed: ${firstError.message}`)
@@ -72,6 +77,9 @@ export async function loadContext(db: SupabaseClient): Promise<DebContext> {
     tasks: tasks.data ?? [],
     facts: facts.data ?? [],
     entries: entries.data ?? [],
+    brief: brief.error
+      ? null
+      : ((brief.data as DebContext['brief']) ?? null),
     history: (history.data ?? []).reverse() as DebContext['history'],
   }
 }
@@ -224,6 +232,20 @@ export function stateBlock(ctx: DebContext, lensProjectId: string | null, tz: st
           .map((t) => `  - ${t.delegated_to} — ${t.title} (chase ${t.chase_on})`)
           .join('\n')}`
       : '',
+    // Two zooms, one truth (V1.5; ritual ruling 1, July 28): the brief
+    // follows the pages. When it exists, "brief me" means speak THIS —
+    // the same brief pinned on Read's today page — compressed, your
+    // voice. When it doesn't: the pages haven't arrived; reason once,
+    // generate_brief on his "anyway", zero friction, never a word about
+    // skipped days.
+    ctx.brief && ctx.brief.app_day === appDay && Array.isArray(ctx.brief.items) && ctx.brief.items.length
+      ? `THIS MORNING'S BRIEF (already on Read's today page — "brief me" means speak this, compressed, your voice):\n${ctx.brief.items
+          .map(
+            (i) =>
+              `  - ${String(i.title)} (${String(i.world ?? 'the Bench')}) — ${String(i.detail ?? '')}${i.note ? ` — your note: ${String(i.note)}` : ''}`,
+          )
+          .join('\n')}`
+      : `THE MORNING BRIEF: not built yet today — his pages haven't arrived. If he asks to be briefed: your reason, once (the brief is better informed after the pages; the thread shows if you already said so today), then generate_brief the moment he says anyway — zero friction, no guilt, and never mention skipped days.`,
     `</current-state>`,
   ].join('\n')
 }
