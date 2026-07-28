@@ -16,7 +16,20 @@ export const DISTILLATE_MAX = 8000
 /** The record's surface rows (M5). The raw beneath lives in entry_raw,
  *  physically immutable — the client never reads it except one tap under
  *  the distillate (T5). */
-export type EntrySource = 'plaud' | 'remarkable' | 'filed'
+export type EntrySource = 'plaud' | 'remarkable' | 'filed' | 'email'
+
+/** What rode beside an emailed entry (E1, July 28): the raw stays
+ *  verbatim; the envelope lives here. `unreadable` = the payload held no
+ *  text we could reach — the honest couldn't-read state, never a silent
+ *  drop. */
+export type EntrySourceMeta = {
+  channel?: 'email'
+  from?: string
+  subject?: string
+  date?: string // the email's own Date header — her receipts may cite it
+  attachments?: { name: string; type: string; text: boolean }[]
+  unreadable?: boolean
+}
 
 export type EntryMeta = {
   id: string
@@ -35,6 +48,7 @@ export type Entry = {
   project_id: string | null
   spoken_in: string | null
   source: EntrySource
+  source_meta: EntrySourceMeta | null
   distillate: string | null
   entry_day: string
   created_at: string

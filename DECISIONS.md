@@ -30,6 +30,56 @@ confirm. Next: **T5 — the V1 walk**, gated on Chris's two device passes.
 
 ## The log (newest first)
 
+### July 28, 2026 — The email chute pulled forward · the security ruling · one throat forever
+**Pulled ahead of v1.0 by deliberate re-ruling** (supersedes the same-day
+"first post-v1.0" sequencing): ritual friction confirmed on day one of
+real use — the sequencing evidence bar was met. Cut E1–E6 approved. The
+shape: one private inbound address on Chris's domain → Resend inbound →
+`/api/ingest-email` → the same filing engine the composer uses. A second
+mouth feeding the same throat; channel semantics per standing law —
+file, chip at silver, silence.
+
+**The security ruling — the first privileged key enters the codebase:**
+- The service-role key is used by `/api/ingest-email` ONLY — never
+  imported anywhere else. The invariant is documented at the import site
+  and here.
+- Defense in depth, all layers required: Resend webhook signature
+  verification (unsigned/invalid rejected outright) · a hard sender
+  allowlist (config, editable) · an unguessable local part on the address
+  itself. Anything failing any layer is dropped and logged — never
+  processed, never bounced (a bounce confirms the address exists).
+- Under the service role, RLS guards nothing: every write stamps the
+  owner explicitly and every read scopes to the owner, in code.
+- This inlet triples the content-never-instructions law — strangers can
+  technically mail it. Email-sourced material gets the hardened framing
+  variant, mandatory.
+
+**One throat, forever (the extraction ruling):** the filing engine is a
+shared module (`api/_lib/filing.ts`) with explicit ownership on every
+write. Any future inlet — voice, calendar, people-cards — consumes it. A
+second pipeline is a bug by definition.
+
+Resolutions, approved same day: source is SENDER-MAPPED (Plaud sender →
+`plaud`, reMarkable → `remarkable`, all else `email`; the channel lives
+in source_meta) — provenance labels are the tiebreaker over channel
+purity · allowlist/address/secrets are env config, no settings UI (a
+settings surface is move-in-findings material if ever) · owner resolved
+from INGEST_OWNER_EMAIL at runtime, nothing hardcoded · unpdf for PDF
+text, image-only PDFs take the honest couldn't-read state (visible in
+Read, never a silent drop) · silent signature-gated brief refresh on
+email day-entries · the chip at silver IS the filed object (spoken_in
+null renders at silver under the thread law — two laws meeting, zero new
+surface) · refile_entry moves open minted cards, finished ones stay
+(credit lives where it was earned) · same-day version matching is
+source-agnostic (the noon email grows the dawn page) · app-day is the
+received day in Chris's local timezone (INGEST_TZ); the raw carries the
+email's own dates for her receipts · easy always, as law: zero required
+conventions — a subject world-name is honored as a routing hint, never
+required; a bare forward with an empty body works · genuinely-unsure
+routing files at silver with her margin QUESTION on the entry (a door;
+Chris re-homes by answering — her refile_entry hand acts on it) ·
+idempotency by Message-ID, enforced by the database.
+
 ### July 28, 2026 — The mark, final form: "d." with the dawn period
 The sunrise as punctuation. Upright Fraunces at the mark's own axes —
 opsz 144 / wght 500 / SOFT 60 / WONK 1 — the whole "d." unit rotated 2°
