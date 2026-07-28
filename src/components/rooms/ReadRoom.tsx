@@ -6,6 +6,7 @@ import { useDoor } from '../../lib/door'
 import { useRoom } from '../../lib/rooms'
 import { addDays, shortDay, todayKey } from '../../lib/line'
 import { LoadFailed } from '../LoadFailed'
+import { DaysDealings } from './DaysDealings'
 import { MorningBrief } from './MorningBrief'
 import type { Entry, EntryNote, EntrySource, Project } from '../../db/types'
 
@@ -127,6 +128,9 @@ export function ReadRoom({ lens }: { lens: string | null }) {
             />
           ))
         )}
+
+        {/* the colophon: how the day's page closes (thread ruling pt 5) */}
+        <DaysDealings day={day} lens={lens} />
 
         {/* the page corners — real hit areas, ≥44px (T4 ruling 5) */}
         <div className="mt-2 flex items-center gap-1.5">
