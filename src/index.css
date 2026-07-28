@@ -7,18 +7,22 @@
 */
 
 :root {
-  /* light — warm paper */
+  /* light — warm paper. Text tokens sit AT the ruled contrast floors
+     (July 28 legibility ruling, floors separated same day: ink ≥7:1,
+     muted ≥5.5:1, dim/eyebrow ≥4.5:1, accent's text uses ≥4.5:1 —
+     against every surface incl. the white card), byte-equal to Arc's
+     noon so the system stays one. */
   --t-bg: #faf8f4;
   --t-ink: #2b2823;
-  --t-muted: #6e6a61;
-  --t-dim: #8c8579;
+  --t-muted: #5f5c54;
+  --t-dim: #6e6960;
   --t-fill: rgba(43, 40, 35, 0.045);
   --t-fill2: rgba(43, 40, 35, 0.07);
   --t-hair: rgba(43, 40, 35, 0.06);
   --t-bloom: rgba(140, 133, 121, 0.09);
-  --t-silver: #7e838c; /* the Mentor's silver — no project can take it */
+  --t-silver: #656a71; /* the Mentor's silver — no project can take it */
   --t-accent: var(--t-silver);
-  --t-ok: #5f7f5c;
+  --t-ok: #547051;
   --t-bad: #a84b3a;
   --t-card: #ffffff; /* the deck card — lifted above the paper */
   /* the delegate purple — minted from the prototype (T4 ruling 7, July 27);

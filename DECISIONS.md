@@ -30,6 +30,50 @@ confirm. Next: **T5 — the V1 walk**, gated on Chris's two device passes.
 
 ## The log (newest first)
 
+### July 28, 2026 — Arc rebuilt: legibility by construction (bug fix + architecture ruling)
+The 5:53am screenshot was finding 15 answering itself — text keyframes
+interpolating independently of surface keyframes collapsed contrast at
+states nobody ever inspected. Four rulings, executed:
+- **Readable is not a palette attribute; it is a constraint the system
+  enforces at every interpolated state.** Arc keyframes SURFACES only
+  (background, wells, card, bloom). Every text token is pushed, at every
+  tick, to a fixed floor against every surface it can sit on — the wells
+  composited over the background and the white card included: ink ≥ 7:1,
+  muted and the eyebrow ≥ 4.5:1, the accent's text-bearing uses (and
+  ok/bad) ≥ 4.5:1, placeholder ≥ 3:1 (it rides the dim token, so it lands
+  at 4.5 for free). No sky state can produce the screenshot again.
+- **The discovered theorem, now law:** against a background of mid
+  luminance (≈0.09–0.32) NO text color of any kind can reach 7:1 — so the
+  surface path itself must step across that band, never linger inside.
+  The gate moves bg and card in lockstep (a split would demand two
+  opposite inks at once); the standing 350ms background transition
+  smooths the one step into a quick brightening.
+- **Interpolation runs in OKLCH** (hue on the shortest arc) — the
+  gray-green wash was RGB blending detouring off the warm path.
+- **The sweep lives in the suite:** the full 24-hour cycle at one-minute
+  steps, both solstices plus the no-location fallback, every token
+  against every surface (~104k assertions). A failing minute fails the
+  build — illegible can't compile. *(Latitude 40.7°N stands in for
+  Chris's until he supplies one; the schedule is sunrise-relative, so the
+  sweep covers the same palette states regardless.)*
+- **Dawn and dusk rebuilt on the warm axis** (warm paper faintly
+  first-lit / last-lit, near the day palette; the rose and gold live in
+  the BLOOM, never the text) — awaiting Chris's mood pass under the real
+  sky, which can no longer approve anything illegible.
+
+Flagged consequence, accepted into the stylesheet: the ruled floors moved
+the approved LIGHT values — dim (was 3.0:1 vs the white card), silver
+(3.2:1), and ok (3.7:1) darken to their floors, and index.css is synced so
+manual light equals Arc's noon (one system).
+
+**Same day, Chris's call — the floors separate so the hierarchy stays
+real:** ink 7:1 · muted 5.5:1 · dim and the eyebrow 4.5:1. Floors are
+minimums, so separation costs no legibility; hierarchy by hue alone is
+too subtle on warm paper. Targets updated, sweep re-run, manual light
+re-synced. The 40.7°N sweep latitude stands (he is near that parallel);
+exact coordinates arrive only if the margin's sunrise line should be
+to-the-minute — nothing else hangs on it.
+
 ### July 28, 2026 — The Morning Brief: V2's anchor (charter) · the V1.5 brief (built)
 **The V2 charter amendment** lands in `docs/v2-epic.md`: the Morning Brief
 is V2's anchor feature — the outside world and your day, distilled once
