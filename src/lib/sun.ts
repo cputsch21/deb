@@ -1,11 +1,17 @@
 import { create } from 'zustand'
 
 /**
- * Arc (M6 T1) — the app lit by the real sun. From local sunrise/sunset the
- * palette breathes through the day: dawn warmth → full paper at midday →
- * amber at dusk → the charcoal night. Continuous interpolation between
- * keyframe palettes, never a switch; Arc moves the Warm Glass token VALUES
- * (inline on :root, winning over the stylesheet), never the system.
+ * Arc (M6 T1; rebuilt July 28 under the legibility ruling) — the app lit
+ * by the real sun. The sky keyframes SURFACES only; every text token is
+ * pushed, at every tick, to a fixed contrast floor against the current
+ * surfaces — legibility by construction, not by inspection. Interpolation
+ * runs in OKLCH so in-between states stay on the warm path the endpoints
+ * define (naive RGB blending detours through gray-green — the 5:53am bug).
+ *
+ * The deep constraint (July 28 DECISIONS): against a background of
+ * mid luminance (~0.10–0.32) NO text color can reach 7:1 — so the surface
+ * path itself must step across that band, never linger inside it. The
+ * gate below enforces that; the 350ms body transition smooths the step.
  *
  * Location: asked for once (cached); denied or unavailable falls back to a
  * quiet 6:30 / 19:30 approximation — the sky still breathes, just not to
@@ -15,19 +21,39 @@ import { create } from 'zustand'
 type RGBA = [number, number, number, number]
 type Palette = Record<string, RGBA>
 
-/* ---------- the four keyframes (Warm Glass values) ---------- */
+/* ---------- the contract: fixed floors, enforced every tick ---------- */
+
+/** Text tokens and the contrast each must hold against EVERY surface it
+ *  can sit on (bg, the wells over it, the card). Ruled July 28. `dim`
+ *  carries the eyebrow's 4.5 floor (it is the eyebrow token; placeholders
+ *  ride the same token and land above their 3:1 floor for free). */
+export const TEXT_TARGETS = {
+  ink: 7,
+  muted: 4.5,
+  dim: 4.5,
+  silver: 4.5, // the accent's text-bearing uses
+  ok: 4.5,
+  bad: 4.5,
+} as const
+
+/* ---------- the four keyframes (Warm Glass values) ----------
+   DAY's text tokens are pre-clamped to the floors (so noon is byte-equal
+   to the manual light theme in index.css — one system). Dawn and dusk are
+   rebuilt on the warm axis (July 28 ruling 4): warm paper faintly first-
+   lit / last-lit, close to the day palette with a low warm tint — the
+   bloom carries the mood, never the text. */
 
 const DAY: Palette = {
   bg: [250, 248, 244, 1],
   ink: [43, 40, 35, 1],
-  muted: [110, 106, 97, 1],
-  dim: [140, 133, 121, 1],
+  muted: [109, 105, 97, 1],
+  dim: [110, 105, 96, 1],
   fill: [43, 40, 35, 0.045],
   fill2: [43, 40, 35, 0.07],
   hair: [43, 40, 35, 0.06],
   bloom: [140, 133, 121, 0.09],
-  silver: [126, 131, 140, 1],
-  ok: [95, 127, 92, 1],
+  silver: [101, 106, 113, 1],
+  ok: [84, 112, 81, 1],
   bad: [168, 75, 58, 1],
   card: [255, 255, 255, 1],
 }
@@ -47,39 +73,107 @@ const NIGHT: Palette = {
   card: [34, 31, 26, 1],
 }
 
-/** Dawn: the light set warmed toward rose, bloom flushed. */
+/** Dawn: warm paper faintly first-lit — the rose lives in the bloom. */
 const DAWN: Palette = {
   ...DAY,
-  bg: [249, 242, 236, 1],
-  ink: [46, 39, 35, 1],
-  muted: [113, 103, 94, 1],
-  dim: [146, 133, 122, 1],
+  bg: [250, 245, 237, 1],
+  ink: [46, 40, 35, 1],
+  muted: [112, 104, 95, 1],
+  dim: [113, 104, 94, 1],
   fill: [60, 40, 30, 0.05],
   fill2: [60, 40, 30, 0.075],
   hair: [60, 40, 30, 0.065],
   bloom: [214, 150, 120, 0.14],
-  silver: [138, 131, 144, 1],
-  card: [255, 253, 251, 1],
+  silver: [104, 106, 116, 1],
+  card: [255, 253, 250, 1],
 }
 
-/** Dusk: the light set sunk toward amber, bloom low and gold. */
+/** Dusk: warm paper last-lit — the amber lives in the bloom. */
 const DUSK: Palette = {
   ...DAY,
-  bg: [248, 241, 227, 1],
+  bg: [250, 244, 232, 1],
   ink: [44, 38, 32, 1],
-  muted: [111, 101, 87, 1],
-  dim: [143, 130, 113, 1],
+  muted: [110, 101, 89, 1],
+  dim: [111, 102, 90, 1],
   fill: [70, 50, 25, 0.05],
   fill2: [70, 50, 25, 0.075],
   hair: [70, 50, 25, 0.065],
   bloom: [216, 166, 90, 0.13],
-  silver: [141, 133, 120, 1],
+  silver: [104, 104, 110, 1],
   card: [255, 252, 245, 1],
 }
 
 const KEYS = Object.keys(DAY)
 
-/* ---------- interpolation ---------- */
+/* ---------- color math: sRGB ↔ OKLab/OKLCH · WCAG contrast ---------- */
+
+const srgbToLin = (c: number): number => {
+  const x = c / 255
+  return x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4
+}
+const linToSrgb = (x: number): number => {
+  const v = x <= 0.0031308 ? 12.92 * x : 1.055 * x ** (1 / 2.4) - 0.055
+  return Math.min(255, Math.max(0, Math.round(v * 255)))
+}
+
+type Oklab = [number, number, number]
+
+function rgbToOklab(c: RGBA): Oklab {
+  const R = srgbToLin(c[0])
+  const G = srgbToLin(c[1])
+  const B = srgbToLin(c[2])
+  const l = Math.cbrt(0.4122214708 * R + 0.5363325363 * G + 0.0514459929 * B)
+  const m = Math.cbrt(0.2119034982 * R + 0.6806995451 * G + 0.1073969566 * B)
+  const s = Math.cbrt(0.0883024619 * R + 0.2817188376 * G + 0.6299787005 * B)
+  return [
+    0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s,
+    1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s,
+    0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s,
+  ]
+}
+
+function oklabToRgb(c: Oklab, alpha: number): RGBA {
+  const l = (c[0] + 0.3963377774 * c[1] + 0.2158037573 * c[2]) ** 3
+  const m = (c[0] - 0.1055613458 * c[1] - 0.0638541728 * c[2]) ** 3
+  const s = (c[0] - 0.0894841775 * c[1] - 1.291485548 * c[2]) ** 3
+  return [
+    linToSrgb(4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s),
+    linToSrgb(-1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s),
+    linToSrgb(-0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s),
+    alpha,
+  ]
+}
+
+/** WCAG relative luminance of an opaque color. */
+export function luminance(c: RGBA): number {
+  return 0.2126 * srgbToLin(c[0]) + 0.7152 * srgbToLin(c[1]) + 0.0722 * srgbToLin(c[2])
+}
+
+/** WCAG contrast ratio between two opaque colors. */
+export function contrastRatio(a: RGBA, b: RGBA): number {
+  const la = luminance(a)
+  const lb = luminance(b)
+  const [hi, lo] = la > lb ? [la, lb] : [lb, la]
+  return (hi + 0.05) / (lo + 0.05)
+}
+
+/** An alpha overlay composited onto an opaque surface (how the wells render). */
+export function composite(fg: RGBA, bg: RGBA): RGBA {
+  const a = fg[3]
+  return [
+    Math.round(a * fg[0] + (1 - a) * bg[0]),
+    Math.round(a * fg[1] + (1 - a) * bg[1]),
+    Math.round(a * fg[2] + (1 - a) * bg[2]),
+    1,
+  ]
+}
+
+/** Every opaque surface a text token can sit on, from a derived palette. */
+export function surfacesOf(p: Palette): RGBA[] {
+  return [p.bg, composite(p.fill, p.bg), composite(p.fill2, p.bg), p.card]
+}
+
+/* ---------- interpolation: OKLCH, hue on the shortest arc ---------- */
 
 export function lerpColor(a: RGBA, b: RGBA, t: number): RGBA {
   const u = Math.max(0, Math.min(1, t))
@@ -91,12 +185,111 @@ export function lerpColor(a: RGBA, b: RGBA, t: number): RGBA {
   ]
 }
 
-const css = (c: RGBA) =>
-  c[3] >= 1 ? `rgb(${c[0]}, ${c[1]}, ${c[2]})` : `rgba(${c[0]}, ${c[1]}, ${c[2]}, ${c[3]})`
+function mixOklch(a: RGBA, b: RGBA, t: number): RGBA {
+  const u = Math.max(0, Math.min(1, t))
+  if (u <= 0) return a
+  if (u >= 1) return b
+  const [La, aa, ba] = rgbToOklab(a)
+  const [Lb, ab, bb] = rgbToOklab(b)
+  const Ca = Math.hypot(aa, ba)
+  const Cb = Math.hypot(ab, bb)
+  let Ha = Math.atan2(ba, aa)
+  let Hb = Math.atan2(bb, ab)
+  // near-achromatic endpoints have no meaningful hue — borrow the other's
+  if (Ca < 1e-4) Ha = Hb
+  if (Cb < 1e-4) Hb = Ha
+  let dH = Hb - Ha
+  if (dH > Math.PI) dH -= 2 * Math.PI
+  if (dH < -Math.PI) dH += 2 * Math.PI
+  const L = La + (Lb - La) * u
+  const C = Ca + (Cb - Ca) * u
+  const H = Ha + dH * u
+  return oklabToRgb([L, C * Math.cos(H), C * Math.sin(H)], +(a[3] + (b[3] - a[3]) * u).toFixed(4))
+}
 
 function mix(a: Palette, b: Palette, t: number): Palette {
   const out: Palette = {}
-  for (const k of KEYS) out[k] = lerpColor(a[k], b[k], t)
+  for (const k of KEYS) out[k] = mixOklch(a[k], b[k], t)
+  return out
+}
+
+/* ---------- legibility by construction (July 28 ruling) ---------- */
+
+/** Against a background of luminance inside (BAND_DARK, BAND_LIGHT), no
+ *  text color at all can reach ink's 7:1 — the band edges are where white
+ *  (resp. black) text hits exactly 7:1, with a little margin. Surfaces
+ *  must step across, never linger inside. */
+const BAND_DARK = 0.09
+const BAND_LIGHT = 0.32
+const BAND_MID = Math.sqrt(BAND_DARK * BAND_LIGHT)
+
+/** Move a color's OKLab lightness (hue kept) until its WCAG luminance
+ *  satisfies `test`; binary search toward `pole` (0 = black, 1 = white). */
+function adjustL(c: RGBA, pole: 0 | 1, test: (candidate: RGBA) => boolean): RGBA {
+  if (test(c)) return c
+  const lab = rgbToOklab(c)
+  let lo = lab[0]
+  let hi: number = pole
+  let best: RGBA = oklabToRgb([pole, 0, 0], c[3]) // the pole always satisfies, or nothing does
+  for (let i = 0; i < 28; i++) {
+    const m = (lo + hi) / 2
+    // chroma tapers toward the pole so extremes stay clean
+    const k = Math.abs(pole - m) / Math.max(1e-6, Math.abs(pole - lab[0]))
+    const cand = oklabToRgb([m, lab[1] * k, lab[2] * k], c[3])
+    if (test(cand)) {
+      best = cand
+      hi = m
+    } else {
+      lo = m
+    }
+  }
+  return best
+}
+
+/** Keep the background — INCLUDING the wells composited over it, which
+ *  brighten or darken it — out of the forbidden band, on the given side. */
+function gateBg(p: Palette, side: 'dark' | 'light'): RGBA {
+  const clear = (bg: RGBA): boolean => {
+    const lums = [
+      luminance(bg),
+      luminance(composite(p.fill, bg)),
+      luminance(composite(p.fill2, bg)),
+    ]
+    return side === 'dark'
+      ? Math.max(...lums) <= BAND_DARK
+      : Math.min(...lums) >= BAND_LIGHT
+  }
+  if (clear(p.bg)) return p.bg
+  return adjustL(p.bg, side === 'dark' ? 0 : 1, clear)
+}
+
+/** The card carries no wells — a single-luminance gate. */
+function gateCard(c: RGBA, side: 'dark' | 'light'): RGBA {
+  const lum = luminance(c)
+  if (lum <= BAND_DARK || lum >= BAND_LIGHT) return c
+  return side === 'dark'
+    ? adjustL(c, 0, (x) => luminance(x) <= BAND_DARK)
+    : adjustL(c, 1, (x) => luminance(x) >= BAND_LIGHT)
+}
+
+/**
+ * The invariant, applied: gate bg (and card, in lockstep — a split would
+ * demand two opposite inks at once), then push every text token to its
+ * floor against the worst surface it can sit on. Tokens already at their
+ * floor pass through byte-identical — the approved day and night looks
+ * do not move.
+ */
+export function derive(p: Palette): Palette {
+  const side: 'dark' | 'light' = luminance(p.bg) < BAND_MID ? 'dark' : 'light'
+  const bg = gateBg(p, side)
+  const card = gateCard(p.card, side)
+  const out: Palette = { ...p, bg, card }
+  const surfaces = surfacesOf(out)
+  const worst = (c: RGBA) => Math.min(...surfaces.map((s) => contrastRatio(c, s)))
+  const pole: 0 | 1 = side === 'light' ? 0 : 1 // text runs opposite the surfaces
+  for (const [token, target] of Object.entries(TEXT_TARGETS)) {
+    out[token] = adjustL(p[token], pole, (cand) => worst(cand) >= target)
+  }
   return out
 }
 
@@ -104,7 +297,8 @@ function mix(a: Palette, b: Palette, t: number): Palette {
  * The sky's schedule, in minutes relative to sunrise (sr) and sunset (ss):
  *   …·sr−40  night · sr−40‥+20 night→dawn · +20‥+90 dawn→day ·
  *   day ‥ ss−90 · ss−90‥−15 day→dusk · ss−15‥+45 dusk→night · night…
- * Returns the palette and how far toward night we are (for scheme bits).
+ * Returns the DERIVED palette (floors enforced) and how far toward night
+ * we are (for scheme bits).
  */
 export function paletteAt(
   now: number,
@@ -116,25 +310,25 @@ export function paletteAt(
   const sr = min(sunrise)
   const ss = min(sunset)
 
-  if (t < sr - 40) return { palette: NIGHT, nightness: 1 }
+  if (t < sr - 40) return { palette: derive(NIGHT), nightness: 1 }
   if (t < sr + 20) {
     const u = (t - (sr - 40)) / 60
-    return { palette: mix(NIGHT, DAWN, u), nightness: 1 - u * 0.6 }
+    return { palette: derive(mix(NIGHT, DAWN, u)), nightness: 1 - u * 0.6 }
   }
   if (t < sr + 90) {
     const u = (t - (sr + 20)) / 70
-    return { palette: mix(DAWN, DAY, u), nightness: 0.4 - u * 0.4 }
+    return { palette: derive(mix(DAWN, DAY, u)), nightness: 0.4 - u * 0.4 }
   }
-  if (t < ss - 90) return { palette: DAY, nightness: 0 }
+  if (t < ss - 90) return { palette: derive(DAY), nightness: 0 }
   if (t < ss - 15) {
     const u = (t - (ss - 90)) / 75
-    return { palette: mix(DAY, DUSK, u), nightness: u * 0.35 }
+    return { palette: derive(mix(DAY, DUSK, u)), nightness: u * 0.35 }
   }
   if (t < ss + 45) {
     const u = (t - (ss - 15)) / 60
-    return { palette: mix(DUSK, NIGHT, u), nightness: 0.35 + u * 0.65 }
+    return { palette: derive(mix(DUSK, NIGHT, u)), nightness: 0.35 + u * 0.65 }
   }
-  return { palette: NIGHT, nightness: 1 }
+  return { palette: derive(NIGHT), nightness: 1 }
 }
 
 /* ---------- the sun (NOAA-style, ±minutes is plenty) ---------- */
@@ -233,6 +427,9 @@ export const useSunTimes = create<{ sunrise: number | null; sunset: number | nul
 }))
 
 /* ---------- the engine ---------- */
+
+const css = (c: RGBA) =>
+  c[3] >= 1 ? `rgb(${c[0]}, ${c[1]}, ${c[2]})` : `rgba(${c[0]}, ${c[1]}, ${c[2]}, ${c[3]})`
 
 let timer: ReturnType<typeof setInterval> | null = null
 
