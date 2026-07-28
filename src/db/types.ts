@@ -25,11 +25,15 @@ export type EntryMeta = {
   entry_day: string
 }
 
-/** A page's entry: the distillate on the page, the raw one tap beneath. */
+/** A page's entry: the distillate on the page, the raw one tap beneath.
+ *  `spoken_in` = the lens at the moment of filing (null = silver) — the
+ *  thread ruling (July 28): the filed object renders where the paste
+ *  happened; the entry lives in Read wearing its routed project_id. */
 export type Entry = {
   id: string
   raw_id: string
   project_id: string | null
+  spoken_in: string | null
   source: EntrySource
   distillate: string | null
   entry_day: string

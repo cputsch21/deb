@@ -399,7 +399,7 @@ export async function POST(request: Request): Promise<Response> {
                     : use.name === 'set_mission'
                       ? await setMission(db, use, projectId, ctx.projects, send)
                       : use.name === 'file_entry'
-                        ? await fileEntryTool(db, use, content, ctx, tz, send)
+                        ? await fileEntryTool(db, use, content, projectId, ctx, tz, send)
                         : use.name === 'create_goal'
                           ? await createGoal(db, use, projectId, ctx, send)
                           : use.name === 'rename_goal'
@@ -637,6 +637,7 @@ async function fileMaterial(
         const { entryId, worldName } = await insertEntry(db, {
           raw,
           projectId: target ? String(target.id) : null,
+          spokenIn: lensProjectId,
           worldName: target ? String(target.name) : null,
           distillate: result?.distillate ?? null,
           tz,
@@ -696,12 +697,15 @@ async function fileMaterial(
   })
 }
 
-/** The shared write: raw first (immutable), then the entry surface over it. */
+/** The shared write: raw first (immutable), then the entry surface over it.
+ *  `spokenIn` = the lens at the moment of filing (thread ruling, July 28):
+ *  where the words were said is a fact, and the record keeps facts. */
 async function insertEntry(
   db: SupabaseClient,
   input: {
     raw: string
     projectId: string | null
+    spokenIn: string | null
     worldName: string | null
     distillate: string | null
     tz: string
@@ -718,6 +722,7 @@ async function insertEntry(
     id: entryId,
     raw_id: rawId,
     project_id: input.projectId,
+    spoken_in: input.spokenIn,
     source: 'filed',
     distillate: input.distillate,
     entry_day: todayKeyInTz(input.tz),
@@ -732,6 +737,7 @@ async function fileEntryTool(
   db: SupabaseClient,
   use: Anthropic.ToolUseBlock,
   content: string,
+  lensProjectId: string | null,
   ctx: DebContext,
   tz: string,
   send: (event: Record<string, unknown>) => void,
@@ -751,6 +757,7 @@ async function fileEntryTool(
     const { entryId } = await insertEntry(db, {
       raw: content,
       projectId: target ? String(target.id) : null,
+      spokenIn: lensProjectId,
       worldName: target ? String(target.name) : null,
       distillate: capText(content, DISTILLATE_MAX),
       tz,

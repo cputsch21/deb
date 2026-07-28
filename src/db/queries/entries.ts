@@ -66,7 +66,7 @@ export function useEntryMutations() {
 async function fetchEntries(): Promise<Entry[]> {
   const { data, error } = await supabase
     .from('entries')
-    .select('id, raw_id, project_id, source, distillate, entry_day, created_at')
+    .select('id, raw_id, project_id, spoken_in, source, distillate, entry_day, created_at')
     .is('deleted_at', null)
     .order('entry_day', { ascending: false })
     .order('created_at', { ascending: true })

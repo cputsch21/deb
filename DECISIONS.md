@@ -30,6 +30,52 @@ confirm. Next: **T5 — the V1 walk**, gated on Chris's two device passes.
 
 ## The log (newest first)
 
+### July 28, 2026 — The thread law: one mind, one record; display scoped by where words were spoken
+Chris's call, overruling the folded-passages recommendation (both
+recorded, per the log's habit of keeping reversals honest).
+- **Display scoping.** The silver thread shows only whole-life dialogue —
+  exchanges spoken at silver. A world's thread shows only exchanges
+  spoken in that lens. No interleaving in either direction, no folds, no
+  dividers. Storage untouched: one `messages` table, one history, one
+  mind — a rendering law, not a data change.
+- **Words live where they were said.** A message spoken at silver stays
+  at silver even when its subject belongs to a world; no message ever
+  migrates on content — where you said it is a fact, and the record keeps
+  facts. Filed objects follow the same rule: the object renders in the
+  thread where the paste happened (`entries.spoken_in`, recorded at
+  filing; pre-ruling rows carry no such fact and stay at silver — the
+  record does not invent facts), while the entry itself lives in Read
+  wearing its routed world, as already built.
+- **One mind is untouched — the acceptance test.** Context assembly stays
+  whole-life in every lens: memory, goals, the Line, the full thread.
+  Asking at silver about a world's exchanges gets her instant, specific
+  answer even though those exchanges display only in that world's thread.
+  If scoping the display ever narrows her knowledge, that is a bug
+  against this ruling.
+- **Doors land in their object's world.** A margin note, goal, or card
+  door opens Reflect in the world its object belongs to (silver for
+  whole-life objects; a retired world's goals talk at silver), quoted per
+  provenance law — and her reply lands in that thread.
+- **The day's dealings** — the piece that makes Read the scroll of the
+  life: each day's page closes with a quiet derived ledger of what that
+  day's conversations and verdicts actually did (finishes, additions,
+  goal verdicts), one line each, world dot + mono tag, each line a door.
+  Read-only, zero maintenance, a colophon not a dashboard; a day of pure
+  conversation still leaves its story in the Book. Rides with the V1.5
+  brief work (the evening face of the same day page). Scope note:
+  anchor/delegation verdicts and mission-set carry no timestamps in the
+  schema, so the ledger lists what is honestly derivable — and it never
+  lists what DIDN'T happen (no missed-anchor lines: the graveyard law
+  outranks completeness).
+
+### July 28, 2026 — The room grammar, completed: Reflect is present tense, Read is past
+Reflect is where you talk; Read is where you scroll. The thread was never
+the biography — the Book is ("I can scroll my life in Read, can't I?").
+The one-conversation law survives as what it always really meant: one
+mind, one relationship — while the display is honest about registers.
+Scrolling the life is Read's job, made fully true by the day's dealings
+above.
+
 ### July 28, 2026 — Arc rebuilt: legibility by construction (bug fix + architecture ruling)
 The 5:53am screenshot was finding 15 answering itself — text keyframes
 interpolating independently of surface keyframes collapsed contrast at

@@ -7,6 +7,7 @@ import { factKeys, useFactMutations } from '../../db/queries/facts'
 import { goalKeys, useGoalMutations } from '../../db/queries/goals'
 import { entryKeys, useEntries, useEntryMutations } from '../../db/queries/entries'
 import { useBook } from '../../lib/book'
+import { useLens } from '../../lib/lens'
 import { Markdown } from '../../lib/markdown'
 import { useDoor, type Knock } from '../../lib/door'
 import { useRoom } from '../../lib/rooms'
@@ -67,7 +68,13 @@ export function Reflect({ lens }: { lens: string | null }) {
   // their moment, interleaved with the conversation by time. Visibly
   // material — never styled as Chris's prose.
   const timeline = useMemo(() => {
-    const scoped = filedEntries.filter((e) => lens === null || e.project_id === lens)
+    // The thread ruling (July 28): the filed object renders in the thread
+    // where the PASTE happened (spoken_in), not where the entry routed —
+    // words live where they were said. Pre-ruling rows carry no spoken_in
+    // and stay at silver: the record does not invent facts.
+    const scoped = filedEntries.filter((e) =>
+      lens === null ? e.spoken_in === null : e.spoken_in === lens,
+    )
     const items: ({ at: string; kind: 'msg'; msg: Message } | { at: string; kind: 'entry'; entry: Entry })[] = [
       ...messages.map((m) => ({ at: m.created_at, kind: 'msg' as const, msg: m })),
       ...scoped.map((e) => ({ at: e.created_at, kind: 'entry' as const, entry: e })),
@@ -252,6 +259,7 @@ export function Reflect({ lens }: { lens: string | null }) {
                 entry={item.entry}
                 world={projects.find((p) => p.id === item.entry.project_id) ?? null}
                 minted={allTasks.filter((t) => t.source_entry_id === item.entry.id).length}
+                lens={lens}
               />
             ) : item.msg.role === 'deb' ? (
               <Markdown
@@ -404,17 +412,23 @@ function FiledCard({
   entry,
   world,
   minted,
+  lens,
 }: {
   entry: Entry
   world: Project | null
   minted: number
+  lens: string | null
 }) {
   const { setRoom } = useRoom()
+  const { setLens } = useLens()
   const firstLine = (entry.distillate ?? '').split('\n').find((l) => l.trim()) ?? null
 
   return (
     <button
       onClick={() => {
+        // The book door lands where the entry is visible: a world-routed
+        // entry opens its world's pages (whole-life entries show anywhere).
+        if (entry.project_id && entry.project_id !== lens) setLens(entry.project_id)
         useBook.getState().open(entry.entry_day)
         setRoom('read')
       }}
