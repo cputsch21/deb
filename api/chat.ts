@@ -214,6 +214,28 @@ const GENERATE_BRIEF: Anthropic.Tool = {
   input_schema: { type: 'object', properties: {} },
 }
 
+/** Re-home a filed entry (E5, July 28): the answer to her routing
+ *  question needs a verb — this is it. */
+const REFILE_ENTRY: Anthropic.Tool = {
+  name: 'refile_entry',
+  description: `Move a filed ENTRY (a page of the record) to a different world when Chris says so — most often the moment he answers a routing question you left in an entry's margin ("yes, that's Subseven" → move it). Act-then-correct with undo; your words carry the confirmation briefly. Find the entry by words from its content or subject (and its day, when he names one); if the words match more than one entry, ask rather than guess. The entry's still-OPEN minted cards move with it; finished ones stay where the credit was earned. Pass "silver" to move an entry back to whole-life. This moves ENTRIES only — tasks move with update_task.`,
+  input_schema: {
+    type: 'object',
+    properties: {
+      entry: {
+        type: 'string',
+        description: 'Words identifying the entry — from its distillate, its subject, or your own margin note about it.',
+      },
+      world: { type: 'string', description: 'The destination world name, or "silver".' },
+      day: {
+        type: 'string',
+        description: 'Optional: the entry\'s day — "today" or yyyy-mm-dd — to narrow the search.',
+      },
+    },
+    required: ['entry', 'world'],
+  },
+}
+
 const TOOLS: Anthropic.Tool[] = [
   CREATE_TASK,
   REMEMBER,
@@ -226,6 +248,7 @@ const TOOLS: Anthropic.Tool[] = [
   UPDATE_TASK,
   COMPLETE_TASK,
   GENERATE_BRIEF,
+  REFILE_ENTRY,
 ]
 
 const GOAL_TITLE_MAX = 200
@@ -483,7 +506,9 @@ export async function POST(request: Request): Promise<Response> {
                                   ? await completeTask(db, use, ctx, send)
                                   : use.name === 'generate_brief'
                                     ? await generateBriefTool(db, tz, send)
-                                    : { content: `Unknown tool: ${use.name}`, is_error: true }
+                                    : use.name === 'refile_entry'
+                                      ? await refileEntry(db, use, ctx, tz, send)
+                                      : { content: `Unknown tool: ${use.name}`, is_error: true }
             results.push({
               type: 'tool_result',
               tool_use_id: use.id,
@@ -1112,6 +1137,116 @@ async function generateBriefTool(
       content: 'The brief could not be built just now — tell Chris plainly; the facts in your current state still stand.',
       is_error: true,
     }
+  }
+}
+
+/** Execute refile_entry: entry → world by his word; open minted cards
+ *  ride along, finished ones stay (credit lives where earned). */
+async function refileEntry(
+  db: SupabaseClient,
+  use: Anthropic.ToolUseBlock,
+  ctx: DebContext,
+  tz: string,
+  send: (event: Record<string, unknown>) => void,
+): Promise<{ content: string; is_error: boolean }> {
+  const input = (use.input ?? {}) as { entry?: unknown; world?: unknown; day?: unknown }
+  const q = String(input.entry ?? '').trim()
+  if (!q) return { content: 'Say which entry — words from its content.', is_error: true }
+
+  const worldName = String(input.world ?? '').trim()
+  const toSilver = worldName.toLowerCase() === 'silver'
+  const target = toSilver
+    ? null
+    : ctx.projects.find((p) => String(p.name).toLowerCase() === worldName.toLowerCase())
+  if (!toSilver && !target) {
+    return { content: `No world named "${worldName}" exists — use a real one, or "silver".`, is_error: true }
+  }
+
+  let eq = db
+    .from('entries')
+    .select('id, project_id, distillate, entry_day, source_meta')
+    .is('deleted_at', null)
+    .order('entry_day', { ascending: false })
+    .limit(80)
+  const dayRaw = String(input.day ?? '').trim().toLowerCase()
+  if (dayRaw === 'today') eq = eq.eq('entry_day', todayKeyInTz(tz))
+  else if (/^\d{4}-\d{2}-\d{2}$/.test(dayRaw)) eq = eq.eq('entry_day', dayRaw)
+  const { data: rows, error: readError } = await eq
+  if (readError || !rows) {
+    return { content: 'The record could not be read just now — tell Chris plainly.', is_error: true }
+  }
+
+  const hay = (r: Record<string, unknown>): string => {
+    const meta = (r.source_meta ?? {}) as { subject?: unknown }
+    return `${String(r.distillate ?? '')} ${String(meta.subject ?? '')}`.toLowerCase()
+  }
+  let pool = rows.filter((r) => hay(r).includes(q.toLowerCase()))
+  if (pool.length === 0) {
+    const tokens = q.toLowerCase().split(/\s+/).filter((t) => t.length > 2)
+    if (tokens.length > 0) pool = rows.filter((r) => tokens.every((t) => hay(r).includes(t)))
+  }
+  if (pool.length === 0) {
+    return { content: `No entry matches "${q}" — try words from its distillate, or name its day.`, is_error: true }
+  }
+  if (pool.length > 1) {
+    const days = pool.slice(0, 4).map((r) => String(r.entry_day)).join(', ')
+    return { content: `"${q}" matches ${pool.length} entries (${days}) — ask Chris which one, or narrow by day.`, is_error: true }
+  }
+
+  const entry = pool[0]
+  const entryId = String(entry.id)
+  const prevProjectId = (entry.project_id as string | null) ?? null
+  const nextProjectId = target ? String(target.id) : null
+  if (prevProjectId === nextProjectId) {
+    return { content: `That entry already lives ${target ? `in ${String(target.name)}` : 'at silver'} — nothing to move.`, is_error: false }
+  }
+
+  const { data: upd, error: updError } = await db
+    .from('entries')
+    .update({ project_id: nextProjectId })
+    .eq('id', entryId)
+    .select('id')
+  if (updError || !upd || upd.length === 0) {
+    return { content: 'The write failed — the entry was NOT moved. Tell Chris plainly.', is_error: true }
+  }
+
+  // still-open minted cards ride along; finished ones stay (approved call 7)
+  const { data: openCards } = await db
+    .from('tasks')
+    .select('id, project_id, goal_id')
+    .eq('source_entry_id', entryId)
+    .is('done_at', null)
+    .is('deleted_at', null)
+  const moved: { id: string; prevProjectId: string | null; prevGoalId: string | null }[] = []
+  for (const t of openCards ?? []) {
+    const { data: tUpd, error: tErr } = await db
+      .from('tasks')
+      .update({ project_id: nextProjectId, goal_id: null, touched_at: new Date().toISOString() })
+      .eq('id', String(t.id))
+      .select('id')
+    if (!tErr && tUpd && tUpd.length > 0) {
+      moved.push({
+        id: String(t.id),
+        prevProjectId: (t.project_id as string | null) ?? null,
+        prevGoalId: (t.goal_id as string | null) ?? null,
+      })
+    }
+  }
+
+  const destName = target ? String(target.name) : 'silver'
+  send({
+    type: 'action',
+    kind: 'entry_refiled',
+    id: entryId,
+    worldName: destName,
+    prevProjectId,
+    tasks: moved,
+  })
+  return {
+    content: `Moved the ${String(entry.entry_day)} entry to ${destName}${
+      moved.length ? ` with ${moved.length} open card${moved.length === 1 ? '' : 's'}` : ''
+    }. It is done — one tap undoes it. Confirm briefly, your voice.`,
+    is_error: false,
   }
 }
 

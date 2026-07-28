@@ -92,7 +92,19 @@ export function useEntryMutations() {
     void qc.invalidateQueries({ queryKey: entryKeys.notes })
   }
 
-  return { hide, unhide, revertVersion }
+  /** Move an entry between worlds (E5's undo path) — row-checked. */
+  const refile = async (entryId: string, projectId: string | null) => {
+    const { data, error } = await supabase
+      .from('entries')
+      .update({ project_id: projectId })
+      .eq('id', entryId)
+      .select('id')
+    assertRowChanged(data, error, `refile entry ${entryId}`)
+    void qc.invalidateQueries({ queryKey: entryKeys.meta })
+    void qc.invalidateQueries({ queryKey: entryKeys.pages })
+  }
+
+  return { hide, unhide, revertVersion, refile }
 }
 
 
