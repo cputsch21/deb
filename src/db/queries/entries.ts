@@ -83,7 +83,7 @@ export function useEntries() {
 async function fetchEntryNotes(): Promise<EntryNote[]> {
   const { data, error } = await supabase
     .from('entry_notes')
-    .select('id, entry_id, kind, content, created_at')
+    .select('id, entry_id, kind, content, question, created_at')
     .is('deleted_at', null)
     .order('created_at')
     .limit(300)

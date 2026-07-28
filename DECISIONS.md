@@ -30,6 +30,79 @@ confirm. Next: **T5 — the V1 walk**, gated on Chris's two device passes.
 
 ## The log (newest first)
 
+### July 28, 2026 — The daily ritual batch: five rulings (cut R1–R6 approved)
+Ingestion reshaped around Chris's actual day: morning pages + goals on the
+reMarkable at dawn, notes dropped mid-day to discuss, a written close-out
+at night, one reMarkable page per day growing across drops. Amends the
+parked V1.5 brief spec; all of it rides the work branch.
+1. **The brief follows the pages.** No longer generated on first open — it
+   generates as Deb's response to the morning drop: pages in, brief back,
+   in the thread as her reply AND pinned atop Read's today page (one
+   derivation, two zooms — the Line's law applied to the brief). Before
+   any drop, today's page opens with one warm line: "Drop your morning
+   pages and I'll build the day around them." Hard rails, graveyard law:
+   an invitation, never a lock — "brief me" before pages gets her reason
+   once (session-ephemeral: the thread itself is the only memory of
+   having said it); "no pages today, brief me anyway" gets a spine-only
+   brief with zero friction; a skipped day is never referenced afterward —
+   no streaks, no state, no guilt. The brief gains "today, in your
+   words": his written goals from the morning entry, her notes where the
+   record has something to say. **The gate exists because the brief is
+   honestly better informed after the pages; the moment it becomes
+   pressure-shaped rather than accuracy-shaped, it reverts to open
+   generation.**
+2. **Channel semantics — chat converses, email files.** (Supersedes the
+   composite-message ruling, dead; amends M5's filing-earns-silence
+   default for the chat channel.) Anything dropped in the composer is
+   conversation: it files as material exactly as built (filed object,
+   distillation, minting) AND she engages it like any message — her
+   honest take, questions, pushback; never a recital of what it says.
+   "Just dropping this for context" or equivalent → chip only, restraint
+   restored (her existing silence choice is the mechanism). The
+   inbound-email chute, when it ships, is the quiet channel by nature:
+   file, chip, silence.
+3. **The living day-entry — the day has one page; drops grow it, never
+   duplicate it.** A same-day filing that substantially contains an
+   existing entry's content is a new VERSION: raw snapshot appended to
+   entry_revisions (every version kept — immutability law), distillate
+   and margins refreshed against the whole, cards minted only from the
+   delta — no duplicate loops, ever. Matching is fuzzy containment, not
+   exact prefix (handwriting conversion varies): deterministic
+   length/overlap screen first (0.6 version / 0.25 new-entry, named
+   constants, tuned at move-in), model judgment only in the ambiguous
+   band; genuinely unsure → separate entry, merged by saying so. Read
+   renders the current version as one living page; priors reachable
+   beneath, raw-under-distillate style. Undo on a version drop restores
+   the prior version, never deletes the entry.
+4. **The fifth margin note: THE ANSWER.** Questions in his notes are
+   found on ingest (question marks as the deterministic screen, model
+   judgment for implicit interrogatives) and sorted into three species:
+   answerable → a margin note of kind ANSWER beside the question,
+   labeled per the honesty ladder (FACT with dated receipt / JUDGMENT
+   CALL / OPINION) — a fabricated margin answer is the gravest possible
+   violation of the receipts law; actually-a-loop → the minting engine
+   deals it as a card, no duplicate note; honestly unanswerable → the
+   margin says so plainly, optionally offering to hold the question.
+   **Restraint scope clarified: the 0–2 margin limit governs her
+   unprompted notes; questions are prompts — every detected question
+   earns its answer, its card, or its honest can't.** Channel behavior
+   follows ruling 2. Answer notes are doors — question and answer on the
+   table. An answer resolving an open loop is not evidence the loop's
+   task happened; the evidence bar stands.
+5. **The inbound-email chute is first post-v1.0 work** (Resend lean per
+   the spike doc; the service-role security ruling is due at build, not
+   as a footnote). One address; reMarkable and Plaud both feed it; same
+   filing engine, `source` marking the channel.
+
+Approved judgment calls, same date: the day starts when the pages arrive
+(no clock — a 2pm first drop births the brief at 2pm) · reason-once is
+session-ephemeral only (she may repeat herself; the app never remembers
+his behavior) · her engagement pass reads the distillate + a capped raw
+excerpt (the record holds every word so she doesn't have to) · a version
+drop's evidence at the site is her reply plus the living object updating
+in place (the filed object stays at its first moment — one page, one
+object).
+
 ### July 28, 2026 — The thread law: one mind, one record; display scoped by where words were spoken
 Chris's call, overruling the folded-passages recommendation (both
 recorded, per the log's habit of keeping reversals honest).
