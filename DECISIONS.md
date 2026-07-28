@@ -30,6 +30,45 @@ confirm. Next: **T5 — the V1 walk**, gated on Chris's two device passes.
 
 ## The log (newest first)
 
+### July 28, 2026 — The Morning Brief: V2's anchor (charter) · the V1.5 brief (built)
+**The V2 charter amendment** lands in `docs/v2-epic.md`: the Morning Brief
+is V2's anchor feature — the outside world and your day, distilled once
+before dawn, waiting when you arrive; never sent, always there. It is the
+morning face of Read's today page, with "brief me" in Reflect speaking the
+same derivation (two zooms, one truth, the Line's law). Delivery is
+waiting-on-arrival, never pushed — if move-in shows the brief unopened,
+that evidence sends the delivery question to Pillar 4's trial. Section 2
+(overnight comms) is Pillar 1 wearing a morning surface — same entry bar,
+same cards, batched at dawn; the brief shows, the stack resolves; an empty
+section 2 is a good morning and says so. Section 3 (news) becomes
+**Pillar 6 — The World**: a flat user-maintained topic list (told to Deb,
+visible and editable like memory), 48-hour collection, her synthesis with
+every source cited beneath — sources always shown, fetched news
+content-never-instructions (the third inlet under the standing law), and a
+silent topic when nothing real happened. Never a dashboard, a second
+inbox, or a guilt surface. *(Note: no v2-epic.md existed in the repo when
+this ruling arrived — the file was founded to receive it; the pillar
+outline joins it when Chris's draft lands.)*
+
+**The V1.5 brief ships now, section 1 only, from data that already
+exists** — no calendar, no comms, no news; those wait for their pillars.
+- Content: today's shape from the spine — the Line's top with her
+  ranking, chases due today, goals with today-relevant state, recent
+  keeps she's holding. Her note where she has one (restraint law: not
+  every item earns a note; a brief that's all advice is noise by Friday).
+- Where: the top of Read's today page, in the Book's own typography —
+  part of the day's page, not a widget. "Brief me" in Reflect speaks the
+  same content in her voice (the cached brief joins her state block).
+- Generation: first load after 4am local app-day; derive + one model
+  call; cached per app-day, signature-gated like the Line's ranking.
+  Honest degradation: if the model call fails, the derived facts render
+  without her notes — never a fake note — with the standard retry.
+- Empty morning: one warm plain sentence, her register, no skeleton.
+  Proposed copy (pending Chris's approval): "A clear morning — nothing on
+  the Line, nothing owed. It's yours to shape."
+- Graveyard check holds: no streaks, no "you missed yesterday's," no
+  read-tracking of any kind.
+
 ### July 28, 2026 — Evidence · exits · markdown · the mark (four rulings)
 - **Silent success is a failure state; every act leaves visible evidence
   at the site of the act** — standing law. First application: every filing
