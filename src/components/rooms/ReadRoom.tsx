@@ -6,6 +6,7 @@ import { useDoor } from '../../lib/door'
 import { useRoom } from '../../lib/rooms'
 import { addDays, shortDay, todayKey } from '../../lib/line'
 import { LoadFailed } from '../LoadFailed'
+import { MorningBrief } from './MorningBrief'
 import type { Entry, EntryNote, EntrySource, Project } from '../../db/types'
 
 /**
@@ -105,6 +106,10 @@ export function ReadRoom({ lens }: { lens: string | null }) {
         <p className="mt-1.5 mb-9 border-b border-hair pb-5 font-serif text-[12.5px] text-dim italic">
           {subtitle}
         </p>
+
+        {/* the morning face (V1.5 brief): today's page simply begins with
+            it — whole-life only, after 4am; a world's journal stays journal */}
+        {day === today && lens === null && <MorningBrief />}
 
         {pageEntries.length === 0 ? (
           <p className="py-10 font-serif text-[15px] text-muted">
