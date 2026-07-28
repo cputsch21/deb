@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useProjects } from '../../db/queries/projects'
-import { useEntries, useEntryNotes, useEntryRaw } from '../../db/queries/entries'
+import { useEntries, useEntryNotes, useEntryRaw, useEntryRevisions } from '../../db/queries/entries'
 import { useBook } from '../../lib/book'
 import { useDoor } from '../../lib/door'
 import { useLens } from '../../lib/lens'
@@ -213,7 +213,14 @@ function PageEntry({
         )}
       </div>
 
-      {rawOpen && <RawBlock rawId={entry.raw_id} />}
+      {rawOpen && (
+        <>
+          <RawBlock rawId={entry.raw_id} />
+          {/* the living page's history (ritual ruling 3): every prior
+              version kept, one lift beneath the current raw */}
+          <PriorVersions entryId={entry.id} />
+        </>
+      )}
 
       {/* Deb's hand — desktop: in the actual margin; mobile: inline below */}
       {notes.map((n) => (
@@ -267,6 +274,25 @@ function MarginNote({
         <span className="relative block pl-1">{body}</span>
       </button>
     </>
+  )
+}
+
+/** Prior versions of a living page — quiet history under the raw. */
+function PriorVersions({ entryId }: { entryId: string }) {
+  const revisionsQ = useEntryRevisions(entryId, true)
+  const revisions = revisionsQ.data ?? []
+  if (revisions.length === 0) return null
+  return (
+    <div className="mt-2.5">
+      {revisions.map((r) => (
+        <div key={r.id} className="mt-2">
+          <span className="eyebrow block text-[0.58rem] text-dim opacity-70">
+            earlier that day · {timeOf(r.created_at)}
+          </span>
+          <RawBlock rawId={r.raw_id} />
+        </div>
+      ))}
+    </div>
   )
 }
 

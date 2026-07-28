@@ -20,6 +20,19 @@ export type DebEvent =
       worldName: string | null
       taskIds: string[]
     }
+  // The living day-entry (ritual ruling 3): a drop grew today's page.
+  // Everything the undo needs to restore the prior version rides along.
+  | {
+      type: 'action'
+      kind: 'entry_versioned'
+      id: string
+      worldName: string | null
+      taskIds: string[]
+      prevRawId: string
+      prevDistillate: string | null
+      newNoteIds: string[]
+      oldNoteIds: string[]
+    }
   // T4 rulings 1–2 (July 27): her goal hands and task hands. `prev` carries
   // exactly what the undo puts back — the client never guesses.
   | { type: 'action'; kind: 'goal_created'; id: string; title: string; worldName: string }

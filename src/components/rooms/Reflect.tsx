@@ -38,7 +38,7 @@ export function Reflect({ lens }: { lens: string | null }) {
   const { forget: forgetFact } = useFactMutations()
   const { update: updateProject } = useProjectMutations()
   const { update: updateGoal, verdict: goalVerdict, remove: removeGoal } = useGoalMutations()
-  const { hide: hideEntry } = useEntryMutations()
+  const { hide: hideEntry, revertVersion: revertEntryVersion } = useEntryMutations()
   const world = projects.find((p) => p.id === lens) ?? null
   const isMobile = useIsMobile()
   const [turn, setTurn] = useState<Turn | null>(null)
@@ -172,6 +172,29 @@ export function Reflect({ lens }: { lens: string | null }) {
           transient.undo(label, () => {
             void hideEntry(entryId)
             for (const tid of taskIds) removeTask(tid, false)
+          })
+        } else if (e.kind === 'entry_versioned') {
+          // The living page grew (ritual ruling 3). The undo restores the
+          // prior version — never deletes the entry.
+          void qc.invalidateQueries({ queryKey: entryKeys.meta })
+          void qc.invalidateQueries({ queryKey: entryKeys.pages })
+          void qc.invalidateQueries({ queryKey: entryKeys.notes })
+          void qc.invalidateQueries({ queryKey: taskKeys.all })
+          const v = e
+          const where = e.worldName ?? 'silver'
+          const label =
+            v.taskIds.length > 0
+              ? `Page grown (${where}) — ${v.taskIds.length} new card${v.taskIds.length === 1 ? '' : 's'}`
+              : `Page grown (${where})`
+          transient.undo(label, () => {
+            void revertEntryVersion({
+              entryId: v.id,
+              prevRawId: v.prevRawId,
+              prevDistillate: v.prevDistillate,
+              newNoteIds: v.newNoteIds,
+              oldNoteIds: v.oldNoteIds,
+            })
+            for (const tid of v.taskIds) removeTask(tid, false)
           })
         } else if (e.kind === 'goal_created') {
           void qc.invalidateQueries({ queryKey: goalKeys.all })
