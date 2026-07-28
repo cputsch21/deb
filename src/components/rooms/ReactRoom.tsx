@@ -480,6 +480,7 @@ function provenance(task: Task, kind: CardKind, entry: EntryMeta | null): string
     const weekday = new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'long' })
     if (entry.source === 'plaud') return `from ${weekday}'s Plaud call`
     if (entry.source === 'remarkable') return `from ${weekday}'s reMarkable page`
+    if (entry.source === 'email') return `from ${weekday}'s mail`
     return `from ${weekday}'s filing`
   }
   return `from Reflect · ${shortDay(task.created_at.slice(0, 10))}`

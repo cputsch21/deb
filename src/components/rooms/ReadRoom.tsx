@@ -186,6 +186,9 @@ function PageEntry({
     <div className="relative mb-9">
       <span className="eyebrow mb-2 block text-[0.6rem] text-dim opacity-85">
         {timeOf(entry.created_at)} · {sourceLabel(entry.source)}
+        {entry.source_meta?.channel === 'email' && entry.source_meta.from && (
+          <> · {entry.source_meta.from.split('@')[0]}</>
+        )}
         {showWorld && world && (
           <>
             {' · '}
@@ -203,9 +206,22 @@ function PageEntry({
         </button>
       </span>
 
+      {/* an emailed entry wears its subject — the envelope, not the letter */}
+      {entry.source_meta?.subject && (
+        <p className="mb-1.5 max-w-[62ch] font-serif text-[13px] text-muted italic">
+          &ldquo;{entry.source_meta.subject}&rdquo;
+        </p>
+      )}
+
       <div className="max-w-[62ch] text-[15px] leading-[1.8] text-ink">
         {entry.distillate ? (
           renderDistillate(entry.distillate)
+        ) : entry.source_meta?.unreadable ? (
+          // the honest couldn't-read state (chute law): never a silent drop
+          <em className="text-muted">
+            I couldn&rsquo;t read this one — nothing textual arrived that I can
+            reach. The raw records what came.
+          </em>
         ) : (
           <em className="text-muted">
             Not yet distilled — the raw is kept, one tap up there.
@@ -349,6 +365,7 @@ function renderDistillate(text: string) {
 function sourceLabel(source: EntrySource): string {
   if (source === 'plaud') return 'call'
   if (source === 'remarkable') return 'reMarkable'
+  if (source === 'email') return 'mail'
   return 'filed'
 }
 
