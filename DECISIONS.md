@@ -64,10 +64,15 @@ states nobody ever inspected. Four rulings, executed:
 Flagged consequence, accepted into the stylesheet: the ruled floors moved
 the approved LIGHT values — dim (was 3.0:1 vs the white card), silver
 (3.2:1), and ok (3.7:1) darken to their floors, and index.css is synced so
-manual light equals Arc's noon (one system). At equal 4.5 floors dim now
-sits at muted's lightness — the muted/dim hierarchy is carried by hue
-alone; if the hierarchy is missed, the re-tune is a targets change
-(e.g. muted 5.5), one line, Chris's call.
+manual light equals Arc's noon (one system).
+
+**Same day, Chris's call — the floors separate so the hierarchy stays
+real:** ink 7:1 · muted 5.5:1 · dim and the eyebrow 4.5:1. Floors are
+minimums, so separation costs no legibility; hierarchy by hue alone is
+too subtle on warm paper. Targets updated, sweep re-run, manual light
+re-synced. The 40.7°N sweep latitude stands (he is near that parallel);
+exact coordinates arrive only if the margin's sunrise line should be
+to-the-minute — nothing else hangs on it.
 
 ### July 28, 2026 — The Morning Brief: V2's anchor (charter) · the V1.5 brief (built)
 **The V2 charter amendment** lands in `docs/v2-epic.md`: the Morning Brief
