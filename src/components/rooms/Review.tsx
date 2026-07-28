@@ -341,9 +341,13 @@ function Dossier({ world, goals, tasks }: { world: Project; goals: Goal[]; tasks
 function GoalDoor({ goal, world }: { goal: Goal; world: Project }) {
   const { knock } = useDoor()
   const { setRoom } = useRoom()
+  const { setLens } = useLens()
   return (
     <button
       onClick={() => {
+        // The door lands in the goal's world (thread ruling, July 28) — a
+        // retired world can't be a lens, so its goals talk at silver.
+        if (!world.deleted_at) setLens(world.id)
         knock({
           type: 'object',
           object: 'goal',

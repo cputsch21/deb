@@ -2,6 +2,7 @@ import { useRef, type ReactNode } from 'react'
 import { useProjects } from '../../db/queries/projects'
 import { useTasks, useTaskMutations } from '../../db/queries/tasks'
 import { useDoor } from '../../lib/door'
+import { useLens } from '../../lib/lens'
 import { useRoom } from '../../lib/rooms'
 import { applyDebOrder, deriveLine, todayKey } from '../../lib/line'
 import { useIsMobile } from '../../lib/useIsMobile'
@@ -93,6 +94,7 @@ function Chip({
 }) {
   const { knock } = useDoor()
   const { setRoom } = useRoom()
+  const { setLens } = useLens()
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const start = useRef<{ x: number; y: number } | null>(null)
   const clearHold = () => {
@@ -101,6 +103,8 @@ function Chip({
   }
   const carry = () => {
     clearHold()
+    // the door lands in the task's world (thread ruling, July 28)
+    setLens(task.project_id)
     knock({
       type: 'object',
       object: 'task',

@@ -6,6 +6,7 @@ import { useEntryMeta } from '../../db/queries/entries'
 import { supabase } from '../../lib/supabase'
 import { DELEGATE_MAX, type EntryMeta, type Task } from '../../db/types'
 import { useDoor } from '../../lib/door'
+import { useLens } from '../../lib/lens'
 import { useRoom } from '../../lib/rooms'
 import { transient } from '../../lib/undo'
 import { useLineWhys } from '../../lib/lineWhys'
@@ -341,6 +342,7 @@ function Card({
   // hasn't moved is a carry, not a drag.
   const { knock } = useDoor()
   const { setRoom } = useRoom()
+  const { setLens } = useLens()
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const clearHold = () => {
     if (holdTimer.current) clearTimeout(holdTimer.current)
@@ -350,6 +352,8 @@ function Card({
     clearHold()
     drag.current = null
     setDxy(null)
+    // the door lands in the task's world (thread ruling, July 28)
+    setLens(task.project_id)
     knock({
       type: 'object',
       object: 'task',
