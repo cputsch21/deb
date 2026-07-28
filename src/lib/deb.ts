@@ -71,7 +71,10 @@ const CANT_ANSWER = 'Deb could not answer just now.'
  */
 export type DebInput =
   | { kind: 'text'; content: string; pasted: boolean }
-  | { kind: 'margin'; note: { content: string; noteKind: string; day: string } }
+  | {
+      kind: 'margin'
+      note: { content: string; noteKind: string; day: string; question?: string }
+    }
   | {
       kind: 'object'
       object: {
@@ -110,6 +113,7 @@ export async function streamDeb(
                   content: input.note.content,
                   kind: input.note.noteKind,
                   day: input.note.day,
+                  question: input.note.question,
                 },
                 projectId,
                 tz,

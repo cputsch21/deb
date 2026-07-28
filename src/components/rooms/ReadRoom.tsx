@@ -247,13 +247,26 @@ function MarginNote({
     // Provenance law: the tap carries HER note as a quoted object — it never
     // composes words in Chris's voice. The door lands in the world the
     // note's entry belongs to (thread ruling, July 28; silver = whole-life).
+    // An ANSWER note (ritual ruling 4) carries its question through the door.
     setLens(worldId)
-    knock({ type: 'margin', content: note.content, noteKind: note.kind, day: shortDay(day) })
+    knock({
+      type: 'margin',
+      content: note.content,
+      noteKind: note.kind,
+      day: shortDay(day),
+      question: note.question ?? undefined,
+    })
     setRoom('reflect')
   }
   const body = (
     <>
       <span className="absolute top-[3px] bottom-[3px] left-[-10px] w-[1.5px] rounded bg-accent opacity-40" />
+      {/* the answer's anchor: the question it serves, in his register, dim */}
+      {note.kind === 'answer' && note.question && (
+        <span className="mb-0.5 block truncate text-dim not-italic">
+          {note.question}
+        </span>
+      )}
       {note.content}
     </>
   )

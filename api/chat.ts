@@ -899,6 +899,7 @@ async function performFiling(
         entry_id: entryId,
         kind: note.kind,
         content: note.content,
+        question: note.question,
       })
       if (!noteError) newNoteIds.push(noteId)
       else console.error('[chat] margin note', noteError)
@@ -973,6 +974,7 @@ async function performFiling(
       entry_id: entryId,
       kind: note.kind,
       content: note.content,
+      question: note.question,
     })
     if (noteError) console.error('[chat] margin note', noteError)
   }
@@ -1412,19 +1414,21 @@ async function completeTask(
   }
 }
 
-/** The four margin kinds — mirrors entry_notes' schema check. */
-const MARGIN_KINDS = ['receipt', 'read', 'keep', 'question']
+/** The five margin kinds — mirrors entry_notes' schema check. */
+const MARGIN_KINDS = ['receipt', 'read', 'keep', 'question', 'answer']
 
 function parseMargin(
   value: unknown,
-): { content: string; kind: string; day: string } | null {
+): { content: string; kind: string; day: string; question: string | null } | null {
   if (!value || typeof value !== 'object') return null
-  const v = value as { content?: unknown; kind?: unknown; day?: unknown }
-  const content = capText(String(v.content ?? ''), 200)
+  const v = value as { content?: unknown; kind?: unknown; day?: unknown; question?: unknown }
+  const content = capText(String(v.content ?? ''), 500)
   const kind = String(v.kind ?? '')
   const day = capText(String(v.day ?? ''), 16)
+  const question =
+    typeof v.question === 'string' && v.question.trim() ? capText(v.question, 300) : null
   if (!content || !MARGIN_KINDS.includes(kind)) return null
-  return { content, kind, day }
+  return { content, kind, day, question }
 }
 
 /** A goal or task carried onto the table (T4 rulings 1–2). */
@@ -1483,7 +1487,27 @@ function tableFrame(t: {
  * The tap, framed for her. This text is CONTEXT for the model only — it is
  * never persisted; the thread's provenance stays absolute.
  */
-function marginFrame(m: { content: string; kind: string; day: string }): string {
+function marginFrame(m: {
+  content: string
+  kind: string
+  day: string
+  question: string | null
+}): string {
+  if (m.kind === 'answer' && m.question) {
+    return [
+      '<margin-tap>',
+      `Chris tapped THE ANSWER you left in the margin on ${m.day}.`,
+      `His question, as he wrote it: "${m.question}"`,
+      `Your answer: "${m.content}"`,
+      'Both are on the table now. He wants more — the reasoning under it,',
+      'the receipt behind it, what to do with it. Keep your honesty ladder',
+      'labels honest (a FACT stays a fact; never upgrade an OPINION). He is',
+      'addressing you, so answer (this is not a moment for silence). He',
+      'typed no words — never quote or paraphrase him beyond the question',
+      'he already wrote.',
+      '</margin-tap>',
+    ].join('\n')
+  }
   return [
     '<margin-tap>',
     `Chris tapped your margin note from ${m.day} (a ${m.kind}): "${m.content}"`,

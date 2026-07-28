@@ -320,6 +320,11 @@ export function Reflect({ lens }: { lens: string | null }) {
                   ? `from the margin · ${q.noteKind} · ${q.day}`
                   : `from ${q.from} · ${q.object}${q.world ? ` · ${q.world}` : ''}`}
               </span>
+              {q.type === 'margin' && q.question && (
+                <span className="mb-1 block text-[13px] text-muted not-italic">
+                  {q.question}
+                </span>
+              )}
               &ldquo;{q.content}&rdquo;
             </blockquote>
           ))}
