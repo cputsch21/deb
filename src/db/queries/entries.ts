@@ -44,6 +44,7 @@ export function useEntryMutations() {
       .select('id')
     assertRowChanged(data, error, `hide entry ${id}`)
     void qc.invalidateQueries({ queryKey: entryKeys.meta })
+    void qc.invalidateQueries({ queryKey: entryKeys.pages })
   }
 
   const unhide = async (id: string) => {
@@ -54,6 +55,7 @@ export function useEntryMutations() {
       .select('id')
     assertRowChanged(data, error, `restore entry ${id}`)
     void qc.invalidateQueries({ queryKey: entryKeys.meta })
+    void qc.invalidateQueries({ queryKey: entryKeys.pages })
   }
 
   return { hide, unhide }
