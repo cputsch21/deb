@@ -1,13 +1,17 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { messageKeys, useMessages } from '../../db/queries/messages'
 import { projectKeys, useProjects, useProjectMutations } from '../../db/queries/projects'
-import { taskKeys, useTaskMutations } from '../../db/queries/tasks'
+import { taskKeys, useTasks, useTaskMutations } from '../../db/queries/tasks'
 import { factKeys, useFactMutations } from '../../db/queries/facts'
 import { goalKeys, useGoalMutations } from '../../db/queries/goals'
-import { entryKeys, useEntryMutations } from '../../db/queries/entries'
+import { entryKeys, useEntries, useEntryMutations } from '../../db/queries/entries'
+import { useBook } from '../../lib/book'
+import { Markdown } from '../../lib/markdown'
 import { useDoor, type Knock } from '../../lib/door'
-import { RAW_MAX } from '../../db/types'
+import { useRoom } from '../../lib/rooms'
+import { shortDay } from '../../lib/line'
+import { RAW_MAX, type Entry, type Message, type Project } from '../../db/types'
 import { streamDeb, type DebInput } from '../../lib/deb'
 import { LoadFailed } from '../LoadFailed'
 import { NowStrip } from '../mobile/NowStrip'
@@ -27,6 +31,8 @@ export function Reflect({ lens }: { lens: string | null }) {
   const qc = useQueryClient()
   const { data: messages = [], isError, refetch } = useMessages(lens)
   const { data: projects = [] } = useProjects()
+  const { data: filedEntries = [] } = useEntries()
+  const { data: allTasks = [] } = useTasks()
   const { remove: removeTask, update: updateTask, setDone: setTaskDone } = useTaskMutations()
   const { forget: forgetFact } = useFactMutations()
   const { update: updateProject } = useProjectMutations()
@@ -56,11 +62,24 @@ export function Reflect({ lens }: { lens: string | null }) {
   // typed text of any length is conversation. The flag rides the message.
   const pastedRef = useRef(false)
 
+  // The thread with its evidence (July 28 ruling: silent success is a
+  // failure state): filed entries render as objects IN the thread, at
+  // their moment, interleaved with the conversation by time. Visibly
+  // material — never styled as Chris's prose.
+  const timeline = useMemo(() => {
+    const scoped = filedEntries.filter((e) => lens === null || e.project_id === lens)
+    const items: ({ at: string; kind: 'msg'; msg: Message } | { at: string; kind: 'entry'; entry: Entry })[] = [
+      ...messages.map((m) => ({ at: m.created_at, kind: 'msg' as const, msg: m })),
+      ...scoped.map((e) => ({ at: e.created_at, kind: 'entry' as const, entry: e })),
+    ]
+    return items.sort((a, b) => a.at.localeCompare(b.at))
+  }, [messages, filedEntries, lens])
+
   // Stay pinned to the newest line.
   useEffect(() => {
     const el = scrollRef.current
     if (el) el.scrollTop = el.scrollHeight
-  }, [messages, turn])
+  }, [timeline, turn])
 
   // The composer grows with the draft (to ~5 lines, then scrolls inside).
   useEffect(() => {
@@ -128,9 +147,10 @@ export function Reflect({ lens }: { lens: string | null }) {
           transient.undo(`Noted · ${e.content.slice(0, 40)}`, () => forgetFact(id, false))
           setReceipts((r) => [...r, { id, label: 'Noted — memory updated' }])
         } else if (e.kind === 'entry_filed') {
-          // Filing is the act; the chip is the receipt; undo un-files —
-          // the entry surface hides, minted cards go with it. The raw
-          // beneath stays kept, as law.
+          // Filing is the act; the FILED OBJECT in the thread is the
+          // evidence (July 28 ruling — no more silent success); the pill
+          // is the undo. Un-filing hides the entry surface and its minted
+          // cards; the raw beneath stays kept, as law.
           void qc.invalidateQueries({ queryKey: entryKeys.meta })
           void qc.invalidateQueries({ queryKey: entryKeys.pages })
           void qc.invalidateQueries({ queryKey: entryKeys.notes })
@@ -142,11 +162,9 @@ export function Reflect({ lens }: { lens: string | null }) {
             taskIds.length > 0
               ? `Filed to ${where} — ${taskIds.length} card${taskIds.length === 1 ? '' : 's'} minted`
               : `Filed to ${where}`
-          setReceipts((r) => [...r, { id: entryId, label }])
           transient.undo(label, () => {
             void hideEntry(entryId)
             for (const tid of taskIds) removeTask(tid, false)
-            setReceipts((r) => r.filter((x) => x.id !== entryId))
           })
         } else if (e.kind === 'goal_created') {
           void qc.invalidateQueries({ queryKey: goalKeys.all })
@@ -227,18 +245,26 @@ export function Reflect({ lens }: { lens: string | null }) {
             <span className="eyebrow text-dim opacity-70">{daymark}</span>
           </div>
 
-          {messages.map((m) =>
-            m.role === 'deb' ? (
-              <p key={m.id} className="rise max-w-[88%] font-serif text-[16.5px] leading-[1.68] text-ink">
-                {m.content}
-              </p>
+          {timeline.map((item) =>
+            item.kind === 'entry' ? (
+              <FiledCard
+                key={item.entry.id}
+                entry={item.entry}
+                world={projects.find((p) => p.id === item.entry.project_id) ?? null}
+                minted={allTasks.filter((t) => t.source_entry_id === item.entry.id).length}
+              />
+            ) : item.msg.role === 'deb' ? (
+              <Markdown
+                key={item.msg.id}
+                className="rise max-w-[88%] font-serif text-[16.5px] leading-[1.68] text-ink"
+                text={item.msg.content}
+              />
             ) : (
-              <p
-                key={m.id}
+              <Markdown
+                key={item.msg.id}
                 className="rise ml-auto max-w-[78%] text-right text-[15px] leading-relaxed text-ink opacity-80 md:text-[14px]"
-              >
-                {m.content}
-              </p>
+                text={item.msg.content}
+              />
             ),
           )}
 
@@ -270,9 +296,10 @@ export function Reflect({ lens }: { lens: string | null }) {
           {turn && (
             <>
               {turn.userLine && (
-                <p className="rise ml-auto max-w-[78%] text-right text-[15px] leading-relaxed text-ink opacity-80 md:text-[14px]">
-                  {turn.userLine}
-                </p>
+                <Markdown
+                  className="rise ml-auto max-w-[78%] text-right text-[15px] leading-relaxed text-ink opacity-80 md:text-[14px]"
+                  text={turn.userLine}
+                />
               )}
               {turn.phase === 'speaking' && <Dots />}
               {turn.phase === 'error' && (
@@ -363,6 +390,48 @@ export function Reflect({ lens }: { lens: string | null }) {
         </div>
       </div>
     </div>
+  )
+}
+
+/**
+ * The filed object (July 28 ruling): every filing leaves visible evidence
+ * in the thread at the site of the act — a compact card in a tonal well,
+ * visibly MATERIAL, never styled as Chris's prose. The whole object is a
+ * door: tap → Read, open on that entry's page. The pasted-material sibling
+ * of the margin-door pattern.
+ */
+function FiledCard({
+  entry,
+  world,
+  minted,
+}: {
+  entry: Entry
+  world: Project | null
+  minted: number
+}) {
+  const { setRoom } = useRoom()
+  const firstLine = (entry.distillate ?? '').split('\n').find((l) => l.trim()) ?? null
+
+  return (
+    <button
+      onClick={() => {
+        useBook.getState().open(entry.entry_day)
+        setRoom('read')
+      }}
+      className="rise ml-auto w-fit max-w-[78%] rounded-2xl bg-fill px-4 py-3 text-left transition-colors duration-150 hover:bg-fill2"
+    >
+      <span className="eyebrow block text-[0.58rem] text-dim">
+        filed · {world?.name ?? 'silver'} · {shortDay(entry.entry_day)}
+      </span>
+      <span className="mt-1.5 block truncate font-serif text-[14px] leading-snug text-ink">
+        {firstLine ?? <em className="text-muted">Filed — the raw is kept; distilling.</em>}
+      </span>
+      {minted > 0 && (
+        <span className="mt-1 block text-[11px] text-muted">
+          {minted} card{minted === 1 ? '' : 's'} dealt to React
+        </span>
+      )}
+    </button>
   )
 }
 

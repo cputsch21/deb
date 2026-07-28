@@ -248,6 +248,44 @@ body::after {
   }
 }
 
+/* The thread's rendered markdown (July 28 ruling) — the subset, styled in
+   Warm Glass: lists breathe per the type system, inline code wears the
+   mono in a shallow well. Serif for her, Inter for him, set by the
+   wrapping element. */
+.md p + p,
+.md p + ul,
+.md p + ol,
+.md ul + p,
+.md ol + p {
+  margin-top: 0.55em;
+}
+.md ul,
+.md ol {
+  padding-left: 1.3em;
+}
+.md ul {
+  list-style: disc;
+}
+.md ol {
+  list-style: decimal;
+}
+.md li {
+  margin-top: 0.3em;
+}
+.md li::marker {
+  color: var(--t-dim);
+}
+.md code {
+  font-family: var(--font-mono);
+  font-size: 0.82em;
+  background: var(--t-fill);
+  border-radius: 6px;
+  padding: 0.12em 0.38em;
+}
+.md strong {
+  font-weight: 600;
+}
+
 /* The whisper — the signature mono micro-label. Never body text. */
 .eyebrow {
   font-family: var(--font-mono);

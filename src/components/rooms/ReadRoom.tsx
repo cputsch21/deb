@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useProjects } from '../../db/queries/projects'
 import { useEntries, useEntryNotes, useEntryRaw } from '../../db/queries/entries'
+import { useBook } from '../../lib/book'
 import { useDoor } from '../../lib/door'
 import { useRoom } from '../../lib/rooms'
 import { addDays, shortDay, todayKey } from '../../lib/line'
@@ -24,6 +25,15 @@ export function ReadRoom({ lens }: { lens: string | null }) {
   const { data: projects = [] } = useProjects()
   const today = todayKey()
   const [cursor, setCursor] = useState<string>(today)
+
+  // A filed object in the thread is a door here (July 28 ruling): consume
+  // the requested page and open the book on it.
+  const jump = useBook((s) => s.jump)
+  useEffect(() => {
+    if (!jump) return
+    setCursor(jump)
+    useBook.getState().clear()
+  }, [jump])
 
   const scoped = useMemo(
     () =>

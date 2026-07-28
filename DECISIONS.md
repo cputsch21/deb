@@ -30,6 +30,51 @@ confirm. Next: **T5 — the V1 walk**, gated on Chris's two device passes.
 
 ## The log (newest first)
 
+### July 28, 2026 — Evidence · exits · markdown · the mark (four rulings)
+- **Silent success is a failure state; every act leaves visible evidence
+  at the site of the act** — standing law. First application: every filing
+  renders a FILED OBJECT in the thread where the paste happened — a
+  compact tonal-well card (mono eyebrow `FILED · WORLD · DAY`, the entry's
+  first distilled line in the serif, a cards-minted count when > 0),
+  interleaved with the conversation by time and visibly material, never
+  styled as Chris's prose. The whole object is a door: tap → Read opens on
+  that entry's page — the pasted-material sibling of the margin-door
+  pattern, provenance safe. Deb's optional one-liner rides after it per
+  the restraint law; the undo pill stays. For filings this supersedes the
+  mobile-only receipt chip: the filed object renders on both shells
+  (chips remain for the other acts).
+- **No mobile surface may lack an exit.** The shared sheet gains the
+  standard dismissals: drag-down on the handle — ownership by touch-start,
+  per the standing ruling, so the fact-list's own scroll never fights it —
+  and an explicit mono CLOSE, ≥44px, safe-area-cleared. Audit result: the
+  memory and project sheets were the trap (both fixed through the one
+  shared Sheet — no forks); the world sheet, the verdict confirm, and the
+  rooms already had exits.
+- **The thread renders a markdown subset — the Claude-chat pattern**:
+  bold, italic, lists, line breaks, inline code. No headers, tables,
+  images, or links in V1 — her register doesn't need them and the thread
+  must not look like a wiki. The composer stays a plain textarea; typed
+  markdown renders on send. marked + DOMPurify with a hard allowlist
+  (`p em strong ul ol li code br`, zero attributes): rendered markdown is
+  the same threat surface as ingested content and must never execute
+  anything — everything outside the subset survives only as its text.
+- **The brand mark is "d." — nothing else may serve as the logo.**
+  Lowercase d set in real Fraunces (the 144pt display cut, Medium — her
+  voice's own face), warm ink on warm paper, with the silver dot as its
+  period sitting at baseline right of the bowl — the home dot's silver
+  gradient, so it is the brand mark twice over. No other elements, no
+  border, no gloss. Light: ink `#191713` on paper `#FAF8F4`; dark variant:
+  paper letterform on charcoal, the dot in dark-mode silver. Optical
+  centering over mathematical; generous but inside the maskable safe zone;
+  the period survives the smallest rendered sizes by growing optically
+  there (per-size cheating is standard practice). Rendered from the actual
+  Fraunces font file at every raster size — `scripts/icon-mark.mjs`, the
+  OFL face kept beside it — never a downscale, never a system-serif
+  stand-in. The mark appears on the icon, splash, favicon, and any future
+  surface that needs a signature. (Supersedes the same-day dot-only mark,
+  re-ruled before it ever shipped; the template debris — the bolt favicon,
+  the unreferenced icons.svg sprite — is gone.)
+
 ### July 27, 2026 — The T4 rulings: all fifteen, ruled and executed
 Chris ruled on every finding of the design reckoning; 1–14 are built, 15 is
 deliberately untouched. Four rulings are standing law:
