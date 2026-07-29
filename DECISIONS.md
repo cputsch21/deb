@@ -30,6 +30,35 @@ confirm. Next: **T5 — the V1 walk**, gated on Chris's two device passes.
 
 ## The log (newest first)
 
+### July 28, 2026 — The Arrivals ledger: observability for the mouth
+The filing engine gets a ledger: everything that ever arrives — the
+composer's paste, the chute's mail, any future mouth — leaves a row in
+`ingest_log` (when · from · what · outcome), **including what the door
+turned away**, with the rejecting address shown. The outcome column is
+load-bearing: filed (world dot + tag) · grew today's page · couldn't
+read · dropped — sender not allowed · dropped — bad signature, in plain
+warm sentences, never codes.
+
+The laws:
+- **Append-only by RLS**: select + insert, deliberately no update and no
+  delete policy — a log that can be edited isn't a log.
+- **Rejected mail logs metadata only** (sender, subject) — never body
+  content. A bad-signature drop logs the bare fact alone.
+- The **engine logs its own successes** (filed / versioned) for every
+  mouth; each inlet logs its own drops. Logging is best-effort — a failed
+  ledger line never breaks a filing.
+- Surfaced as a **quiet mono ARRIVALS door in Read at silver**, in the
+  page furniture, opening the standard Sheet (standard exits). Last 30
+  days by default, a quiet "earlier" reach-back, honest failure state.
+- **Read-only is law**: no actions in the surface except the doors —
+  every row whose entry survives opens the book on its day. Fixing an
+  allowlist stays where config lives.
+- No counts, no badges, no unread-dots — it's a ledger, not a to-do
+  (graveyard rules apply here as everywhere).
+
+Migration `supabase/2026-07-28_arrivals_ledger.sql` gates the deploy per
+the standing discipline.
+
 ### July 28, 2026 — The email chute pulled forward · the security ruling · one throat forever
 **Pulled ahead of v1.0 by deliberate re-ruling** (supersedes the same-day
 "first post-v1.0" sequencing): ritual friction confirmed on day one of

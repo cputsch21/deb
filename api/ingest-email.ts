@@ -4,7 +4,7 @@ import { createHmac, timingSafeEqual } from 'node:crypto'
 import { extractText, getDocumentProxy } from 'unpdf'
 import { generateBrief } from './_lib/brief.js'
 import { capText, RAW_MAX } from './_lib/context.js'
-import { performFiling } from './_lib/filing.js'
+import { insertEntry, logArrival, performFiling } from './_lib/filing.js'
 
 /**
  * /api/ingest-email — the second mouth, feeding the same throat (chute
@@ -16,7 +16,8 @@ import { performFiling } from './_lib/filing.js'
  * codebase. It exists because inbound mail carries no user JWT. Under it,
  * RLS guards nothing: every read and write goes through the filing
  * engine's explicit owner scoping. Never import this key elsewhere;
- * never add a write here outside performFiling/generateBrief.
+ * never add a write here outside performFiling/insertEntry/generateBrief
+ * and the engine's own Arrivals ledger (logArrival).
  * ────────────────────────────────────────────────────────────────────
  *
  * Defense in depth, all layers required (fail any → dropped and logged,
@@ -238,9 +239,29 @@ export async function POST(request: Request): Promise<Response> {
 
   const payload = await request.text()
 
-  // layer 1 — signature: unsigned/invalid rejected outright
+  // the client and owner come first so every drop below can leave its row
+  // in the Arrivals ledger (metadata only, never body content)
+  const db = createClient(url, serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+    realtime: { transport: class NoWebSocket {} as never },
+  })
+  const ownerId = await resolveOwner(db, ownerEmail)
+  const ledger = (row: {
+    outcome: string
+    sender?: string | null
+    summary?: string | null
+    entryId?: string | null
+    source?: 'email' | 'plaud' | 'remarkable'
+  }) =>
+    ownerId
+      ? logArrival(db, { source: row.source ?? 'email', ...row, ownerId })
+      : Promise.resolve()
+
+  // layer 1 — signature: unsigned/invalid rejected outright; the ledger
+  // records the bare fact alone (nothing unsigned earns a parse)
   if (!verifySignature(payload, request.headers, secret)) {
     console.error('[ingest] DROP: bad or missing signature')
+    await ledger({ outcome: 'dropped_signature' })
     return new Response('invalid signature', { status: 401 })
   }
 
@@ -252,31 +273,38 @@ export async function POST(request: Request): Promise<Response> {
   }
   if (!email) {
     console.error('[ingest] DROP: unreadable payload shape')
+    await ledger({ outcome: 'dropped_shape' })
     return ok()
   }
 
   // layer 2 — the unguessable address must be the recipient
   if (!email.to.includes(address)) {
     console.error('[ingest] DROP: recipient mismatch', email.to.join(','))
+    await ledger({ outcome: 'dropped_recipient', sender: email.from, summary: email.subject })
     return ok()
   }
 
-  // layer 3 — the hard sender allowlist
+  // layer 3 — the hard sender allowlist: the rejecting address shown
   if (!allowed.includes(email.from)) {
     console.error('[ingest] DROP: sender not allowed', email.from)
+    await ledger({ outcome: 'dropped_sender', sender: email.from, summary: email.subject })
     return ok()
   }
 
-  const db = createClient(url, serviceKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-    realtime: { transport: class NoWebSocket {} as never },
-  })
-
-  const ownerId = await resolveOwner(db, ownerEmail)
   if (!ownerId) {
     console.error('[ingest] DROP: owner could not be resolved')
     return ok()
   }
+
+  // sender-mapped source (E1 resolution): provenance labels win
+  const plaudSender = (process.env.INGEST_PLAUD_SENDER ?? '').toLowerCase().trim()
+  const remarkableSender = (process.env.INGEST_REMARKABLE_SENDER ?? '').toLowerCase().trim()
+  const source =
+    plaudSender && email.from === plaudSender
+      ? ('plaud' as const)
+      : remarkableSender && email.from === remarkableSender
+        ? ('remarkable' as const)
+        : ('email' as const)
 
   try {
     // idempotency — the same email arriving twice files once
@@ -287,18 +315,17 @@ export async function POST(request: Request): Promise<Response> {
         .eq('user_id', ownerId)
         .eq('message_id', email.messageId)
         .limit(1)
-      if (dupe && dupe.length > 0) return ok({ received: true, duplicate: true })
+      if (dupe && dupe.length > 0) {
+        await ledger({
+          outcome: 'duplicate',
+          source,
+          sender: email.from,
+          summary: email.subject,
+          entryId: String(dupe[0].id),
+        })
+        return ok({ received: true, duplicate: true })
+      }
     }
-
-    // sender-mapped source (E1 resolution): provenance labels win
-    const plaudSender = (process.env.INGEST_PLAUD_SENDER ?? '').toLowerCase().trim()
-    const remarkableSender = (process.env.INGEST_REMARKABLE_SENDER ?? '').toLowerCase().trim()
-    const source =
-      plaudSender && email.from === plaudSender
-        ? ('plaud' as const)
-        : remarkableSender && email.from === remarkableSender
-          ? ('remarkable' as const)
-          : ('email' as const)
 
     // payload → text: body, text/pdf attachments — easy always, zero conventions
     const parts: string[] = []
@@ -333,8 +360,7 @@ export async function POST(request: Request): Promise<Response> {
       ]
         .filter(Boolean)
         .join('\n')
-      const { insertEntry } = await import('./_lib/filing.js')
-      await insertEntry(db, {
+      const { entryId } = await insertEntry(db, {
         raw: manifestText,
         projectId: null,
         spokenIn: null,
@@ -345,6 +371,13 @@ export async function POST(request: Request): Promise<Response> {
         messageId: email.messageId,
         sourceMeta,
         ownerId,
+      })
+      await ledger({
+        outcome: 'unreadable',
+        source,
+        sender: email.from,
+        summary: email.subject,
+        entryId,
       })
       return ok({ received: true, unreadable: true })
     }
@@ -375,9 +408,11 @@ export async function POST(request: Request): Promise<Response> {
     // a unique-index collision is the idempotency backstop, not a failure
     const code = (err as { code?: string })?.code
     if (code === '23505' || String(err).includes('23505')) {
+      await ledger({ outcome: 'duplicate', source, sender: email.from, summary: email.subject })
       return ok({ received: true, duplicate: true })
     }
     console.error('[ingest] filing failed', err)
+    await ledger({ outcome: 'failed', source, sender: email.from, summary: email.subject })
     return ok() // never bounce, never retry-storm; the log is the record
   }
 }

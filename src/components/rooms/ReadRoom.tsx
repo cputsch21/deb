@@ -7,6 +7,7 @@ import { useLens } from '../../lib/lens'
 import { useRoom } from '../../lib/rooms'
 import { addDays, shortDay, todayKey } from '../../lib/line'
 import { LoadFailed } from '../LoadFailed'
+import { ArrivalsSheet } from './ArrivalsSheet'
 import { DaysDealings } from './DaysDealings'
 import { MorningBrief } from './MorningBrief'
 import type { Entry, EntryNote, EntrySource, Project } from '../../db/types'
@@ -28,6 +29,7 @@ export function ReadRoom({ lens }: { lens: string | null }) {
   const { data: projects = [] } = useProjects()
   const today = todayKey()
   const [cursor, setCursor] = useState<string>(today)
+  const [arrivalsOpen, setArrivalsOpen] = useState(false)
 
   // A filed object in the thread is a door here (July 28 ruling): consume
   // the requested page and open the book on it.
@@ -159,8 +161,21 @@ export function ReadRoom({ lens }: { lens: string | null }) {
               {newer === today ? 'today' : shortDay(newer)} →
             </button>
           )}
+          {/* the Arrivals ledger's quiet door (July 28) — whole-life only */}
+          {lens === null && (
+            <button
+              onClick={() => setArrivalsOpen(true)}
+              className="eyebrow ml-auto flex min-h-11 items-center px-2.5 text-[0.6rem] text-dim transition-colors hover:text-ink"
+            >
+              arrivals
+            </button>
+          )}
         </div>
       </div>
+
+      {lens === null && (
+        <ArrivalsSheet open={arrivalsOpen} onClose={() => setArrivalsOpen(false)} />
+      )}
     </div>
   )
 }

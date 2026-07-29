@@ -171,6 +171,33 @@ async function findVersionTarget(
   }
 }
 
+/**
+ * The Arrivals ledger (July 28): every arrival at the engine leaves a
+ * row — append-only by RLS, best-effort (a failed log line never breaks
+ * a filing; the console carries the miss).
+ */
+export async function logArrival(
+  db: SupabaseClient,
+  row: {
+    source: 'composer' | 'email' | 'plaud' | 'remarkable'
+    sender?: string | null
+    summary?: string | null
+    outcome: string
+    entryId?: string | null
+    ownerId?: string | null
+  },
+): Promise<void> {
+  const { error } = await db.from('ingest_log').insert({
+    source: row.source,
+    sender: row.sender ? capText(row.sender, 200) : null,
+    summary: row.summary ? capText(row.summary, 200) : null,
+    outcome: row.outcome,
+    entry_id: row.entryId ?? null,
+    ...(row.ownerId ? { user_id: row.ownerId } : {}),
+  })
+  if (error) console.error('[arrivals] log failed', error)
+}
+
 /** A world name inside the subject is a routing HINT — never required. */
 function subjectHint(projects: Row[], subject: string | null | undefined): string | null {
   if (!subject) return null
@@ -239,6 +266,19 @@ export async function performFiling(
   const anthropic = new Anthropic()
   const today = todayKeyInTz(tz)
   const engineInput = opts.distillInput ?? raw
+
+  // the ledger's row for this arrival: the engine logs its own outcomes,
+  // whatever mouth fed it ('filed' = the composer, by its ledger name)
+  const ledgerSource = opts.source && opts.source !== 'filed' ? opts.source : ('composer' as const)
+  const ledgerSender =
+    typeof opts.sourceMeta?.from === 'string' ? (opts.sourceMeta.from as string) : null
+  const ledgerSummary =
+    opts.subject ??
+    raw
+      .split('\n')
+      .map((l) => l.trim())
+      .find(Boolean) ??
+    null
 
   const { target: version, anyToday } = await findVersionTarget(db, anthropic, raw, today, own)
 
@@ -358,6 +398,15 @@ export async function performFiling(
       } else console.error('[filing] mint', mintError)
     }
 
+    await logArrival(db, {
+      source: ledgerSource,
+      sender: ledgerSender,
+      summary: ledgerSummary,
+      outcome: 'versioned',
+      entryId,
+      ownerId: own,
+    })
+
     return {
       entryId,
       worldName,
@@ -418,6 +467,15 @@ export async function performFiling(
     })
     if (noteError) console.error('[filing] margin note', noteError)
   }
+  await logArrival(db, {
+    source: ledgerSource,
+    sender: ledgerSender,
+    summary: ledgerSummary,
+    outcome: 'filed',
+    entryId,
+    ownerId: own,
+  })
+
   return {
     entryId,
     worldName,

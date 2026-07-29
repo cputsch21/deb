@@ -143,6 +143,29 @@ export type Task = {
   deleted_at: string | null
 }
 
+/** One arrival at the filing engine (the Arrivals ledger, July 28) —
+ *  append-only by RLS; rejects carry metadata only, never body content. */
+export type ArrivalOutcome =
+  | 'filed'
+  | 'versioned'
+  | 'unreadable'
+  | 'duplicate'
+  | 'dropped_sender'
+  | 'dropped_signature'
+  | 'dropped_recipient'
+  | 'dropped_shape'
+  | 'failed'
+
+export type Arrival = {
+  id: string
+  source: 'composer' | 'email' | 'plaud' | 'remarkable'
+  sender: string | null
+  summary: string | null
+  outcome: ArrivalOutcome
+  entry_id: string | null
+  created_at: string
+}
+
 export type Cadence = 'daily' | 'weekly' | 'monthly'
 
 export type RecurringTask = {
