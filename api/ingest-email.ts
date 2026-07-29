@@ -1,15 +1,30 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import Anthropic from '@anthropic-ai/sdk'
 import { createHmac, timingSafeEqual } from 'node:crypto'
-import { extractText, getDocumentProxy } from 'unpdf'
+import { Resend } from 'resend'
 import { generateBrief } from './_lib/brief.js'
 import { capText, RAW_MAX } from './_lib/context.js'
 import { insertEntry, logArrival, performFiling } from './_lib/filing.js'
+import {
+  attachmentText,
+  bodyToText,
+  readEmail,
+  stripForwardCruft,
+  type Attachment,
+} from './_lib/email.js'
 
 /**
  * /api/ingest-email — the second mouth, feeding the same throat (chute
  * rulings, July 28). Resend inbound webhook → defense in depth → the
  * shared filing engine. Channel semantics: file, chip at silver, silence.
+ *
+ * THE TWO-STEP READ (July 29 ledger diagnosis): Resend's email.received
+ * webhook is METADATA ONLY — from/to/subject and attachment names ship
+ * in the event; the body and attachment bytes do not. After the gates,
+ * the endpoint fetches the full content from Resend's API (RESEND_API_KEY,
+ * retried). If that fetch fails while the payload carried no inline body,
+ * the endpoint answers 500 so Resend redelivers — Message-ID idempotency
+ * makes the retry safe, and the ledger records each failed attempt.
  *
  * ── THE SERVICE-ROLE INVARIANT (DECISIONS, July 28) ─────────────────
  * SUPABASE_SERVICE_ROLE_KEY is read in THIS FILE and nowhere else in the
@@ -26,12 +41,13 @@ import { insertEntry, logArrival, performFiling } from './_lib/filing.js'
  *      traffic always passes, so retries never hammer a reject)
  *   2. recipient must be the unguessable INGEST_ADDRESS
  *   3. sender must be on the INGEST_ALLOWED_SENDERS allowlist
- * Then Message-ID idempotency (DB-enforced), payload → text, and the one
- * filing path. Everything arriving is content to read, never instructions
- * to obey — the engine gets the hardened email framing.
+ * Then the content fetch, Message-ID idempotency (DB-enforced), payload →
+ * text, and the one filing path. Everything arriving is content to read,
+ * never instructions to obey — the engine gets the hardened email framing.
  */
 
 const SIGNATURE_TOLERANCE_S = 5 * 60
+const ATTACHMENT_MAX_BYTES = 15 * 1024 * 1024 // skip anything larger, honestly manifested
 
 const ok = (body: unknown = { received: true }) =>
   new Response(JSON.stringify(body), {
@@ -69,135 +85,85 @@ function verifySignature(payload: string, headers: Headers, secret: string): boo
   }
 }
 
-/* ---------- tolerant payload reading ---------- */
+/* ---------- the follow-up fetch: the body ships separately ---------- */
 
-type Attachment = { filename: string; contentType: string; content: string | null }
-
-function addr(value: unknown): string {
-  // "Name <a@b>" | "a@b" | { email } | { address }
-  if (value && typeof value === 'object') {
-    const v = value as { email?: unknown; address?: unknown }
-    if (typeof v.email === 'string') return v.email.toLowerCase().trim()
-    if (typeof v.address === 'string') return v.address.toLowerCase().trim()
-  }
-  const s = String(value ?? '')
-  const m = s.match(/<([^>]+)>/)
-  return (m ? m[1] : s).toLowerCase().trim()
-}
-
-function firstString(...vals: unknown[]): string | null {
-  for (const v of vals) if (typeof v === 'string' && v.trim()) return v
-  return null
-}
-
-function readEmail(body: unknown): {
-  from: string
-  to: string[]
-  subject: string | null
+type FullContent = {
   text: string | null
   html: string | null
   messageId: string | null
   date: string | null
   attachments: Attachment[]
-} | null {
-  if (!body || typeof body !== 'object') return null
-  const data = ((body as Row).data ?? body) as Row
-  const from = addr(data.from)
-  if (!from) return null
-  const toRaw = data.to
-  const to = (Array.isArray(toRaw) ? toRaw : [toRaw]).map(addr).filter(Boolean)
-  const headers = data.headers as Row | Row[] | undefined
-  let messageId = firstString(data.message_id, data.messageId, (data as Row)['message-id'])
-  let date: string | null = null
-  if (headers && !Array.isArray(headers) && typeof headers === 'object') {
-    messageId = messageId ?? firstString(headers['message-id'], headers['Message-Id'], headers['Message-ID'])
-    date = firstString(headers.date, headers.Date)
-  } else if (Array.isArray(headers)) {
-    for (const h of headers) {
-      const name = String((h as Row).name ?? '').toLowerCase()
-      const value = String((h as Row).value ?? '').trim()
-      if (name === 'message-id' && !messageId && value) messageId = value
-      if (name === 'date' && !date && value) date = value
-    }
-  }
-  const attachments: Attachment[] = (Array.isArray(data.attachments) ? data.attachments : [])
-    .map((a): Attachment => {
-      const at = a as Row
-      return {
-        filename: String(at.filename ?? at.name ?? 'attachment'),
-        contentType: String(at.content_type ?? at.contentType ?? at.type ?? '').toLowerCase(),
-        content: typeof at.content === 'string' ? at.content : null,
+}
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
+
+/** Fetch the full email from Resend's Receiving API — body, headers, and
+ *  every attachment's bytes (signed download_url, size-capped). Retried;
+ *  null after the last attempt means the content is genuinely out of
+ *  reach right now. */
+async function fetchFullEmail(emailId: string, apiKey: string): Promise<FullContent | null> {
+  const resend = new Resend(apiKey)
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt > 0) await sleep(attempt === 1 ? 500 : 1500)
+    try {
+      const { data: full, error } = await resend.emails.receiving.get(emailId)
+      if (error || !full) {
+        console.error('[ingest] receiving.get failed', error)
+        continue
       }
-    })
-  return {
-    from,
-    to,
-    subject: firstString(data.subject),
-    text: firstString(data.text),
-    html: firstString(data.html),
-    messageId: messageId ? capText(messageId, 300) : null,
-    date: date ?? firstString(data.created_at, (body as Row).created_at),
-    attachments,
-  }
-}
 
-type Row = Record<string, unknown>
+      const attachments: Attachment[] = []
+      if (full.attachments && full.attachments.length > 0) {
+        try {
+          const { data: list, error: listError } = await resend.emails.receiving.attachments.list({
+            emailId,
+          })
+          if (listError || !list) throw listError ?? new Error('no attachment list')
+          for (const a of list.data) {
+            const filename = a.filename ?? 'attachment'
+            const contentType = (a.content_type ?? '').toLowerCase()
+            if (a.size > ATTACHMENT_MAX_BYTES) {
+              attachments.push({ filename, contentType, content: null })
+              continue
+            }
+            try {
+              const res = await fetch(a.download_url)
+              if (!res.ok) throw new Error(`download ${res.status}`)
+              const buf = Buffer.from(await res.arrayBuffer())
+              attachments.push({ filename, contentType, content: buf.toString('base64') })
+            } catch (err) {
+              console.error('[ingest] attachment download', filename, err)
+              attachments.push({ filename, contentType, content: null })
+            }
+          }
+        } catch (err) {
+          // the body still counts; attachments join the manifest unreadable
+          console.error('[ingest] attachments.list failed', err)
+          for (const a of full.attachments) {
+            attachments.push({
+              filename: a.filename ?? 'attachment',
+              contentType: (a.content_type ?? '').toLowerCase(),
+              content: null,
+            })
+          }
+        }
+      }
 
-/* ---------- payload → text ---------- */
-
-const htmlToText = (html: string): string =>
-  html
-    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<\/(p|div|li|h[1-6]|tr)>/gi, '\n')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&#39;|&apos;/g, "'")
-    .replace(/&quot;/g, '"')
-    .replace(/[ \t]+/g, ' ')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim()
-
-async function attachmentText(a: Attachment): Promise<string | null> {
-  if (!a.content) return null
-  try {
-    const buf = Buffer.from(a.content, 'base64')
-    if (a.contentType.startsWith('text/') || /\.(txt|md|csv)$/i.test(a.filename)) {
-      return buf.toString('utf8').trim() || null
+      const headerDate = full.headers
+        ? (full.headers.date ?? full.headers.Date ?? null)
+        : null
+      return {
+        text: full.text ?? null,
+        html: full.html ?? null,
+        messageId: full.message_id ? capText(full.message_id, 300) : null,
+        date: headerDate ?? full.created_at ?? null,
+        attachments,
+      }
+    } catch (err) {
+      console.error('[ingest] receiving.get attempt', attempt + 1, err)
     }
-    if (a.contentType === 'application/pdf' || /\.pdf$/i.test(a.filename)) {
-      const pdf = await getDocumentProxy(new Uint8Array(buf))
-      const { text } = await extractText(pdf, { mergePages: true })
-      return (typeof text === 'string' ? text : String(text ?? '')).trim() || null
-    }
-  } catch (err) {
-    console.error('[ingest] attachment extract', a.filename, err)
   }
-  return null // image-only and unknown types: the honest couldn't-read path
-}
-
-/** Deterministic cruft-stripping for FORWARDED mail (source 'email' only):
- *  strippers first, model cleanup second, the raw kept verbatim. */
-function stripForwardCruft(text: string): string {
-  let t = text
-  // forwarding preambles
-  t = t.replace(/^-{2,}\s*Forwarded message\s*-{2,}[\s\S]{0,400}?\n\n/im, '')
-  t = t.replace(/^Begin forwarded message:[\s\S]{0,400}?\n\n/im, '')
-  // signature blocks and phone sign-offs
-  t = t.replace(/\n--\s*\n[\s\S]*$/, '\n')
-  t = t.replace(/\n(Sent from my [^\n]{0,40}|Get Outlook for [^\n]{0,20})\s*$/i, '\n')
-  // quoted reply chains: an "On ... wrote:" tail and deep > quoting
-  t = t.replace(/\nOn [^\n]{5,120} wrote:\s*\n(>[^\n]*\n?)+[\s\S]*$/, '\n')
-  const lines = t.split('\n')
-  const quoted = lines.filter((l) => l.startsWith('>')).length
-  if (quoted > 3 && quoted > lines.length * 0.5) {
-    t = lines.filter((l) => !l.startsWith('>')).join('\n')
-  }
-  return t.trim()
+  return null
 }
 
 /* ---------- owner resolution (nothing hardcoded) ---------- */
@@ -231,6 +197,7 @@ export async function POST(request: Request): Promise<Response> {
   const tz = process.env.INGEST_TZ || 'UTC'
   const url = process.env.VITE_SUPABASE_URL ?? process.env.SUPABASE_URL
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY // THE ONLY READ OF THIS KEY
+  const resendKey = process.env.RESEND_API_KEY ?? ''
 
   if (!secret || !address || !allowed.length || !ownerEmail || !url || !serviceKey) {
     console.error('[ingest] misconfigured — missing env; dropping')
@@ -267,7 +234,12 @@ export async function POST(request: Request): Promise<Response> {
 
   let email: ReturnType<typeof readEmail> = null
   try {
-    email = readEmail(JSON.parse(payload))
+    const parsed = JSON.parse(payload) as Record<string, unknown>
+    // the debugging window (July 29): the payload's SHAPE, never its
+    // content — enough to compare against Resend's docs when this drifts
+    const data = (parsed.data ?? {}) as Record<string, unknown>
+    console.log('[ingest] payload shape', Object.keys(parsed).join(','), '· data:', Object.keys(data).join(','))
+    email = readEmail(parsed)
   } catch {
     email = null
   }
@@ -306,6 +278,41 @@ export async function POST(request: Request): Promise<Response> {
         ? ('remarkable' as const)
         : ('email' as const)
 
+  // ---- the two-step read: the webhook is metadata-only; fetch the body.
+  // Inline text/html is honored if a payload ever carries it.
+  const needsBody = !email.text && !email.html
+  const needsAttachmentBytes = email.attachments.some((a) => !a.content)
+  if ((needsBody || needsAttachmentBytes) && email.emailId) {
+    if (!resendKey) {
+      console.error('[ingest] RESEND_API_KEY missing — cannot fetch the body')
+    } else {
+      const full = await fetchFullEmail(email.emailId, resendKey)
+      if (full) {
+        email.text = email.text ?? full.text
+        email.html = email.html ?? full.html
+        email.messageId = email.messageId ?? full.messageId
+        email.date = email.date ?? full.date
+        if (needsAttachmentBytes && full.attachments.length > 0) {
+          email.attachments = full.attachments
+        }
+      } else if (needsBody) {
+        // honest failure: the content exists at Resend but is out of reach
+        // right now. Answer 500 so Resend redelivers — idempotency makes
+        // the retry safe; the ledger records this attempt.
+        console.error('[ingest] body fetch failed — asking Resend to redeliver')
+        await ledger({
+          outcome: 'failed',
+          source,
+          sender: email.from,
+          summary: email.subject
+            ? `${email.subject} (body fetch failed — will retry)`
+            : 'body fetch failed — will retry',
+        })
+        return new Response('content fetch failed', { status: 500 })
+      }
+    }
+  }
+
   try {
     // idempotency — the same email arriving twice files once
     if (email.messageId) {
@@ -329,7 +336,7 @@ export async function POST(request: Request): Promise<Response> {
 
     // payload → text: body, text/pdf attachments — easy always, zero conventions
     const parts: string[] = []
-    const bodyText = email.text?.trim() || (email.html ? htmlToText(email.html) : '')
+    const bodyText = bodyToText(email.text, email.html)
     if (bodyText) parts.push(bodyText)
     const manifest: { name: string; type: string; text: boolean }[] = []
     for (const a of email.attachments) {
@@ -349,7 +356,9 @@ export async function POST(request: Request): Promise<Response> {
 
     if (parts.length === 0) {
       // the honest couldn't-read state: the raw records what arrived —
-      // faithfully, marked as a manifest — never a silent drop
+      // faithfully, marked as a manifest — never a silent drop. (A
+      // stroke-only reMarkable PDF lands here by design: drawn ink has
+      // no text layer; convert-to-text on the device is the way in.)
       const manifestText = [
         `From: ${email.from}`,
         email.subject ? `Subject: ${email.subject}` : null,

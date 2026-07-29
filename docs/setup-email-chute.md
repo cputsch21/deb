@@ -40,6 +40,7 @@ only into your reMarkable, your Plaud, and your own contacts.
 |---|---|
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Settings → API → `service_role` key. **The one privileged key.** |
 | `RESEND_WEBHOOK_SECRET` | the `whsec_…` from step 4 |
+| `RESEND_API_KEY` | Resend → API Keys → create one (read access is enough). **Required for bodies**: Resend's webhook carries only metadata — the chute fetches the actual body and attachments from Resend's API with this key. Without it, every email lands "couldn't read". |
 | `INGEST_ADDRESS` | the full address from step 3 |
 | `INGEST_ALLOWED_SENDERS` | comma-separated: your addresses + the reMarkable sender + the Plaud sender |
 | `INGEST_OWNER_EMAIL` | `cputsch21@gmail.com` |
@@ -68,7 +69,24 @@ your inbox, and put those in the allowlist + the two sender vars.*
    `DROP: sender not allowed` line. No bounce comes back — by design.
 
 If step 1 fails, the Vercel function logs for `/api/ingest-email` say
-exactly which layer dropped it.
+exactly which layer dropped it — and the Arrivals ledger shows every
+attempt with its outcome.
+
+## What "couldn't read" means (and when it's correct)
+
+The webhook event is metadata-only; the body and attachments are fetched
+from Resend's API as a second step (hence `RESEND_API_KEY`). After that
+fix, "couldn't read" appears only when there genuinely are no words:
+
+- **reMarkable, default share**: a stroke PDF — your handwriting as drawn
+  ink, no text layer. "Couldn't read" is the *correct* outcome for it.
+  Use the device's **convert to text** before sending (share → convert to
+  text → send by email) and the words file like any other page.
+- **Photos / image-only mail**: same — no text to reach, honestly said.
+
+If the body fetch itself fails (Resend API hiccup), the chute answers 500
+so Resend redelivers on its retry schedule; the ledger shows the failed
+attempt ("body fetch failed — will retry") and the eventual success.
 
 ---
 

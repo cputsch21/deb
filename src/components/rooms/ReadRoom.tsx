@@ -230,7 +230,7 @@ function PageEntry({
           // the honest couldn't-read state (chute law): never a silent drop
           <em className="text-muted">
             I couldn&rsquo;t read this one — nothing textual arrived that I can
-            reach. The raw records what came.
+            reach. The raw is kept exactly as it came.
           </em>
         ) : (
           <em className="text-muted">

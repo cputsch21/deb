@@ -145,7 +145,7 @@ function ArrivalRow({
           {entry && (entry.distillate || entry.source_meta?.unreadable) && (
             <div className="mt-2 rounded-lg bg-fill px-3 py-2.5 text-[12px] leading-[1.75] whitespace-pre-wrap text-ink">
               {entry.distillate ??
-                'Nothing textual arrived that could be read — the raw records what came.'}
+                'Nothing textual could be read — the raw is kept exactly as it came.'}
             </div>
           )}
 
@@ -185,7 +185,7 @@ function outcomeLabel(a: Arrival): string {
     case 'versioned':
       return "grew today's page"
     case 'unreadable':
-      return "couldn't read — the raw records what came"
+      return "couldn't read — the raw is kept exactly as it came"
     case 'duplicate':
       return 'already on the page'
     case 'dropped_sender':
