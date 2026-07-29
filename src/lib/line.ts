@@ -3,8 +3,10 @@ import type { Task } from '../db/types'
 
 /**
  * THE ONE QUEUE (M4 law): this file is the single derivation of the stack
- * and the Line. React deals all of it, the Now strip glances its top,
- * Reflect's "what now?" speaks the same top via the server's state block
+ * and the Line. React deals the STACK — questions, never answers (July 29
+ * ruling): a verdicted card never returns to center. The Line STANDS at
+ * the room's edge as a list; the Now strip glances its top; Reflect's
+ * "what now?" speaks the same top via the server's state block
  * (api/_lib/context.ts mirrors these rules — KEEP THEM IN SYNC). If you
  * are about to build a second list anywhere, stop and reread this.
  *
@@ -22,7 +24,7 @@ import type { Task } from '../db/types'
 /** Tunable during move-in (DECISIONS, July 24 2026). */
 export const STALE_AFTER_DAYS = 7
 
-export type CardKind = 'fresh' | 'chase' | 'stale' | 'line'
+export type CardKind = 'fresh' | 'chase' | 'stale'
 export type DealtCard = { task: Task; kind: CardKind }
 
 const parseDay = (day: string): Date => {

@@ -4,12 +4,12 @@ import { useProjects } from '../../db/queries/projects'
 import { taskKeys, useTasks, useTaskMutations } from '../../db/queries/tasks'
 import { useEntryMeta } from '../../db/queries/entries'
 import { supabase } from '../../lib/supabase'
-import { DELEGATE_MAX, type EntryMeta, type Task } from '../../db/types'
+import { DELEGATE_MAX, type EntryMeta, type Project, type Task } from '../../db/types'
 import { useDoor } from '../../lib/door'
 import { useLens } from '../../lib/lens'
 import { useRoom } from '../../lib/rooms'
 import { transient } from '../../lib/undo'
-import { useLineWhys } from '../../lib/lineWhys'
+import { useLineWhys, type LineWhys } from '../../lib/lineWhys'
 import {
   addDays,
   ageInDays,
@@ -21,16 +21,22 @@ import {
   todayKey,
   type CardKind,
 } from '../../lib/line'
+import { Sheet } from '../Sheet'
 import { LoadFailed } from '../LoadFailed'
 
 /**
- * REACT — decide and do. One stage, one card at a time: every undecided
- * open loop first (fresh · chase · stale re-deals), then the Line's moves,
- * each with Deb's why when her ranking has landed. The four D's by drag
- * (desktop physics per the design target) or arrow keys; the punch beneath
- * finishes the front card. Every verdict is act-then-correct — it lands
- * instantly, the undo pill offers the take-back, the next card deals.
- * No confirms anywhere in this room.
+ * REACT — decide. A triage pile, not a to-do list: its jurisdiction ends
+ * at the verdict (July 29 ruling). The stage deals QUESTIONS only — fresh
+ * loops, chases, stale re-deals — one card at a time; a verdicted card
+ * never returns to center. When the stack runs dry, the sentence is the
+ * state, full stop. The Line — decided things, standing — renders as a
+ * quiet list at the room's edge (desktop rail; a sheet behind the counter
+ * on mobile). The day is where decided things get done.
+ *
+ * The four D's by drag (desktop physics per the design target) or arrow
+ * keys; the punch beneath finishes the front card. Every verdict is
+ * act-then-correct — it lands instantly, the undo pill offers the
+ * take-back, the next card deals. No confirms anywhere in this room.
  *
  * Age is information, never guilt (redline law): age renders in the same
  * muted mono as the source line — no OVERDUE, no red, no warning weight.
@@ -66,25 +72,12 @@ export function ReactRoom({ lens }: { lens: string | null }) {
     [tasks, lens, today, whys.order],
   )
 
-  // → on a Line card passes it (view-only, silent, no write). Cycles.
-  const [passed, setPassed] = useState<string[]>([])
-  const lineView = useMemo(() => {
-    const remaining = line.filter((t) => !passed.includes(t.id))
-    return remaining.length > 0 ? remaining : line
-  }, [line, passed])
-
-  const dealt = useMemo(
-    () =>
-      stack.length > 0
-        ? stack[0]
-        : lineView.length > 0
-          ? { task: lineView[0], kind: 'line' as const }
-          : null,
-    [stack, lineView],
-  )
+  // the stage deals questions, never answers: the stack only
+  const dealt = stack.length > 0 ? stack[0] : null
 
   const [exiting, setExiting] = useState<Exiting | null>(null)
   const [chooser, setChooser] = useState<Chooser | null>(null)
+  const [lineOpen, setLineOpen] = useState(false)
 
   /* ---------- the verdicts (act-then-correct, no confirms) ---------- */
 
@@ -100,11 +93,7 @@ export function ReactRoom({ lens }: { lens: string | null }) {
     const prev = snapshot(task)
 
     if (dir === 'right') {
-      if (kind === 'line') {
-        // pass — silent, view-only
-        setExiting({ task, kind, dir })
-        setPassed((p) => (p.includes(task.id) ? p : [...p, task.id]))
-      } else if (kind === 'chase') {
+      if (kind === 'chase') {
         setExiting({ task, kind, dir })
         update(task.id, { delegated_to: null, chase_on: null, anchored_on: today })
         transient.undo(`Back on you · ${task.title.slice(0, 32)}`, () => update(task.id, prev))
@@ -146,6 +135,12 @@ export function ReactRoom({ lens }: { lens: string | null }) {
     if (!dealt || exiting || chooser) return
     const { task, kind } = dealt
     setExiting({ task, kind, dir: 'right' })
+    setDone(task.id, true)
+    transient.undo(`Done · ${task.title.slice(0, 32)}`, () => setDone(task.id, false))
+  }
+
+  /** The Line's done circle — the same gesture the Now strip taught. */
+  const finish = (task: Task) => {
     setDone(task.id, true)
     transient.undo(`Done · ${task.title.slice(0, 32)}`, () => setDone(task.id, false))
   }
@@ -224,88 +219,277 @@ export function ReactRoom({ lens }: { lens: string | null }) {
 
   const nDecide = stack.length
   const nLine = line.length
-  const behind = (nDecide > 0 ? nDecide : lineView.length) - 1
-
-  /* ---------- both stages dry: the plain warm sentence ---------- */
-  if (!dealt && !exiting) {
-    return (
-      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 px-8 text-center">
-        <span className="eyebrow text-dim">React</span>
-        <h2 className="font-serif text-[26px] font-medium text-ink">Clear.</h2>
-        <p className="text-sm text-muted">Every loop has a verdict. Go live it.</p>
-      </div>
-    )
-  }
-
-  const show = exiting ?? dealt!
-  const world = projects.find((p) => p.id === show.task.project_id) ?? null
+  const behind = nDecide - 1
+  const staged = exiting ?? dealt
+  const world = staged ? (projects.find((p) => p.id === staged.task.project_id) ?? null) : null
   const accent = world?.color ?? 'var(--t-accent)'
-  const why = show.kind === 'line' ? whys.byId.get(show.task.id) : undefined
 
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center px-8">
-      {/* counts — information, not guilt */}
-      <span className="eyebrow absolute top-16 right-8 text-dim md:top-20">
-        {nDecide > 0 ? `${nDecide} to decide` : ''}
-        {nDecide > 0 && nLine > 0 ? ' · ' : ''}
-        {nLine > 0 ? `${nLine} on the line` : ''}
-      </span>
-
-      {/* the four directions */}
-      <Dir pos="top" label="↑ delay" />
-      <Dir pos="right" label="do →" />
-      <Dir pos="left" label="← delegate" />
-      <Dir pos="bottom" label="↓ delete" />
-
-      {chooser ? (
-        chooser.mode === 'delay' ? (
-          <DelayChooser
-            kind={chooser.kind}
-            today={today}
-            onPick={commitDelay}
-            onCancel={() => setChooser(null)}
-          />
-        ) : (
-          <DelegateChooser
-            task={chooser.task}
-            today={today}
-            onCommit={commitDelegate}
-            onCancel={() => setChooser(null)}
-          />
-        )
-      ) : (
-        <Card
-          key={show.task.id + show.kind}
-          task={show.task}
-          kind={show.kind}
-          entry={entryMeta.find((e) => e.id === show.task.source_entry_id) ?? null}
-          worldName={world?.name ?? null}
-          accent={accent}
-          today={today}
-          why={why}
-          exitingDir={exiting?.dir ?? null}
-          onFly={fly}
-        />
-      )}
-
-      {/* the punch — finishing the front card */}
-      {!chooser && (
-        <button
-          onClick={punch}
-          aria-label="Done"
-          className="mt-9 flex h-[74px] w-[74px] items-center justify-center rounded-full text-2xl text-white transition-transform duration-150 hover:scale-105 active:scale-95"
-          style={{ backgroundColor: accent }}
-        >
-          ✓
-        </button>
-      )}
-
-      {behind > 0 && (
-        <span className="eyebrow absolute bottom-7 left-1/2 -translate-x-1/2 text-dim">
-          {behind} behind this one
+    <div className="relative flex min-h-0 flex-1">
+      {/* ---------- the stage: questions only ---------- */}
+      <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center px-8">
+        {/* counts — information, not guilt. Mobile: the Line's counter IS
+            its door (no rail there); desktop: the rail carries the counter */}
+        <span className="eyebrow absolute top-16 right-8 text-dim md:top-20">
+          {nDecide > 0 ? `${nDecide} to decide` : ''}
+          {nDecide > 0 && nLine > 0 && <span className="md:hidden"> · </span>}
+          {nLine > 0 && (
+            <button
+              onClick={() => setLineOpen(true)}
+              className="-my-4 inline-flex min-h-11 items-center align-middle transition-colors hover:text-ink md:hidden"
+            >
+              {nLine} on the line
+            </button>
+          )}
         </span>
+
+        {!staged ? (
+          /* the stack ran dry: the sentence is the state, full stop */
+          <div className="flex flex-col items-center gap-2 text-center">
+            <span className="eyebrow text-dim">React</span>
+            <h2 className="font-serif text-[26px] font-medium text-ink">Clear.</h2>
+            <p className="text-sm text-muted">Every loop has a verdict. Go live it.</p>
+          </div>
+        ) : (
+          <>
+            {/* the four directions */}
+            <Dir pos="top" label="↑ delay" />
+            <Dir pos="right" label="do →" />
+            <Dir pos="left" label="← delegate" />
+            <Dir pos="bottom" label="↓ delete" />
+
+            {chooser ? (
+              chooser.mode === 'delay' ? (
+                <DelayChooser
+                  kind={chooser.kind}
+                  today={today}
+                  onPick={commitDelay}
+                  onCancel={() => setChooser(null)}
+                />
+              ) : (
+                <DelegateChooser
+                  task={chooser.task}
+                  today={today}
+                  onCommit={commitDelegate}
+                  onCancel={() => setChooser(null)}
+                />
+              )
+            ) : (
+              <Card
+                key={staged.task.id + staged.kind}
+                task={staged.task}
+                kind={staged.kind}
+                entry={entryMeta.find((e) => e.id === staged.task.source_entry_id) ?? null}
+                worldName={world?.name ?? null}
+                accent={accent}
+                today={today}
+                exitingDir={exiting?.dir ?? null}
+                onFly={fly}
+              />
+            )}
+
+            {/* the punch — finishing the front card */}
+            {!chooser && (
+              <button
+                onClick={punch}
+                aria-label="Done"
+                className="mt-9 flex h-[74px] w-[74px] items-center justify-center rounded-full text-2xl text-white transition-transform duration-150 hover:scale-105 active:scale-95"
+                style={{ backgroundColor: accent }}
+              >
+                ✓
+              </button>
+            )}
+
+            {behind > 0 && (
+              <span className="eyebrow absolute bottom-7 left-1/2 -translate-x-1/2 text-dim">
+                {behind} behind this one
+              </span>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* ---------- the Line, standing (desktop rail) ---------- */}
+      {nLine > 0 && (
+        <aside className="hidden min-h-0 w-[280px] flex-none flex-col pt-20 pr-7 pb-8 md:flex">
+          <span className="eyebrow text-dim">{nLine} on the line</span>
+          <div className="momentum mt-3 flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
+            {line.map((t, i) => (
+              <LineRow
+                key={t.id}
+                task={t}
+                world={projects.find((p) => p.id === t.project_id) ?? null}
+                why={i === 0 ? whys.byId.get(t.id) : undefined}
+                today={today}
+                onDone={finish}
+              />
+            ))}
+          </div>
+        </aside>
       )}
+
+      {/* ---------- the Line as a sheet (mobile — the counter's door) ---------- */}
+      <LineSheet
+        open={lineOpen}
+        onClose={() => setLineOpen(false)}
+        line={line}
+        projects={projects}
+        whys={whys}
+        today={today}
+        onDone={finish}
+      />
     </div>
+  )
+}
+
+/* ================= the standing Line ================= */
+
+/**
+ * One decided thing, standing. Read-and-done: the done circle completes
+ * (standard undo pill); long-press / right-click is the door onto
+ * Reflect's table. No drag-reorder, no editing in place — changes happen
+ * by telling Deb. Order is the Line's order (her ranking); the why rides
+ * the top card only — it's her answer to "what now?".
+ */
+function LineRow({
+  task,
+  world,
+  why,
+  today,
+  onDone,
+  onCarried,
+}: {
+  task: Task
+  world: Project | null
+  why: string | undefined
+  today: string
+  onDone: (task: Task) => void
+  onCarried?: () => void
+}) {
+  const { knock } = useDoor()
+  const { setRoom } = useRoom()
+  const { setLens } = useLens()
+  const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const start = useRef<{ x: number; y: number } | null>(null)
+  const clearHold = () => {
+    if (holdTimer.current) clearTimeout(holdTimer.current)
+    holdTimer.current = null
+  }
+  const carry = () => {
+    clearHold()
+    // the door lands in the task's world (thread ruling, July 28)
+    setLens(task.project_id)
+    knock({
+      type: 'object',
+      object: 'task',
+      content: task.title,
+      from: 'the Line',
+      world: world?.name ?? null,
+      state: 'on the Line',
+    })
+    setRoom('reflect')
+    onCarried?.()
+  }
+
+  const n = daysBetween(task.anchored_on!, today)
+  const age = n === 0 ? 'anchored today' : `on the Line ${n} day${n === 1 ? '' : 's'}`
+
+  return (
+    <div
+      className="flex items-center gap-1.5 rounded-xl bg-fill py-2.5 pr-1 pl-3.5"
+      onContextMenu={(e) => {
+        e.preventDefault()
+        carry()
+      }}
+      onPointerDown={(e) => {
+        if (e.pointerType !== 'touch') return
+        start.current = { x: e.clientX, y: e.clientY }
+        clearHold()
+        holdTimer.current = setTimeout(carry, 500)
+      }}
+      onPointerMove={(e) => {
+        // a scroll is a scroll — real movement cancels the hold
+        if (!start.current) return
+        if (
+          Math.max(Math.abs(e.clientX - start.current.x), Math.abs(e.clientY - start.current.y)) >
+          12
+        )
+          clearHold()
+      }}
+      onPointerUp={clearHold}
+      onPointerCancel={clearHold}
+    >
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <span
+            className="h-[7px] w-[7px] flex-none rounded-full"
+            style={{ backgroundColor: world?.color ?? 'var(--t-silver)' }}
+          />
+          <span className="truncate text-[13.5px] text-ink">{task.title}</span>
+        </div>
+        <div className="mt-1 pl-[15px] font-mono text-[0.58rem] tracking-[0.12em] text-dim uppercase">
+          {age}
+        </div>
+        {why && (
+          <p className="mt-1 max-w-[36ch] pl-[15px] font-serif text-[11.5px] leading-[1.5] text-muted italic">
+            {why}
+          </p>
+        )}
+      </div>
+      <button
+        aria-label={`Done: ${task.title}`}
+        onClick={() => onDone(task)}
+        className="flex h-11 w-11 flex-none items-center justify-center transition-opacity active:opacity-80"
+      >
+        <span
+          className="block h-[22px] w-[22px] rounded-full"
+          style={{ backgroundColor: world?.color ?? 'var(--t-accent)' }}
+        />
+      </button>
+    </div>
+  )
+}
+
+/** Mobile's Line: the standard Sheet behind the counter — same rows,
+ *  same exits per the sheet law. The glance levels survive, re-dressed:
+ *  Deb speaks the top · the strip glances the top · this shows all of it. */
+function LineSheet({
+  open,
+  onClose,
+  line,
+  projects,
+  whys,
+  today,
+  onDone,
+}: {
+  open: boolean
+  onClose: () => void
+  line: Task[]
+  projects: Project[]
+  whys: LineWhys
+  today: string
+  onDone: (task: Task) => void
+}) {
+  return (
+    <Sheet open={open} onClose={onClose} label="on the line">
+      <div className="mt-4 flex flex-col gap-2">
+        {line.length === 0 ? (
+          <p className="font-serif text-[13.5px] text-muted">Nothing stands decided right now.</p>
+        ) : (
+          line.map((t, i) => (
+            <LineRow
+              key={t.id}
+              task={t}
+              world={projects.find((p) => p.id === t.project_id) ?? null}
+              why={i === 0 ? whys.byId.get(t.id) : undefined}
+              today={today}
+              onDone={onDone}
+              onCarried={onClose}
+            />
+          ))
+        )}
+      </div>
+    </Sheet>
   )
 }
 
@@ -318,7 +502,6 @@ function Card({
   worldName,
   accent,
   today,
-  why,
   exitingDir,
   onFly,
 }: {
@@ -328,7 +511,6 @@ function Card({
   worldName: string | null
   accent: string
   today: string
-  why: string | undefined
   exitingDir: Exiting['dir'] | null
   onFly: (dir: Exiting['dir']) => void
 }) {
@@ -358,7 +540,7 @@ function Card({
       type: 'object',
       object: 'task',
       content: task.title,
-      from: kind === 'line' ? 'the Line' : 'the stack',
+      from: 'the stack',
       world: worldName,
       state: provenance(task, kind, entry),
     })
@@ -445,12 +627,6 @@ function Card({
         {kind === 'chase' ? `Chase ${task.delegated_to} — ${task.title}` : task.title}
       </div>
 
-      {why && (
-        <p className="mx-auto mt-3.5 max-w-[40ch] font-serif text-[14px] leading-[1.55] text-muted italic">
-          {why}
-        </p>
-      )}
-
       <div className="mt-5 flex items-center justify-center gap-2.5">
         <span className="h-[7px] w-[7px] rounded-full" style={{ backgroundColor: accent }} />
         <span
@@ -460,7 +636,7 @@ function Card({
           {worldName ?? 'bench'}
         </span>
         <span className="ml-2 font-mono text-[0.6rem] tracking-[0.12em] text-dim uppercase">
-          {ageLine(task, kind, today)}
+          {ageLine(task, today)}
         </span>
       </div>
       {/* the drag hints light through the parent Dir components via `lit` —
@@ -474,7 +650,6 @@ function Card({
 function provenance(task: Task, kind: CardKind, entry: EntryMeta | null): string {
   if (kind === 'chase') return `waiting on ${task.delegated_to} · chase ${shortDay(task.chase_on!)}`
   if (kind === 'stale') return `on the Line since ${shortDay(task.anchored_on!)} — still real?`
-  if (kind === 'line') return 'on the Line'
   if (entry) {
     const [y, m, d] = entry.entry_day.split('-').map(Number)
     const weekday = new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'long' })
@@ -487,11 +662,7 @@ function provenance(task: Task, kind: CardKind, entry: EntryMeta | null): string
 }
 
 /** Age in the same muted mono as everything else. Information, never guilt. */
-function ageLine(task: Task, kind: CardKind, today: string): string {
-  if (kind === 'line') {
-    const n = daysBetween(task.anchored_on!, today)
-    return n === 0 ? 'anchored today' : `on the Line ${n} day${n === 1 ? '' : 's'}`
-  }
+function ageLine(task: Task, today: string): string {
   const n = ageInDays(task.created_at, today)
   return n === 0 ? 'opened today' : `open ${n} day${n === 1 ? '' : 's'}`
 }

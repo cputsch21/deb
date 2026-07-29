@@ -30,6 +30,35 @@ confirm. Next: **T5 — the V1 walk**, gated on Chris's two device passes.
 
 ## The log (newest first)
 
+### July 29, 2026 — React deals questions, never answers · the Line stands
+**React is a triage pile, not a to-do list — its jurisdiction ends at the
+verdict.** The dealt stage for Line cards is retired: it wasn't a rhythm,
+it was a category error. A verdicted card returning to center stage
+produced "wait, didn't I decide this?" — the feeling was the bug. The
+stack deals only what needs a verdict (fresh · chase · stale re-deals);
+when it runs dry, the sentence is the state, full stop. The Line is where
+decided things stand; the day is where they get done.
+
+The Line renders as a **standing list** at the room's edge:
+- Desktop: right side, under the N ON THE LINE counter. Each row a quiet
+  tonal well — world dot + title in sentence case, age in muted mono
+  ("on the Line 2 days"), her ≤12-word why in the small italic serif on
+  the **top card only** (it's her answer to "what now?"; a why on every
+  row is noise). Order is the Line's order — her ranking.
+- A done circle on each row: tap completes with the standard undo pill,
+  the same gesture the Now strip taught. The row is a door per the
+  standing law (long-press / right-click → Reflect, task on the table).
+- **No drag-reorder, no editing in place** — the list is read-and-done;
+  changes happen by telling Deb.
+- Mobile: the right rail doesn't exist, so the N ON THE LINE counter
+  itself is the door — tap opens the Line as a standard sheet, same rows,
+  same exits per sheet law.
+
+The three zoom levels survive, re-dressed: Deb speaks the top · the strip
+glances the top · React shows all of it, standing, at the room's edge.
+Completing the last Line item earns the room's full quiet — both empty
+states resolve to the one sentence, never confetti, per the graveyard.
+
 ### July 28, 2026 — The Arrivals ledger: observability for the mouth
 The filing engine gets a ledger: everything that ever arrives — the
 composer's paste, the chute's mail, any future mouth — leaves a row in
