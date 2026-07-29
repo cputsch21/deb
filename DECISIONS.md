@@ -30,6 +30,55 @@ confirm. Next: **T5 — the V1 walk**, gated on Chris's two device passes.
 
 ## The log (newest first)
 
+### July 29, 2026 — The chooser's third row: a slider, not a calendar
+**Replace, don't repair:** the delay and delegate choosers' fixed-date
+field dies. In its place, a 1–5 day slider — quiet Warm Glass track, no
+ticks screaming, thumb snaps to whole days, the row live-previewing the
+resolved day as it moves ("chase in 2 days · AUG 1", same mono).
+Drag-release commits, the same one-pause-deep cadence as the presets;
+arrow keys nudge and Enter commits, matching the room's keyboard
+grammar. The two presets above stay exactly as they were — the
+no-thought path; the slider is the five-second path.
+
+**The deliberate long-tail:** anything beyond five days out belongs to
+the conversation — "chase Karthik in three weeks" — and Deb's delegate
+hand takes any date. The chooser covers the near week; the conversation
+covers the calendar.
+
+**Flag, resolved in the same ticket:** the ruling's premise fought the
+code — Deb had NO delegate hand (update_task did rename · re-home ·
+goal · anchor only). The long-tail home had to exist before the date
+field could die, so `update_task` grew `delegate` + `chase` (any date,
+computed from his words; "none" takes it back on Chris; stamps
+`delegated_on`; act-then-correct with the full undo).
+
+### July 29, 2026 — Cards carry their receipt
+At minting time the extractor captures the **source excerpt** — the
+sentence or two from the material that justified the card, VERBATIM,
+capped at 200 characters — stored on the task beside `source_entry_id`.
+**Captured at mint, never re-derived**: the excerpt is a fact about why
+the card exists; it doesn't drift as the entry versions.
+
+Card anatomy grows one element: beneath the title, the excerpt as a
+short quoted passage — italic serif, muted, visually the card's "raw" —
+with the source line as its attribution ("from Tuesday's Plaud call ·
+JUL 29"). The source line becomes a **door**: tap opens Read on that
+entry, at that spot, for the full surround (the book jump now carries
+the entry, and Read scrolls to it). Chase cards carry their own
+receipt: who it was handed to, when (`delegated_on`, stamped at
+hand-off), and the original excerpt.
+
+**Restraint rule, recorded:** conversation-born cards show NO excerpt —
+the title is the sentence; quoting it back is noise. Only material-born
+cards (plaud / remarkable / email / filed) carry the receipt. An excerpt
+that would exceed the card's calm truncates (3-line clamp), the door
+carrying the rest. The standing Line list gets NO excerpts — those rows
+stay one line each; the receipt's home is the card at verdict time,
+where the decision happens.
+
+Migration `supabase/2026-07-29_card_receipts.sql` (source_excerpt +
+delegated_on) gates the deploy per the standing discipline.
+
 ### July 29, 2026 — React deals questions, never answers · the Line stands
 **React is a triage pile, not a to-do list — its jurisdiction ends at the
 verdict.** The dealt stage for Line cards is retired: it wasn't a rhythm,

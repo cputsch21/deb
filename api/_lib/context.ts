@@ -59,7 +59,7 @@ export async function loadContext(
   const [projects, goals, tasks, facts, entries, brief, history] = await Promise.all([
     scope(db.from('projects').select('id, name, color, mission, created_at').is('deleted_at', null)).order('created_at'),
     scope(db.from('goals').select('id, project_id, title, status, resolved_at, created_at').is('deleted_at', null)).order('created_at'),
-    scope(db.from('tasks').select('id, project_id, goal_id, title, done_at, touched_at, anchored_on, delegated_to, chase_on, created_at').is('deleted_at', null)).order('created_at'),
+    scope(db.from('tasks').select('id, project_id, goal_id, title, done_at, touched_at, anchored_on, delegated_to, chase_on, delegated_on, created_at').is('deleted_at', null)).order('created_at'),
     scope(db.from('known_facts').select('id, content, source, created_at').is('deleted_at', null)).order('created_at'),
     scope(
       db

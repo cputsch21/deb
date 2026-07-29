@@ -5,6 +5,7 @@ import { taskKeys, useTasks, useTaskMutations } from '../../db/queries/tasks'
 import { useEntryMeta } from '../../db/queries/entries'
 import { supabase } from '../../lib/supabase'
 import { DELEGATE_MAX, type EntryMeta, type Project, type Task } from '../../db/types'
+import { useBook } from '../../lib/book'
 import { useDoor } from '../../lib/door'
 import { useLens } from '../../lib/lens'
 import { useRoom } from '../../lib/rooms'
@@ -85,6 +86,7 @@ export function ReactRoom({ lens }: { lens: string | null }) {
     anchored_on: t.anchored_on,
     delegated_to: t.delegated_to,
     chase_on: t.chase_on,
+    delegated_on: t.delegated_on,
   })
 
   const fly = (dir: Exiting['dir']) => {
@@ -95,7 +97,7 @@ export function ReactRoom({ lens }: { lens: string | null }) {
     if (dir === 'right') {
       if (kind === 'chase') {
         setExiting({ task, kind, dir })
-        update(task.id, { delegated_to: null, chase_on: null, anchored_on: today })
+        update(task.id, { delegated_to: null, chase_on: null, delegated_on: null, anchored_on: today })
         transient.undo(`Back on you · ${task.title.slice(0, 32)}`, () => update(task.id, prev))
       } else {
         setExiting({ task, kind, dir })
@@ -166,7 +168,12 @@ export function ReactRoom({ lens }: { lens: string | null }) {
     const prev = snapshot(task)
     setChooser(null)
     setExiting({ task, kind, dir: 'left' })
-    update(task.id, { delegated_to: who, chase_on: chaseOn, anchored_on: null })
+    update(task.id, {
+      delegated_to: who,
+      chase_on: chaseOn,
+      delegated_on: today, // the hand-off's own receipt (July 29)
+      anchored_on: null,
+    })
     transient.undo(`Waiting on ${who.slice(0, 24)} · chase ${shortDay(chaseOn)}`, () =>
       update(task.id, prev),
     )
@@ -547,6 +554,21 @@ function Card({
     setRoom('reflect')
   }
 
+  // The receipt's door (July 29): the source line opens Read on the
+  // entry, at that spot, for the full surround. Lands in the entry's
+  // world per the thread ruling.
+  const openSource = entry
+    ? () => {
+        setLens(entry.project_id)
+        useBook.getState().open(entry.entry_day, entry.id)
+        setRoom('read')
+      }
+    : null
+  // A fresh card's top line IS the source line; with a receipt shown, it
+  // moves beneath the excerpt as its attribution (one element, not two).
+  const receipt = task.source_excerpt
+  const topLine = !(kind === 'fresh' && receipt && entry)
+
   const lit =
     dxy && Math.max(Math.abs(dxy.dx), Math.abs(dxy.dy)) > 16
       ? Math.abs(dxy.dx) > Math.abs(dxy.dy)
@@ -621,11 +643,40 @@ function Card({
         setDxy(null)
       }}
     >
-      <span className="eyebrow block text-dim">{provenance(task, kind, entry)}</span>
+      {topLine &&
+        (kind === 'fresh' && openSource ? (
+          <button
+            onClick={openSource}
+            className="eyebrow -my-3 inline-flex min-h-11 items-center text-dim transition-colors hover:text-ink"
+          >
+            {provenance(task, kind, entry)}
+          </button>
+        ) : (
+          <span className="eyebrow block text-dim">{provenance(task, kind, entry)}</span>
+        ))}
 
       <div className="mt-4 font-serif text-[22px] leading-[1.25] font-medium tracking-[-0.01em] text-ink">
         {kind === 'chase' ? `Chase ${task.delegated_to} — ${task.title}` : task.title}
       </div>
+
+      {/* the receipt (July 29): why this card exists, in his words —
+          verbatim at mint, the card's own "raw"; conversation-born cards
+          carry none. Truncated calm; the door beneath holds the rest. */}
+      {receipt && (
+        <>
+          <p className="mx-auto mt-3.5 line-clamp-3 max-w-[40ch] font-serif text-[13.5px] leading-[1.6] text-muted italic">
+            &ldquo;{receipt}&rdquo;
+          </p>
+          {entry && openSource && (
+            <button
+              onClick={openSource}
+              className="eyebrow mx-auto -mb-3 mt-1 flex min-h-11 items-center text-[0.58rem] text-dim transition-colors hover:text-ink"
+            >
+              {fromLine(entry)} · {shortDay(entry.entry_day)}
+            </button>
+          )}
+        </>
+      )}
 
       <div className="mt-5 flex items-center justify-center gap-2.5">
         <span className="h-[7px] w-[7px] rounded-full" style={{ backgroundColor: accent }} />
@@ -648,17 +699,26 @@ function Card({
 
 /** The source line — where this loop came from. Minted cards wear their entry. */
 function provenance(task: Task, kind: CardKind, entry: EntryMeta | null): string {
-  if (kind === 'chase') return `waiting on ${task.delegated_to} · chase ${shortDay(task.chase_on!)}`
-  if (kind === 'stale') return `on the Line since ${shortDay(task.anchored_on!)} — still real?`
-  if (entry) {
-    const [y, m, d] = entry.entry_day.split('-').map(Number)
-    const weekday = new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'long' })
-    if (entry.source === 'plaud') return `from ${weekday}'s Plaud call`
-    if (entry.source === 'remarkable') return `from ${weekday}'s reMarkable page`
-    if (entry.source === 'email') return `from ${weekday}'s mail`
-    return `from ${weekday}'s filing`
+  if (kind === 'chase') {
+    // the chase card's receipt (July 29): who it was handed to, and when
+    return task.delegated_on
+      ? `handed to ${task.delegated_to} ${shortDay(task.delegated_on)} · chase ${shortDay(task.chase_on!)}`
+      : `waiting on ${task.delegated_to} · chase ${shortDay(task.chase_on!)}`
   }
+  if (kind === 'stale') return `on the Line since ${shortDay(task.anchored_on!)} — still real?`
+  if (entry) return fromLine(entry)
   return `from Reflect · ${shortDay(task.created_at.slice(0, 10))}`
+}
+
+/** "from Tuesday's Plaud call" — the entry's own line, shared by the top
+ *  eyebrow and the receipt's attribution door. */
+function fromLine(entry: EntryMeta): string {
+  const [y, m, d] = entry.entry_day.split('-').map(Number)
+  const weekday = new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'long' })
+  if (entry.source === 'plaud') return `from ${weekday}'s Plaud call`
+  if (entry.source === 'remarkable') return `from ${weekday}'s reMarkable page`
+  if (entry.source === 'email') return `from ${weekday}'s mail`
+  return `from ${weekday}'s filing`
 }
 
 /** Age in the same muted mono as everything else. Information, never guilt. */
@@ -718,6 +778,62 @@ function DirLit({ lit }: { lit: 'up' | 'down' | 'left' | 'right' | null }) {
 
 /* ================= the two choosers (one tap deep) ================= */
 
+/**
+ * The third row (July 29 ruling — replace, don't repair): a 1–5 day
+ * slider, quiet Warm Glass track, whole-day snaps, live preview of the
+ * resolved day. Drag-release commits — the same one-pause-deep cadence
+ * as the presets; arrow keys nudge, Enter commits, per the room's
+ * keyboard grammar. Anything past five days is the conversation's job:
+ * tell Deb, her delegate hand takes any date.
+ */
+function DaySlider({
+  n,
+  setN,
+  today,
+  prefix,
+  disabled,
+  onCommit,
+}: {
+  n: number
+  setN: (n: number) => void
+  today: string
+  prefix: string
+  disabled?: boolean
+  onCommit: (day: string) => void
+}) {
+  const day = addDays(today, n)
+  return (
+    <div
+      className={`flex flex-col gap-2.5 rounded-xl bg-fill px-4 py-3 ${disabled ? 'opacity-40' : ''}`}
+    >
+      <div className="flex min-h-5 items-center justify-between text-[15px] text-ink">
+        <span>
+          {prefix} {n} day{n === 1 ? '' : 's'}
+        </span>
+        <span className="eyebrow text-dim">{shortDay(day)}</span>
+      </div>
+      <input
+        type="range"
+        min={1}
+        max={5}
+        step={1}
+        value={n}
+        disabled={disabled}
+        aria-label={`${prefix} how many days`}
+        onChange={(e) => setN(Number(e.target.value))}
+        onPointerUp={() => !disabled && onCommit(addDays(today, n))}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && !disabled) {
+            e.preventDefault()
+            onCommit(day)
+          }
+        }}
+        className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-fill2 outline-none [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-accent [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-accent"
+      />
+    </div>
+  )
+}
+
 function DelayChooser({
   kind,
   today,
@@ -729,15 +845,21 @@ function DelayChooser({
   onPick: (day: string) => void
   onCancel: () => void
 }) {
+  const [n, setN] = useState(2)
   const picks = [
     { label: 'tomorrow', day: addDays(today, 1), key: '1' },
     { label: 'next week', day: addDays(today, 7), key: '2' },
   ]
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null
+      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) return
       if (e.key === 'Escape') onCancel()
       if (e.key === '1') onPick(picks[0].day)
       if (e.key === '2') onPick(picks[1].day)
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') setN(Math.max(1, n - 1))
+      if (e.key === 'ArrowRight' || e.key === 'ArrowUp') setN(Math.min(5, n + 1))
+      if (e.key === 'Enter') onPick(addDays(today, n))
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -758,12 +880,12 @@ function DelayChooser({
             <span className="eyebrow text-dim">{shortDay(p.day)}</span>
           </button>
         ))}
-        <input
-          type="date"
-          min={addDays(today, 1)}
-          onChange={(e) => e.target.value && onPick(e.target.value)}
-          aria-label="Pick a date"
-          className="min-h-11 rounded-xl bg-fill px-4 text-[15px] text-ink outline-none"
+        <DaySlider
+          n={n}
+          setN={setN}
+          today={today}
+          prefix={kind === 'chase' ? 'chase in' : 'in'}
+          onCommit={onPick}
         />
         <button onClick={onCancel} className="min-h-11 text-sm text-dim hover:text-ink">
           never mind
@@ -785,6 +907,7 @@ function DelegateChooser({
   onCancel: () => void
 }) {
   const [who, setWho] = useState(task.delegated_to ?? '')
+  const [n, setN] = useState(2)
   const picks = [
     { label: 'chase in 3 days', day: addDays(today, 3), key: '1' },
     { label: 'chase next week', day: addDays(today, 7), key: '2' },
@@ -795,6 +918,11 @@ function DelegateChooser({
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onCancel()
+      const el = e.target as HTMLElement | null
+      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) return
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') setN(Math.max(1, n - 1))
+      if (e.key === 'ArrowRight' || e.key === 'ArrowUp') setN(Math.min(5, n + 1))
+      if (e.key === 'Enter') commit(addDays(today, n))
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -822,13 +950,15 @@ function DelegateChooser({
             <span className="eyebrow text-dim">{shortDay(p.day)}</span>
           </button>
         ))}
-        <input
-          type="date"
-          min={addDays(today, 1)}
-          onChange={(e) => e.target.value && commit(e.target.value)}
+        {/* the near week lives here; the calendar lives in the
+            conversation — "chase Karthik in three weeks" is Deb's hand */}
+        <DaySlider
+          n={n}
+          setN={setN}
+          today={today}
+          prefix="chase in"
           disabled={!who.trim()}
-          aria-label="Pick a chase date"
-          className="min-h-11 rounded-xl bg-fill px-4 text-[15px] text-ink outline-none disabled:opacity-40"
+          onCommit={commit}
         />
         <button onClick={onCancel} className="min-h-11 text-sm text-dim hover:text-ink">
           never mind

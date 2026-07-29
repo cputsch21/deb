@@ -381,8 +381,8 @@ export async function performFiling(
 
     const taskIds: string[] = []
     const mintedTitles: string[] = []
-    for (const title of result?.cards ?? []) {
-      const t = capText(title, TASK_TITLE_MAX)
+    for (const card of result?.cards ?? []) {
+      const t = capText(card.title, TASK_TITLE_MAX)
       if (!t || priorMinted.some((p) => p.toLowerCase() === t.toLowerCase())) continue
       const taskId = randomUUID()
       const { error: mintError } = await db.from('tasks').insert({
@@ -390,6 +390,8 @@ export async function performFiling(
         title: t,
         project_id: routedProjectId,
         source_entry_id: entryId,
+        // the receipt: captured at mint, never re-derived (July 29)
+        source_excerpt: card.excerpt ? capText(card.excerpt, 200) : null,
         ...stamp,
       })
       if (!mintError) {
@@ -441,8 +443,8 @@ export async function performFiling(
 
   const taskIds: string[] = []
   const mintedTitles: string[] = []
-  for (const title of result?.cards ?? []) {
-    const t = capText(title, TASK_TITLE_MAX)
+  for (const card of result?.cards ?? []) {
+    const t = capText(card.title, TASK_TITLE_MAX)
     if (!t) continue
     const taskId = randomUUID()
     const { error: mintError } = await db.from('tasks').insert({
@@ -450,6 +452,8 @@ export async function performFiling(
       title: t,
       project_id: target ? String(target.id) : null,
       source_entry_id: entryId,
+      // the receipt: captured at mint, never re-derived (July 29)
+      source_excerpt: card.excerpt ? capText(card.excerpt, 200) : null,
       ...stamp,
     })
     if (!mintError) {

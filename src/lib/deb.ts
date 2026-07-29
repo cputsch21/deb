@@ -47,6 +47,9 @@ export type DebEvent =
         project_id: string | null
         goal_id: string | null
         anchored_on: string | null
+        delegated_to: string | null
+        chase_on: string | null
+        delegated_on: string | null
       }
     }
   // The done hand (July 27 amendment): his direct statement is the

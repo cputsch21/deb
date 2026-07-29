@@ -32,13 +32,23 @@ export function ReadRoom({ lens }: { lens: string | null }) {
   const [arrivalsOpen, setArrivalsOpen] = useState(false)
 
   // A filed object in the thread is a door here (July 28 ruling): consume
-  // the requested page and open the book on it.
+  // the requested page and open the book on it. A jump carrying the entry
+  // (July 29 receipts) lands at that spot for the full surround.
   const jump = useBook((s) => s.jump)
+  const [landAt, setLandAt] = useState<string | null>(null)
   useEffect(() => {
     if (!jump) return
-    setCursor(jump)
+    setCursor(jump.day)
+    setLandAt(jump.entryId)
     useBook.getState().clear()
   }, [jump])
+  useEffect(() => {
+    if (!landAt) return
+    const el = document.querySelector(`[data-entry-id="${landAt}"]`)
+    if (!el) return // the entry isn't on this page yet — wait, don't clear
+    el.scrollIntoView({ block: 'start', behavior: 'auto' })
+    setLandAt(null)
+  })
 
   const scoped = useMemo(
     () =>
@@ -198,7 +208,7 @@ function PageEntry({
   const [rawOpen, setRawOpen] = useState(false)
 
   return (
-    <div className="relative mb-9">
+    <div className="relative mb-9 scroll-mt-6" data-entry-id={entry.id}>
       <span className="eyebrow mb-2 block text-[0.6rem] text-dim opacity-85">
         {timeOf(entry.created_at)} · {sourceLabel(entry.source)}
         {entry.source_meta?.channel === 'email' && entry.source_meta.from && (

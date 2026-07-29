@@ -136,8 +136,14 @@ export type Task = {
   /** ← Delegate: who + when, always together. Off the plate until chase day. */
   delegated_to: string | null
   chase_on: string | null
+  /** when it was handed off — the chase card's receipt (July 29) */
+  delegated_on: string | null
   /** M5: minted cards wear their source entry ("From Tuesday's Plaud call"). */
   source_entry_id: string | null
+  /** The card's receipt (July 29): the verbatim sentence(s) that justified
+   *  the mint — captured at mint, never re-derived. Conversation-born
+   *  cards carry none; the title is the sentence. */
+  source_excerpt: string | null
   materialized_on: string | null
   created_at: string
   deleted_at: string | null

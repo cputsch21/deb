@@ -176,7 +176,7 @@ const STAGE_GOAL_VERDICT: Anthropic.Tool = {
 /** Task editing lives in the conversation too (T4 ruling 2): everything the old sheet did. */
 const UPDATE_TASK: Anthropic.Tool = {
   name: 'update_task',
-  description: `Edit an existing OPEN task when Chris asks for it in words: rename ("call it 'Invoice Larry — May'"), re-home ("move that to CTDI" / "put it on the Bench"), assign it under a goal, or re-anchor it ("do it today" / "actually, unschedule that"). Act-then-correct with undo. Find the task by its title from the current state; if the words match more than one task, ask rather than guess. Pass ONLY the fields he asked to change. This never marks a task done (that is complete_task, under its evidence bar) and never deletes — deletion belongs to the stack's ↓.`,
+  description: `Edit an existing OPEN task when Chris asks for it in words: rename ("call it 'Invoice Larry — May'"), re-home ("move that to CTDI" / "put it on the Bench"), assign it under a goal, re-anchor it ("do it today" / "actually, unschedule that"), or delegate it ("chase Karthik in three weeks" — the long-tail home for any chase date; the room's chooser covers only the near week). Act-then-correct with undo. Find the task by its title from the current state; if the words match more than one task, ask rather than guess. Pass ONLY the fields he asked to change. This never marks a task done (that is complete_task, under its evidence bar) and never deletes — deletion belongs to the stack's ↓.`,
   input_schema: {
     type: 'object',
     properties: {
@@ -185,6 +185,8 @@ const UPDATE_TASK: Anthropic.Tool = {
       world: { type: 'string', description: 'Re-home: exact world name, or "bench" for the Bench. Clears any goal unless one is also given.' },
       goal: { type: 'string', description: 'Assign under a goal in the task\'s world, by goal title — or "none" to un-assign.' },
       anchor: { type: 'string', description: 'Re-anchor: "today", a yyyy-mm-dd day, or "none" to send it back to the stack undecided.' },
+      delegate: { type: 'string', description: 'Hand it to someone ("Karthik"), with `chase` required — compute the yyyy-mm-dd from his words. Or "none" to take it back on Chris.' },
+      chase: { type: 'string', description: 'The chase day (yyyy-mm-dd), required with delegate. Any date — no five-day limit here.' },
     },
     required: ['task'],
   },
@@ -971,6 +973,8 @@ async function updateTask(
     world?: unknown
     goal?: unknown
     anchor?: unknown
+    delegate?: unknown
+    chase?: unknown
   }
 
   const openTasks = ctx.tasks.filter((t) => !t.done_at)
@@ -1048,6 +1052,33 @@ async function updateTask(
     }
   }
 
+  // her delegate hand (July 29 — the chooser's long tail): any date,
+  // computed from his words; "none" takes it back on Chris
+  if (input.delegate !== undefined) {
+    const who = String(input.delegate).trim()
+    if (who.toLowerCase() === 'none') {
+      next.delegated_to = null
+      next.chase_on = null
+      next.delegated_on = null
+      said.push('back on Chris')
+    } else {
+      const name = capText(who, 80)
+      if (!name) return { content: 'The delegate name is empty — nothing changed.', is_error: true }
+      const chase = String(input.chase ?? '').trim()
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(chase)) {
+        return {
+          content: 'Delegating needs a chase day (yyyy-mm-dd) — a who without a when is a lost thread.',
+          is_error: true,
+        }
+      }
+      next.delegated_to = name
+      next.chase_on = chase
+      next.delegated_on = todayKeyInTz(tz)
+      next.anchored_on = null // off the plate until chase day, per the model
+      said.push(`handed to ${name} · chase ${chase}`)
+    }
+  }
+
   if (Object.keys(next).length === 0) {
     return { content: 'No change was given — pass the field Chris asked to change.', is_error: true }
   }
@@ -1057,6 +1088,9 @@ async function updateTask(
     project_id: (task.project_id as string | null) ?? null,
     goal_id: (task.goal_id as string | null) ?? null,
     anchored_on: (task.anchored_on as string | null) ?? null,
+    delegated_to: (task.delegated_to as string | null) ?? null,
+    chase_on: (task.chase_on as string | null) ?? null,
+    delegated_on: (task.delegated_on as string | null) ?? null,
   }
 
   const { data, error } = await db
