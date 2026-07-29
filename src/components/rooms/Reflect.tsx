@@ -39,7 +39,11 @@ export function Reflect({ lens }: { lens: string | null }) {
   const { forget: forgetFact } = useFactMutations()
   const { update: updateProject } = useProjectMutations()
   const { update: updateGoal, verdict: goalVerdict, remove: removeGoal } = useGoalMutations()
-  const { hide: hideEntry, revertVersion: revertEntryVersion } = useEntryMutations()
+  const {
+    hide: hideEntry,
+    revertVersion: revertEntryVersion,
+    refile: refileEntry,
+  } = useEntryMutations()
   const world = projects.find((p) => p.id === lens) ?? null
   const isMobile = useIsMobile()
   const [turn, setTurn] = useState<Turn | null>(null)
@@ -225,6 +229,21 @@ export function Reflect({ lens }: { lens: string | null }) {
           const id = e.id
           transient.undo(`Done · ${e.title.slice(0, 40)}`, () => setTaskDone(id, false))
           setReceipts((r) => [...r, { id: `${id}-done`, label: `Done — ${e.title.slice(0, 32)}` }])
+        } else if (e.kind === 'entry_refiled') {
+          // an entry re-homed by his word (E5); undo restores entry + cards
+          void qc.invalidateQueries({ queryKey: entryKeys.meta })
+          void qc.invalidateQueries({ queryKey: entryKeys.pages })
+          void qc.invalidateQueries({ queryKey: taskKeys.all })
+          const r = e
+          transient.undo(
+            `Re-homed to ${r.worldName}${r.tasks.length ? ` · ${r.tasks.length} card${r.tasks.length === 1 ? '' : 's'} along` : ''}`,
+            () => {
+              void refileEntry(r.id, r.prevProjectId)
+              for (const t of r.tasks) {
+                updateTask(t.id, { project_id: t.prevProjectId, goal_id: t.prevGoalId })
+              }
+            },
+          )
         } else if (e.kind === 'brief_generated') {
           // she built the brief on his word — the page pin re-reads
           void qc.invalidateQueries({ queryKey: briefKey })

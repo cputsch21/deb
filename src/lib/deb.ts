@@ -54,6 +54,16 @@ export type DebEvent =
   | { type: 'action'; kind: 'task_completed'; id: string; title: string }
   // The brief was (re)built server-side — the page pin needs a re-read.
   | { type: 'action'; kind: 'brief_generated' }
+  // An entry re-homed by his word (E5): open minted cards ride along;
+  // `prev*` carries exactly what the undo puts back.
+  | {
+      type: 'action'
+      kind: 'entry_refiled'
+      id: string
+      worldName: string
+      prevProjectId: string | null
+      tasks: { id: string; prevProjectId: string | null; prevGoalId: string | null }[]
+    }
   // Not a write: she staged the app's one solemn confirm. The verdict is
   // Chris's to sign in the thread — or wave off.
   | { type: 'action'; kind: 'verdict_staged'; id: string; title: string; verdict: 'done' | 'dropped' }

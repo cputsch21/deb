@@ -1,19 +1,21 @@
-// Font: Fraunces 144pt Medium (SIL OFL — © 2020 The Fraunces Project Authors,
-// github.com/undercasetype/Fraunces); kept beside this script so the set
-// regenerates from the real face, never a stand-in.
+// Font: Fraunces 144pt Soft Wonky Medium — the instanced axes of the mark
+// (opsz 144 / wght 500 / SOFT 60 / WONK 1; SIL OFL — © 2020 The Fraunces
+// Project Authors, github.com/undercasetype/Fraunces); kept beside this
+// script so the set regenerates from the real face, never a stand-in.
 //
-// The brand mark (July 28 ruling): "d." — lowercase d in real Fraunces (the
-// display cut, Medium — her voice's own face), warm ink on warm paper, the
-// silver dot as its period at baseline right of the bowl. Rendered from the
-// actual font file at every raster size via fontkit (true outlines + metrics)
-// + resvg (path rasterization) — no system-serif stand-ins, no downscaling.
+// The brand mark, final form (July 28 ruling): "d." — upright Fraunces at
+// the axes above, the whole unit rotated 2° counterclockwise, with the DAWN
+// PERIOD: rose #cd735a at the rim to warm gold at the offset highlight —
+// the sunrise as punctuation. Silver stays the in-app home-dot accent,
+// unchanged. Rendered from the actual font file at every raster size via
+// fontkit (true outlines + metrics) + resvg — no stand-ins, no downscaling.
 //
 // Run: node scripts/icon-mark.mjs   (regenerates public/ icons + splashes)
 import { writeFileSync } from 'node:fs'
 import * as fontkit from 'fontkit'
 import { Resvg } from '@resvg/resvg-js'
 
-const FONT = new URL('./Fraunces-144pt-Medium.ttf', import.meta.url).pathname
+const FONT = new URL('./Fraunces-144pt-Medium-Soft-Wonk.ttf', import.meta.url).pathname
 const font = fontkit.openSync(FONT)
 const UPEM = font.unitsPerEm // 2000
 const glyph = font.layout('d').glyphs[0]
@@ -22,8 +24,11 @@ const BB = glyph.bbox // ink: x 48..987, y -20..1478
 
 const PAPER = '#FAF8F4'
 const INK = '#191713'
-const SILVER = ['#C8CCD4', '#8A8F98'] // light-scheme silver (the home dot)
-const SILVER_DARK = ['#D8DCE2', '#9BA1AC']
+// the dawn period (July 28 final form): gold at the offset highlight,
+// rose at the rim — dark wears a slightly brighter gold
+const DAWN = ['#EEBE78', '#CD735A'] // [highlight, rim]
+const DAWN_DARK = ['#F0C37D', '#CD735A']
+const TILT = -2 // degrees — the whole "d." unit, counterclockwise
 
 /**
  * Compose the mark on a w×h canvas.
@@ -44,19 +49,22 @@ function markSvg({ w, h, inkH, dotK = 0.085, gapK = 0.1, nudgeX = 0, dark = fals
   const penX = unitX - BB.minX * s
   const cx = unitX + inkW + gap + r
   const cy = baseline - r // the period sits on the baseline
-  const [c1, c2] = dark ? SILVER_DARK : SILVER
+  const [hi, rim] = dark ? DAWN_DARK : DAWN
+  const unitCx = unitX + unitW / 2
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
   <defs>
     <radialGradient id="dot" cx="35%" cy="32%" r="78%">
-      <stop stop-color="${c1}"/>
-      <stop offset="1" stop-color="${c2}"/>
+      <stop stop-color="${hi}"/>
+      <stop offset="1" stop-color="${rim}"/>
     </radialGradient>
   </defs>
   <rect width="${w}" height="${h}" rx="${radius}" fill="${dark ? INK : PAPER}"/>
-  <g transform="translate(${penX.toFixed(3)}, ${baseline.toFixed(3)}) scale(${s.toFixed(6)}, ${(-s).toFixed(6)})">
-    <path d="${D_PATH}" fill="${dark ? PAPER : INK}"/>
+  <g transform="rotate(${TILT} ${unitCx.toFixed(2)} ${(h / 2).toFixed(2)})">
+    <g transform="translate(${penX.toFixed(3)}, ${baseline.toFixed(3)}) scale(${s.toFixed(6)}, ${(-s).toFixed(6)})">
+      <path d="${D_PATH}" fill="${dark ? PAPER : INK}"/>
+    </g>
+    <circle cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" r="${r.toFixed(2)}" fill="url(#dot)"/>
   </g>
-  <circle cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" r="${r.toFixed(2)}" fill="url(#dot)"/>
 </svg>`
 }
 
@@ -109,19 +117,23 @@ function faviconSvg() {
   const penX = unitX - BB.minX * s
   const cx = unitX + inkW + gap + r
   const cy = baseline - r
-  const g = (fill, cls) =>
-    `<g class="${cls}" transform="translate(${penX.toFixed(3)}, ${baseline.toFixed(3)}) scale(${s.toFixed(6)}, ${(-s).toFixed(6)})"><path d="${D_PATH}" fill="${fill}"/></g>`
+  const unitCx = unitX + unitW / 2
+  const rot = `rotate(${TILT} ${unitCx.toFixed(2)} ${(w / 2).toFixed(2)})`
+  const unit = (letterFill, dotGrad, cls) =>
+    `<g class="${cls}" transform="${rot}"><g transform="translate(${penX.toFixed(3)}, ${baseline.toFixed(3)}) scale(${s.toFixed(6)}, ${(-s).toFixed(6)})"><path d="${D_PATH}" fill="${letterFill}"/></g><circle cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" r="${r.toFixed(2)}" fill="url(#${dotGrad})"/></g>`
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <!-- The brand mark (July 28 ruling): "d." - Fraunces d, silver-gradient period.
-       Nothing else may serve as the logo. Outlines embedded; dark via media query. -->
+  <!-- The brand mark, final form (July 28 ruling): "d." with the DAWN
+       period - the sunrise as punctuation. Fraunces opsz144/wght500/
+       SOFT60/WONK1, the unit tilted 2deg CCW. Outlines embedded; dark
+       via media query. Nothing else may serve as the logo. -->
   <defs>
-    <radialGradient id="dot" cx="35%" cy="32%" r="78%">
-      <stop stop-color="#C8CCD4"/>
-      <stop offset="1" stop-color="#8A8F98"/>
+    <radialGradient id="dawn" cx="35%" cy="32%" r="78%">
+      <stop stop-color="#EEBE78"/>
+      <stop offset="1" stop-color="#CD735A"/>
     </radialGradient>
-    <radialGradient id="dot-dark" cx="35%" cy="32%" r="78%">
-      <stop stop-color="#D8DCE2"/>
-      <stop offset="1" stop-color="#9BA1AC"/>
+    <radialGradient id="dawn-dark" cx="35%" cy="32%" r="78%">
+      <stop stop-color="#F0C37D"/>
+      <stop offset="1" stop-color="#CD735A"/>
     </radialGradient>
   </defs>
   <style>
@@ -134,10 +146,8 @@ function faviconSvg() {
     }
   </style>
   <rect class="paper" width="64" height="64" rx="14"/>
-  ${g('#191713', 'light-only')}
-  ${g('#FAF8F4', 'dark-only')}
-  <circle class="light-only" cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" r="${r.toFixed(2)}" fill="url(#dot)"/>
-  <circle class="dark-only" cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" r="${r.toFixed(2)}" fill="url(#dot-dark)"/>
+  ${unit('#191713', 'dawn', 'light-only')}
+  ${unit('#FAF8F4', 'dawn-dark', 'dark-only')}
 </svg>
 `
 }

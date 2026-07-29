@@ -71,31 +71,43 @@ export async function generateBrief(
   anthropic: Anthropic,
   tz: string,
   todayWords: string[],
+  ownerId?: string | null,
 ): Promise<BriefResult> {
   const today = todayKeyInTz(tz)
   const keepsSince = new Date(Date.now() - KEEPS_DAYS * 86_400_000).toISOString().slice(0, 10)
 
+  // service-role callers scope every read and stamp every write (the
+  // one-throat law) — user-JWT callers keep their RLS defaults
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const scope = (q: any): any => (ownerId ? q.eq('user_id', ownerId) : q)
+  const stamp = ownerId ? { user_id: ownerId } : {}
+
   const [tasks, projects, goals, entries, lineCache, cache] = await Promise.all([
-    db
+    scope(db
       .from('tasks')
       .select('id, project_id, goal_id, title, done_at, touched_at, anchored_on, delegated_to, chase_on')
-      .is('deleted_at', null),
-    db.from('projects').select('id, name, mission').is('deleted_at', null),
-    db.from('goals').select('id, project_id, title, status').is('deleted_at', null),
-    db
+      .is('deleted_at', null)),
+    scope(db.from('projects').select('id, name, mission').is('deleted_at', null)),
+    scope(db.from('goals').select('id, project_id, title, status').is('deleted_at', null)),
+    scope(db
       .from('entries')
       .select('id, project_id, entry_day')
       .is('deleted_at', null)
-      .gte('entry_day', keepsSince),
-    db.from('line_cache').select('items').maybeSingle(),
-    db.from('brief_cache').select('app_day, signature, items').maybeSingle(),
+      .gte('entry_day', keepsSince)),
+    scope(db.from('line_cache').select('items')).maybeSingle(),
+    scope(db.from('brief_cache').select('app_day, signature, items')).maybeSingle(),
   ])
   if (tasks.error || projects.error || goals.error || entries.error) {
     throw new Error('brief context load failed')
   }
 
+  const tasksRows = (tasks.data ?? []) as Row[]
+  const projectRows = (projects.data ?? []) as Row[]
+  const goalRows = (goals.data ?? []) as Row[]
+  const entryRows = (entries.data ?? []) as Row[]
+
   const worldOf = (id: unknown): Row | null =>
-    (projects.data ?? []).find((p) => p.id === id) ?? null
+    projectRows.find((p) => p.id === id) ?? null
   const worldFields = (projectId: unknown) => {
     const w = worldOf(projectId)
     return {
@@ -116,7 +128,7 @@ export async function generateBrief(
   }))
 
   // the Line's top, wearing her cached ranking when it exists
-  const line = deriveLineRows(tasks.data ?? [], today)
+  const line = deriveLineRows(tasksRows, today)
   const rank = new Map(
     ((lineCache.data?.items ?? []) as { id?: unknown }[]).map((r, i) => [String(r.id), i] as const),
   )
@@ -137,7 +149,7 @@ export async function generateBrief(
   }
 
   // chases due today (or past — plainly dated, never an alarm)
-  for (const t of (tasks.data ?? []).filter(
+  for (const t of tasksRows.filter(
     (t) => !t.done_at && t.delegated_to && t.chase_on && String(t.chase_on) <= today,
   )) {
     items.push({
@@ -153,8 +165,8 @@ export async function generateBrief(
 
   // goals with today-relevant state: a move of theirs is on today's Line
   const lineIds = new Set(line.map((t) => String(t.id)))
-  for (const g of (goals.data ?? []).filter((g) => g.status === 'active')) {
-    const moves = (tasks.data ?? []).filter(
+  for (const g of goalRows.filter((g) => g.status === 'active')) {
+    const moves = tasksRows.filter(
       (t) => t.goal_id === g.id && lineIds.has(String(t.id)),
     ).length
     if (moves > 0) {
@@ -170,18 +182,18 @@ export async function generateBrief(
   }
 
   // keeps she's holding, from the recent record
-  const entryIds = (entries.data ?? []).map((e) => String(e.id))
+  const entryIds = entryRows.map((e) => String(e.id))
   if (entryIds.length > 0) {
-    const keeps = await db
+    const keeps = await scope(db
       .from('entry_notes')
       .select('id, entry_id, content, created_at')
-      .eq('kind', 'keep')
+      .eq('kind', 'keep'))
       .is('deleted_at', null)
       .in('entry_id', entryIds)
       .order('created_at', { ascending: false })
       .limit(KEEPS_TOP)
-    for (const k of keeps.data ?? []) {
-      const entry = (entries.data ?? []).find((e) => e.id === k.entry_id)
+    for (const k of (keeps.data ?? []) as Row[]) {
+      const entry = entryRows.find((e) => e.id === k.entry_id)
       items.push({
         id: String(k.id),
         kind: 'keep',
@@ -213,7 +225,7 @@ export async function generateBrief(
   if (items.length === 0) {
     const { error: upsertError } = await db
       .from('brief_cache')
-      .upsert({ app_day: today, signature, items: [] }, { onConflict: 'user_id' })
+      .upsert({ app_day: today, signature, items: [], ...stamp }, { onConflict: 'user_id' })
     if (upsertError) console.error('[brief] cache upsert', upsertError)
     return { appDay: today, items: [], noted: true }
   }
@@ -272,7 +284,7 @@ export async function generateBrief(
   if (noted) {
     const { error: upsertError } = await db
       .from('brief_cache')
-      .upsert({ app_day: today, signature, items }, { onConflict: 'user_id' })
+      .upsert({ app_day: today, signature, items, ...stamp }, { onConflict: 'user_id' })
     if (upsertError) console.error('[brief] cache upsert', upsertError)
   }
 
