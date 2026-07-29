@@ -7,7 +7,7 @@ import type { Project } from '../../db/types'
  * The world sheet — the rail's phone form, mirroring TRUE's grammar: drag
  * handle, the current world in a soft filled well, a hairline, every held
  * world as a row, + NEW WORLD in mono, and a quiet bottom row (theme ·
- * memory · sign out). Slides up 200ms; dismisses instantly on flick-down
+ * arrivals · memory · sign out). Slides up 200ms; dismisses instantly on flick-down
  * or tap-away. Its floating edge is the one sanctioned shadow.
  */
 export function WorldSheet({
@@ -19,6 +19,7 @@ export function WorldSheet({
   onNew,
   onEditCurrent,
   onMemory,
+  onArrivals,
 }: {
   open: boolean
   world: Project | null
@@ -28,6 +29,7 @@ export function WorldSheet({
   onNew: () => void
   onEditCurrent: () => void
   onMemory: () => void
+  onArrivals: () => void
 }) {
   const startY = useRef<number | null>(null)
   const [dy, setDy] = useState(0)
@@ -131,6 +133,15 @@ export function WorldSheet({
           >
             <span className="text-lg">◐</span>
             <span className="eyebrow">{theme}</span>
+          </button>
+          <button
+            onClick={() => {
+              onClose()
+              onArrivals()
+            }}
+            className="eyebrow flex min-h-11 items-center px-3 text-dim active:text-ink"
+          >
+            arrivals
           </button>
           <button
             onClick={() => {

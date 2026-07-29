@@ -22,6 +22,7 @@ import { RoomsPager } from './mobile/RoomsPager'
 import { WorldSheet } from './mobile/WorldSheet'
 import { ProjectSheet } from './ProjectSheet'
 import { MemorySheet } from './MemorySheet'
+import { ArrivalsSheet } from './rooms/ArrivalsSheet'
 import { UndoPill } from './UndoPill'
 
 function sunLabel(ms: number): string {
@@ -45,6 +46,7 @@ export function Shell(_props: { email: string }) {
   const world = projects.find((p) => p.id === lens) ?? null
   const [sheet, setSheet] = useState<'closed' | 'create' | 'edit'>('closed')
   const [memoryOpen, setMemoryOpen] = useState(false)
+  const [arrivalsOpen, setArrivalsOpen] = useState(false)
   const [worldsOpen, setWorldsOpen] = useState(false)
   const [theme, setTheme] = useState(getTheme())
   const sun = useSunTimes()
@@ -149,13 +151,21 @@ export function Shell(_props: { email: string }) {
               )}
             </div>
 
-            {/* the memory whisper — the visible half of memory, one tap away */}
-            <button
-              onClick={() => setMemoryOpen(true)}
-              className="eyebrow absolute right-8 bottom-6 z-10 text-dim opacity-55 transition-opacity hover:opacity-100"
-            >
-              memory
-            </button>
+            {/* the quiet whispers — arrivals (the ledger) beside memory */}
+            <div className="absolute right-8 bottom-6 z-10 flex items-center gap-5">
+              <button
+                onClick={() => setArrivalsOpen(true)}
+                className="eyebrow text-dim opacity-55 transition-opacity hover:opacity-100"
+              >
+                arrivals
+              </button>
+              <button
+                onClick={() => setMemoryOpen(true)}
+                className="eyebrow text-dim opacity-55 transition-opacity hover:opacity-100"
+              >
+                memory
+              </button>
+            </div>
 
             {/* the quiet corner: theme + sign out */}
             <button
@@ -206,10 +216,12 @@ export function Shell(_props: { email: string }) {
           onNew={() => setSheet('create')}
           onEditCurrent={() => setSheet('edit')}
           onMemory={() => setMemoryOpen(true)}
+          onArrivals={() => setArrivalsOpen(true)}
         />
       )}
 
       <MemorySheet open={memoryOpen} onClose={() => setMemoryOpen(false)} />
+      <ArrivalsSheet open={arrivalsOpen} onClose={() => setArrivalsOpen(false)} />
 
       <UndoPill />
     </div>

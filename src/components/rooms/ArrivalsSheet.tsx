@@ -3,24 +3,27 @@ import { useEntries } from '../../db/queries/entries'
 import { useProjects } from '../../db/queries/projects'
 import { useArrivals } from '../../db/queries/ingestLog'
 import { useBook } from '../../lib/book'
+import { useLens } from '../../lib/lens'
+import { useRoom } from '../../lib/rooms'
 import { Sheet } from '../Sheet'
-import type { Arrival } from '../../db/types'
+import type { Arrival, Entry, Project } from '../../db/types'
 
 /**
  * The Arrivals ledger (July 28) — observability for the mouth. Everything
  * that ever arrived at the filing engine, newest first: when, from, what,
  * and what became of it — including what the door turned away, with the
- * rejecting address shown. Read-only is law: no actions here except the
- * doors (a row whose entry survived opens the book on its day). Fixing an
- * allowlist stays where config lives. No counts, no badges, no unread
- * dots — it's a ledger, not a to-do.
+ * rejecting address shown. Every row opens (July 29 polish): tap for the
+ * full context in plain text — the whole summary, the envelope, and the
+ * entry's own words when it survived — with the door into Read inside.
+ * Read-only is law: no actions here except the doors; fixing an allowlist
+ * stays where config lives. No counts, no badges, no unread dots — it's
+ * a ledger, not a to-do.
  */
 export function ArrivalsSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [reach, setReach] = useState<'recent' | 'all'>('recent')
   const arrivalsQ = useArrivals(open, reach)
   const { data: entries = [] } = useEntries()
   const { data: projects = [] } = useProjects()
-  const openBook = useBook((s) => s.open)
 
   const rows = arrivalsQ.data ?? []
 
@@ -55,10 +58,7 @@ export function ArrivalsSheet({ open, onClose }: { open: boolean; onClose: () =>
               arrival={a}
               entries={entries}
               projects={projects}
-              onDoor={(day) => {
-                openBook(day)
-                onClose()
-              }}
+              onDoorTaken={onClose}
             />
           ))}
         </div>
@@ -83,55 +83,99 @@ function ArrivalRow({
   arrival,
   entries,
   projects,
-  onDoor,
+  onDoorTaken,
 }: {
   arrival: Arrival
-  entries: { id: string; entry_day: string; project_id: string | null }[]
-  projects: { id: string; name: string; color: string }[]
-  onDoor: (day: string) => void
+  entries: Entry[]
+  projects: Project[]
+  onDoorTaken: () => void
 }) {
+  const [expanded, setExpanded] = useState(false)
+  const openBook = useBook((s) => s.open)
+  const { setRoom } = useRoom()
+  const { setLens } = useLens()
+
   // a row is a door only while its entry survives on the shelf
   const entry = arrival.entry_id ? (entries.find((e) => e.id === arrival.entry_id) ?? null) : null
   const world = entry?.project_id ? (projects.find((p) => p.id === entry.project_id) ?? null) : null
 
-  const body = (
-    <>
-      <span className="eyebrow block text-[0.6rem] text-dim opacity-85">
-        {when(arrival.created_at)} · {fromLabel(arrival)}
-      </span>
-      {arrival.summary && (
-        <span className="mt-0.5 block truncate text-[13px] text-ink">{arrival.summary}</span>
-      )}
-      <span className="mt-0.5 block text-[12.5px] text-muted">
-        {outcomeLabel(arrival)}
-        {arrival.outcome === 'filed' && world && (
-          <>
-            {' → '}
-            <span
-              className="mr-1 inline-block size-[7px] rounded-full align-baseline"
-              style={{ background: world.color }}
-            />
-            <span className="eyebrow text-[0.6rem]">{world.name}</span>
-          </>
-        )}
-      </span>
-    </>
-  )
+  // the door lands in the entry's world, at that spot (thread ruling)
+  const door = entry
+    ? () => {
+        setLens(entry.project_id)
+        openBook(entry.entry_day, entry.id)
+        setRoom('read')
+        onDoorTaken()
+      }
+    : null
 
-  if (entry) {
-    return (
+  return (
+    <div className={`rounded-xl transition-colors ${expanded ? 'bg-fill2' : 'hover:bg-fill2'}`}>
+      {/* the row itself opens: the full context, in plain text */}
       <button
-        onClick={() => onDoor(entry.entry_day)}
-        className="block w-full rounded-xl px-2.5 py-2.5 text-left transition-colors hover:bg-fill2"
+        onClick={() => setExpanded((v) => !v)}
+        className="block w-full px-2.5 py-2.5 text-left"
       >
-        {body}
+        <span className="eyebrow block text-[0.6rem] text-dim opacity-85">
+          {when(arrival.created_at)} · {fromLabel(arrival)}
+        </span>
+        {arrival.summary && (
+          <span className="mt-0.5 block truncate text-[13px] text-ink">{arrival.summary}</span>
+        )}
+        <span className="mt-0.5 block text-[12.5px] text-muted">
+          {outcomeLabel(arrival)}
+          {arrival.outcome === 'filed' && world && (
+            <>
+              {' → '}
+              <span
+                className="mr-1 inline-block size-[7px] rounded-full align-baseline"
+                style={{ background: world.color }}
+              />
+              <span className="eyebrow text-[0.6rem]">{world.name}</span>
+            </>
+          )}
+        </span>
       </button>
-    )
-  }
-  return <div className="px-2.5 py-2.5">{body}</div>
+
+      {expanded && (
+        <div className="px-2.5 pt-0.5 pb-3 text-[12.5px] leading-[1.7] text-muted">
+          <div className="whitespace-pre-wrap">{detailText(arrival)}</div>
+
+          {/* the actual context: the entry's own words, plainly */}
+          {entry && (entry.distillate || entry.source_meta?.unreadable) && (
+            <div className="mt-2 rounded-lg bg-fill px-3 py-2.5 text-[12px] leading-[1.75] whitespace-pre-wrap text-ink">
+              {entry.distillate ??
+                'Nothing textual arrived that could be read — the raw records what came.'}
+            </div>
+          )}
+
+          {door && (
+            <button
+              onClick={door}
+              className="eyebrow mt-2 flex min-h-11 items-center text-[0.6rem] text-dim transition-colors hover:text-ink"
+            >
+              open in read →
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  )
 }
 
 /* ================= small helpers ================= */
+
+/** The expanded row: the whole envelope, plainly — nothing truncated. */
+function detailText(a: Arrival): string {
+  const lines = [
+    `arrived ${fullWhen(a.created_at)}`,
+    `source: ${a.source}`,
+    a.sender ? `from: ${a.sender}` : null,
+    a.summary ? `subject: ${a.summary}` : null,
+    `outcome: ${outcomeLabel(a)}`,
+  ]
+  return lines.filter(Boolean).join('\n')
+}
 
 /** The outcome is load-bearing — plain warm sentences, never codes. */
 function outcomeLabel(a: Arrival): string {
@@ -173,4 +217,15 @@ function when(iso: string): string {
     .toLowerCase()
     .replace(' ', '')
   return `${day} · ${time}`
+}
+
+function fullWhen(iso: string): string {
+  const d = new Date(iso)
+  return `${d.toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  })}, ${d
+    .toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+    .toLowerCase()}`
 }
