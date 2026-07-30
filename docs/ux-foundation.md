@@ -19,7 +19,7 @@ That's the whole resting state: void + quote + conversation + lenses + (sometime
 
 Tap ISO. The whole app repaints — ISO's world: its own muted scheme over both light and dark, the same calm geometry in a different material. Same mind, narrowed focus: the thread is now the ISO conversation, Now shows only ISO's reality, the project's derived status card is one ask away ("where are we?"). The Mentor's own world (the whole-life lens) keeps a reserved scheme no project can take — coming home feels like coming home.
 
-Arc lives here too: **Arc mode is the Mentor's world done as ambience** — the deep, atmospheric treatment you loved, reserved for the whole-life lens, so "home" has a soul the project rooms don't compete with. *(We'll design this properly in the visual phase.)*
+~~Arc lives here too: **Arc mode is the Mentor's world done as ambience** — the deep, atmospheric treatment you loved, reserved for the whole-life lens, so "home" has a soul the project rooms don't compete with.~~ *(Arc was built in M6 T1 and **removed July 30, 2026** for energy cost — see DECISIONS.md. The whole-life lens keeps its reserved silver; the ambience idea is not carried forward in v2.)*
 
 ## When things arrive
 

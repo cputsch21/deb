@@ -30,6 +30,56 @@ confirm. Next: **T5 — the V1 walk**, gated on Chris's two device passes.
 
 ## The log (newest first)
 
+### July 30, 2026 — ARC REMOVED (reversal of the July 27–28 Arc rulings)
+**Arc is cut — not deprecated, not feature-flagged. Removed.** This entry
+is a REVERSAL, kept beside the rulings it overturns: the Arc entries of
+July 27 (M6 T1) and July 28 (the legibility rebuild) describe a system
+that no longer exists. They stand as the record of what was built and
+why; this entry stands as the record of why it went.
+
+**What Arc was:** the app lit by the real sun — four keyframe palettes
+(night · dawn · day · dusk) interpolated in OKLCH, with every text token
+re-derived each tick to a fixed contrast floor against the current
+surfaces, plus a 24h × 1-minute sweep test (~104k assertions) proving no
+minute of any day fell below the floors.
+
+**Why it went — cost, not taste.** Safari reloaded the page for
+excessive energy use. Profiled before removal (July 30):
+- `setInterval(tick, 60_000)` ran for the entire session, always, for
+  every user — Arc was the DEFAULT theme, and after the Paper landed
+  there was no UI left to turn it off.
+- Every tick recomputed the palette unconditionally, never checking
+  whether a keyframe boundary had been crossed. Through the whole DAY
+  phase it re-derived a bit-identical result ~600 times a day. Measured:
+  114 µs/tick steady, 535 µs/tick interpolating — the JS itself was
+  cheap.
+- The real cost: each tick wrote 12 CSS custom properties onto
+  `documentElement`. Custom properties on `:root` are inherited by every
+  element, so each write invalidated style for the ENTIRE document, and
+  `body` carries a 350ms `background-color` transition behind two
+  full-viewport fixed radial-gradient layers. Every 60 seconds, forever,
+  an idle page ran a full-document recalc and a 350ms full-screen
+  composite. With a very tall entry mounted the recalc covered a much
+  larger tree — which is how it surfaced.
+
+**Time-of-day theming is out of scope for v2.** If it ever returns it
+must be event-driven (a timeout to the next boundary, not a poll),
+must not touch `:root` variables on a schedule, and must be provably
+free when nothing is changing.
+
+**What survives — these were never Arc:**
+- The Warm Glass palette, now plainly STATIC in `src/index.css`
+  (light + dark), and the world colors, untouched.
+- **The contrast floors**, converted from a swept runtime invariant to a
+  static build-time assertion: ink ≥ 7:1, muted ≥ 5.5:1, dim/eyebrow
+  ≥ 4.5:1 against the paper of their own scheme. `src/lib/contrast.test.ts`
+  reads the REAL tokens out of index.css (no second list to drift) and
+  checks every block that defines a paper — light, system-dark, and the
+  explicit `.dark` override. Edit a token below its floor and the build
+  fails. Legibility by construction survives; only the sun goes away.
+- The theme is now light · dark with SYSTEM as the default; a stored
+  `'arc'` preference migrates to system on next load.
+
 ### July 29, 2026 — The page slot · the channel law, full triptych
 **The channel law, recorded whole: the composer converses · email
 files · the page slot files.** Anything needing her engagement goes
