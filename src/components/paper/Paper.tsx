@@ -18,6 +18,7 @@ import { MemorySheet } from '../MemorySheet'
 import { ArrivalsSheet } from '../rooms/ArrivalsSheet'
 import { UndoPill } from '../UndoPill'
 import { RecordColumn } from './RecordColumn'
+import { DebColumn } from './DebColumn'
 import { ReactRoom } from '../rooms/ReactRoom'
 import { Review } from '../rooms/Review'
 import { Reflect } from '../rooms/Reflect'
@@ -268,18 +269,12 @@ export function Paper() {
             )}
           </section>
 
-          {/* RIGHT — DEB, THE COLUMNIST (interim: the doors are real; the
-              column itself is laid in P3) */}
+          {/* RIGHT — DEB, THE COLUMNIST (P3): the brief as her lead piece,
+              her latest remarks beneath — a read of the thread, never new
+              state; the whole column a door into CONVERSATION focus */}
           <section className="mt-8 flex min-w-0 flex-col border-hair md:mt-0 md:min-h-full md:border-l md:pl-10">
             <div className="eyebrow mb-3">Deb</div>
-            <button
-              onClick={() => setRoom('reflect')}
-              className="-mx-3.5 rounded-[14px] px-3.5 py-2 pb-1.5 text-left transition-colors hover:bg-fill"
-            >
-              <span className="eyebrow mt-2 block text-[0.58rem] text-dim">
-                open the thread →
-              </span>
-            </button>
+            <DebColumn lens={lens} onOpen={() => setRoom('reflect')} />
             <div className="flex-1" />
             {/* the composer is a door: engaging it is CONVERSATION focus */}
             {!isMobile && (
@@ -346,7 +341,18 @@ export function Paper() {
             </button>
           </div>
           <div className="roomin flex min-h-0 flex-1 flex-col">
-            {room === 'reflect' && <Reflect lens={lens} />}
+            {room === 'reflect' &&
+              (isMobile ? (
+                <Reflect lens={lens} />
+              ) : (
+                /* the conversation sheet — one of the four surfaces that
+                   genuinely float (flag 1): the thread at full measure */
+                <div className="flex min-h-0 flex-1 items-start justify-center overflow-hidden px-6 pb-8">
+                  <div className="flex h-full w-[720px] max-w-[92vw] flex-col overflow-hidden rounded-[18px] bg-bg shadow-[0_30px_80px_rgba(25,23,19,0.18),0_6px_20px_rgba(25,23,19,0.1)]">
+                    <Reflect lens={lens} />
+                  </div>
+                </div>
+              ))}
             {room === 'react' && <ReactRoom lens={lens} />}
             {room === 'review' && <Review lens={lens} />}
           </div>

@@ -9,7 +9,6 @@ import { useRoom } from '../../lib/rooms'
 import { localDayString } from '../../lib/day'
 import { addDays, shortDay, todayKey } from '../../lib/line'
 import { DaysDealings } from '../rooms/DaysDealings'
-import { MorningBrief } from '../rooms/MorningBrief'
 import type { Entry, EntryNote, EntrySource, Project, Task } from '../../db/types'
 
 /**
@@ -111,10 +110,6 @@ export function RecordColumn({ lens }: { lens: string | null }) {
           The page for {longDay(day)}.
         </p>
       )}
-
-      {/* the morning face (pages-first gate intact) — interim home until
-          P3 seats the brief as the columnist's lead piece */}
-      {day === today && lens === null && <MorningBrief />}
 
       {/* ---------- TAKEN DOWN ---------- */}
       <div className="eyebrow mt-8 mb-3 first:mt-0">Taken Down</div>
