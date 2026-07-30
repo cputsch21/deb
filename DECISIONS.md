@@ -82,11 +82,24 @@ confirm local `main` is not behind. "2 ahead" while silently 53 behind is
 exactly how one ticket gets built twice. Any future session that opens onto
 a dirty tree enforces this out loud, before doing anything else.
 
-Also corrected the same day: the escape hatch in circulation ran
-`git revert -m 1 bad1d86 85378a1`. `bad1d86` is not a merge commit, so `-m 1`
-errors and the whole line fails. The working form is two reverts —
-`git revert bad1d86 && git revert -m 1 85378a1` — now in `docs/ESCAPE.md`
-and tested on a scratch branch. An untested escape hatch is a superstition.
+**The escape hatch, tested — and a prediction that was wrong.** This session
+claimed `git revert -m 1 bad1d86 85378a1` would fail because `bad1d86` is not
+a merge and `-m 1` errors on non-merges. **It does not.** git 2.39.5 applies
+the mainline flag only to the commits that are merges and reverts the rest
+normally; the original one-liner runs clean, exit 0. The claim was asserted
+from memory instead of tested, and testing is what caught it. Chris's command
+stands, unchanged.
+
+What the test DID find is a real hazard nobody had predicted: run from
+today's `main`, "undo everything" **conflicts on `DECISIONS.md`, and only
+`DECISIONS.md`** — every line of code reverts clean. The log is append-at-top,
+so every ruling written after July 30 sits exactly where the X1/R2 entries
+are being removed. **This recurs forever, and gets likelier with every entry.**
+`docs/ESCAPE.md` now carries the one-line resolution (`--ours` — undoing a
+build never erases the record of having built it) and `--no-edit`, so a
+panicking founder is never dropped into vim. An untested escape hatch is a
+superstition; this one is tested, and it was wrong in a direction nobody
+guessed.
 
 ### July 30, 2026 — The token taxonomy · the mark-as-text audit · D1 cut
 **The floors apply to TEXT tokens only.** Writing them as if they applied
