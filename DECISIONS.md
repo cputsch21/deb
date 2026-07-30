@@ -30,6 +30,67 @@ confirm. Next: **T5 — the V1 walk**, gated on Chris's two device passes.
 
 ## The log (newest first)
 
+### July 30, 2026 — The distillate is a distillate (spec + hard ceiling)
+**The bug:** a reMarkable page rendered as ~200 words of near-verbatim
+re-flowed prose in the distillate slot, eating the whole column. The
+cause was in the prompt, in writing: step 2 said *"this is a
+distillation, not a summary: it may be long if the material earns it."*
+That sentence is gone.
+
+**What a distillate is — spec, not vibe. EXTRACTIVE, NOT ABSTRACTIVE.**
+It is assembled from Chris's OWN phrases, selected and trimmed, and never
+contains a sentence he did not write. No invented sentences, no new
+facts, no editorialising, no third person. Phrases from different parts
+of a page join with " · " or " — "; ellipsis never appears. **Deb's
+reading of the page goes in her NOTE, never in the distillate** — the
+note is visibly hers, the distillate visibly his, and the two are never
+blurred. Target shapes: DAY-OPEN (the prayer/gratitude fragment + the
+stated goals) · DAY-CLOSE (what happened + what's carried) · MEETING
+(who + the decision or ask) · DUMP (the two or three load-bearing
+phrases). The bar is the locked prototype's 24 words covering a full
+page.
+
+**The ceiling is enforced in code, not requested in the prompt:** 240
+characters AND 36 words, whichever binds first, measured after generation
+and before persist. Overrun behaviour, in order: (1) one regeneration at
+a tightened budget with the overrun stated back to the model ("you
+produced 210 words; the ceiling is 36"), (2) still over → a deterministic
+extract from the page itself — its first complete sentence plus its
+stated goals line when parseable, (3) never a mid-word truncation, never
+an appended "…", never a persisted overrun. **Every path logs which one
+fired**; path 3 firing regularly means the prompt is wrong, and that
+should be visible in the logs rather than on the page.
+
+**Provenance is tested, not hoped for.** `api/_lib/distill.test.ts`
+asserts phrase-level provenance against a fixture page: every content
+word of the output must trace back to the page. A distillate containing
+a sentence Chris did not write fails the build.
+
+**The raw doesn't go away, it goes behind.** The full page stays one tap
+away, byte-identical. The raw well caps at ~40vh with a soft
+paper-coloured fade and a single affordance — READ THE PAGE — with no
+scrollbar inside the well. Display only; nothing is ever destroyed.
+
+**No entry owns the column.** A collapsed entry's distillate is clamped
+in layout independently of the ceiling — entries filed before this ruling
+still hold long text, and one entry filling the column is a layout bug
+regardless of how good the summary is.
+
+**A provenance leak, fixed in the same pass:** a source subject
+("Document from my reMarkable: 5. July") was rendering in italic quotes —
+the styling reserved for Chris's own words — which implied he wrote a
+machine-generated email subject. Source subjects now render as mono at
+label scale, in dim: metadata, not voice.
+
+*Flagged, not built:* the same ruling asked for day-first datelines
+("5. July") to be added to "A2's reader". **No such reader exists** —
+nothing in the codebase parses a date out of page content. `entry_day` is
+the app-day the material arrived (the received-day rule approved with the
+email chute). Making a page's own dateline set its filing day is a real
+product change that would collide with that rule and with the living
+day-entry's same-day versioning — it needs its own ruling, so it was not
+built here.
+
 ### July 30, 2026 — ARC REMOVED (reversal of the July 27–28 Arc rulings)
 **Arc is cut — not deprecated, not feature-flagged. Removed.** This entry
 is a REVERSAL, kept beside the rulings it overturns: the Arc entries of
