@@ -25,7 +25,8 @@
   --t-hair: rgba(43, 40, 35, 0.06);
   --t-bloom: rgba(140, 133, 121, 0.09);
   --t-silver: #656a71; /* the Mentor's silver — no project can take it */
-  --t-accent: var(--t-silver);
+  --t-accent: var(--t-silver); /* MARK: the true color */
+  --t-accent-ink: var(--t-silver); /* TEXT: derived to clear 4.5:1 */
   --t-ok: #547051;
   --t-bad: #a84b3a;
   --t-card: #ffffff; /* the deck card — lifted above the paper */
@@ -62,6 +63,7 @@
   --color-hair: var(--t-hair);
   --color-silver: var(--t-silver);
   --color-accent: var(--t-accent);
+  --color-accent-ink: var(--t-accent-ink);
   --color-ok: var(--t-ok);
   --color-bad: var(--t-bad);
   --color-purple: var(--t-purple);
@@ -94,7 +96,8 @@ body {
 }
 
 :root.in-world {
-  --t-accent: var(--world);
+  --t-accent: var(--world); /* marks keep the true color */
+  --t-accent-ink: var(--world-ink); /* letterforms use the readable one */
 }
 
 body {

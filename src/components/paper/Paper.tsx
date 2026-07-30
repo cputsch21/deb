@@ -162,7 +162,7 @@ export function Paper() {
               )}
             </div>
             <div className="flex items-center gap-3 md:flex-col md:items-end md:gap-2.5 md:pb-2">
-              <span className="eyebrow order-2 min-h-[13px] truncate text-accent md:order-1">
+              <span className="eyebrow order-2 min-h-[13px] truncate text-accent-ink md:order-1">
                 {hoverName ?? (world ? world.name : 'Whole life')}
               </span>
               <div className="order-1 flex gap-1 overflow-x-auto md:order-2" style={{ scrollbarWidth: 'none' }}>
@@ -249,7 +249,7 @@ export function Paper() {
               </>
             ) : (
               <>
-                <div className="eyebrow mt-3 text-[0.6rem] text-accent">
+                <div className="eyebrow mt-3 text-[0.6rem] text-accent-ink">
                   {stack.length} loop{stack.length === 1 ? '' : 's'} need
                   {stack.length === 1 ? 's' : ''} verdicts
                 </div>
@@ -481,7 +481,7 @@ function WorldTile({
           className="h-[9px] w-[9px] flex-none rounded-full"
           style={{ backgroundColor: world.color }}
         />
-        {active && <span className="eyebrow text-[0.58rem] text-accent">in the lens</span>}
+        {active && <span className="eyebrow text-[0.58rem] text-accent-ink">in the lens</span>}
         {/* status in the same muted mono as everything (flag 6): the word
             carries the information, guilt-free */}
         {glance && (

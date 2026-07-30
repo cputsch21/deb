@@ -22,7 +22,7 @@ export function UndoPill() {
             pill.undo()
             dismiss()
           }}
-          className="eyebrow text-accent"
+          className="eyebrow text-accent-ink"
         >
           Undo
         </button>

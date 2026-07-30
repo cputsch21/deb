@@ -142,7 +142,7 @@ export function RecordColumn({ lens }: { lens: string | null }) {
       {pastFinishes.length > 0 && (
         <>
           <div className="eyebrow mt-8 mb-3">
-            Finished <span className="ml-1 text-accent">{pastFinishes.length}</span>
+            Finished <span className="ml-1 text-accent-ink">{pastFinishes.length}</span>
           </div>
           <div className="flex flex-col gap-2.5">
             {pastFinishes.map((t) => (
@@ -316,7 +316,7 @@ function MarginNote({
       className="group mt-3 block w-full rounded-xl bg-[var(--t-bg)] px-4 py-3 text-left transition-colors hover:bg-fill2"
     >
       <span className="flex items-baseline justify-between gap-3">
-        <span className="eyebrow text-[0.56rem] font-semibold text-accent">
+        <span className="eyebrow text-[0.56rem] font-semibold text-accent-ink">
           the {note.kind}
         </span>
         <span className="eyebrow text-[0.56rem] text-dim opacity-0 transition-opacity group-hover:opacity-100">
@@ -337,7 +337,7 @@ function MarginNote({
 function FinishedRow({ task, world }: { task: Task; world: Project | null }) {
   return (
     <div className="grid grid-cols-[20px_1fr_auto] items-center gap-x-2.5 rounded-xl bg-fill px-3.5 py-3">
-      <span className="grid w-5 place-items-center text-[12px] text-accent">✓</span>
+      <span className="grid w-5 place-items-center text-[12px] text-accent-ink">✓</span>
       <span className="flex min-w-0 items-center gap-2">
         <span
           className="h-2 w-2 flex-none rounded-full"

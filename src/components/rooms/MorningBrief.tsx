@@ -79,7 +79,7 @@ export function MorningBrief() {
                 {it.title}
               </p>
               {it.note && (
-                <p className="mt-0.5 ml-4 max-w-[46ch] font-serif text-[12.5px] leading-[1.55] text-accent italic opacity-90">
+                <p className="mt-0.5 ml-4 max-w-[46ch] font-serif text-[12.5px] leading-[1.55] text-accent-ink italic opacity-90">
                   {it.note}
                 </p>
               )}
@@ -105,7 +105,7 @@ export function MorningBrief() {
                 <span className="flex-none text-[11px] text-dim">{it.detail}</span>
               </div>
               {it.note && (
-                <p className="mt-1 ml-4 max-w-[46ch] font-serif text-[12.5px] leading-[1.55] text-accent italic opacity-90">
+                <p className="mt-1 ml-4 max-w-[46ch] font-serif text-[12.5px] leading-[1.55] text-accent-ink italic opacity-90">
                   {it.note}
                 </p>
               )}

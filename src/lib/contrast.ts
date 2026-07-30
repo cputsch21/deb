@@ -85,6 +85,81 @@ export function composite(fg: RGB, alpha: number, bg: RGB): RGB {
   ]
 }
 
+/* ---------- HSL, for lightness-only adjustment ---------- */
+
+/** RGB → HSL. Hue in degrees, s/l in 0…1. */
+export function rgbToHsl([r, g, b]: RGB): [number, number, number] {
+  const R = r / 255
+  const G = g / 255
+  const B = b / 255
+  const max = Math.max(R, G, B)
+  const min = Math.min(R, G, B)
+  const l = (max + min) / 2
+  const d = max - min
+  if (d === 0) return [0, 0, l]
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
+  let h: number
+  if (max === R) h = ((G - B) / d + (G < B ? 6 : 0)) * 60
+  else if (max === G) h = ((B - R) / d + 2) * 60
+  else h = ((R - G) / d + 4) * 60
+  return [h, s, l]
+}
+
+/** HSL → RGB. */
+export function hslToRgb(h: number, s: number, l: number): RGB {
+  const k = (n: number) => (n + h / 30) % 12
+  const a = s * Math.min(l, 1 - l)
+  const f = (n: number) => l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1))
+  return [Math.round(255 * f(0)), Math.round(255 * f(8)), Math.round(255 * f(4))]
+}
+
+export const toHex = ([r, g, b]: RGB): string =>
+  `#${[r, g, b].map((c) => Math.max(0, Math.min(255, c)).toString(16).padStart(2, '0')).join('')}`
+
+/**
+ * WORLD-INK (ruled July 30, 2026 — the mark exception). A mark color
+ * rendered AS TEXT must clear 4.5:1, so this DERIVES a readable variant:
+ *
+ *   · lightness-only — the hue is never touched, so the world still reads
+ *     as itself, just deeper (or, on charcoal, brighter)
+ *   · directional by scheme — darken toward black on paper, lighten
+ *     toward white on charcoal
+ *   · a color that already clears the floor is returned BIT-IDENTICAL, so
+ *     worlds that were always legible do not move at all
+ *
+ * Marks keep the true color; only letterforms use this.
+ */
+export function readableInk(color: string, paper: string, floor = 4.5): string {
+  const rgb = parseHex(color)
+  const bg = parseHex(paper)
+  if (!rgb || !bg) return color // unparseable: never invent a color
+  if (contrastRatio(rgb, bg) >= floor) return color // already legible — untouched
+
+  const [h, s, l] = rgbToHsl(rgb)
+  // on light paper text runs darker; on charcoal it runs lighter
+  const towardDark = lstar(bg) > 50
+  let lo = towardDark ? 0 : l
+  let hi = towardDark ? l : 1
+  let best = hslToRgb(h, s, towardDark ? 0 : 1)
+
+  // 24 halvings resolve lightness far finer than 8-bit channels can show
+  for (let i = 0; i < 24; i++) {
+    const mid = (lo + hi) / 2
+    const candidate = hslToRgb(h, s, mid)
+    if (contrastRatio(candidate, bg) >= floor) {
+      best = candidate
+      // keep as much of the original lightness as the floor allows
+      if (towardDark) lo = mid
+      else hi = mid
+    } else if (towardDark) {
+      hi = mid
+    } else {
+      lo = mid
+    }
+  }
+  return toHex(best)
+}
+
 /** `rgba(r, g, b, a)` → channels + alpha. Returns null for anything else. */
 export function parseRgba(value: string): { rgb: RGB; alpha: number } | null {
   const m = /^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+)\s*)?\)$/i.exec(value.trim())

@@ -53,7 +53,7 @@ export function TodoList({ lens }: { lens: string | null }) {
     <>
       <div className="mt-8">
         <div className="eyebrow mb-3">
-          To Do{line.length > 0 && <span className="ml-2 text-accent">{line.length}</span>}
+          To Do{line.length > 0 && <span className="ml-2 text-accent-ink">{line.length}</span>}
         </div>
         {line.length === 0 ? (
           <p className="py-1 font-serif text-[14.5px] text-dim italic">
@@ -78,7 +78,7 @@ export function TodoList({ lens }: { lens: string | null }) {
       {finished.length > 0 && (
         <div className="mt-8">
           <div className="eyebrow mb-3">
-            Finished <span className="ml-2 text-accent">{finished.length}</span>
+            Finished <span className="ml-2 text-accent-ink">{finished.length}</span>
           </div>
           <div className="flex flex-col gap-2.5">
             {finished.map((t) => (
@@ -86,7 +86,7 @@ export function TodoList({ lens }: { lens: string | null }) {
                 key={t.id}
                 className="rise grid grid-cols-[20px_1fr_auto] items-center gap-x-2.5 rounded-xl bg-fill px-3.5 py-3"
               >
-                <span className="grid w-5 place-items-center text-[12px] text-accent">✓</span>
+                <span className="grid w-5 place-items-center text-[12px] text-accent-ink">✓</span>
                 <span className="flex min-w-0 items-center gap-2">
                   <span
                     className="h-2 w-2 flex-none rounded-full"

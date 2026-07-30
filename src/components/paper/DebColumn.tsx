@@ -32,7 +32,7 @@ export function DebColumn({ lens, onOpen }: { lens: string | null; onOpen: () =>
       {remarks.map((m) => (
         <div key={m.id} className="mt-5 first:mt-1">
           <div className="eyebrow text-[0.56rem] font-semibold text-dim">
-            <span className="text-accent">deb</span> · {timeOf(m.created_at)}
+            <span className="text-accent-ink">deb</span> · {timeOf(m.created_at)}
           </div>
           <p className="mt-1.5 line-clamp-6 font-serif text-[15px] leading-[1.62] text-ink">
             {m.content}

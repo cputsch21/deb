@@ -314,7 +314,7 @@ function Dossier({ world, goals, tasks }: { world: Project; goals: Goal[]; tasks
                 {/* ink vs muted does the work — never bold (T4 ruling 8) */}
                 <span className="text-ink">{t.delegated_to}</span>
                 <span className="min-w-0 flex-1 truncate text-muted">— {t.title}</span>
-                <span className="text-[11px] text-accent">
+                <span className="text-[11px] text-accent-ink">
                   chase {t.chase_on ? lineShortDay(t.chase_on) : ''}
                 </span>
               </div>

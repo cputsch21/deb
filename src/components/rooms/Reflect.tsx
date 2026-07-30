@@ -337,7 +337,7 @@ export function Reflect({ lens }: { lens: string | null }) {
           {quotes.map((q) => (
             <blockquote
               key={q.id}
-              className="rise relative max-w-[88%] pl-4 font-serif text-[14px] leading-[1.6] text-accent italic"
+              className="rise relative max-w-[88%] pl-4 font-serif text-[14px] leading-[1.6] text-accent-ink italic"
             >
               <span className="absolute top-[3px] bottom-[3px] left-0 w-[1.5px] rounded bg-accent opacity-40" />
               <span className="eyebrow mb-1 block text-[0.58rem] text-dim not-italic">
