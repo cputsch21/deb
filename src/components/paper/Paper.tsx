@@ -17,7 +17,7 @@ import { ProjectSheet } from '../ProjectSheet'
 import { MemorySheet } from '../MemorySheet'
 import { ArrivalsSheet } from '../rooms/ArrivalsSheet'
 import { UndoPill } from '../UndoPill'
-import { ReadRoom } from '../rooms/ReadRoom'
+import { RecordColumn } from './RecordColumn'
 import { ReactRoom } from '../rooms/ReactRoom'
 import { Review } from '../rooms/Review'
 import { Reflect } from '../rooms/Reflect'
@@ -210,11 +210,11 @@ export function Paper() {
 
         {/* ---------- the sheet: record · verdicts · deb ---------- */}
         <div className="mt-6 grid grid-cols-1 items-start md:grid-cols-[1.35fr_1fr_1.04fr]">
-          {/* LEFT — THE RECORD (interim organ: the V1 Read room; P2 lays
-              the true column: taken down · finished · dealings · earlier) */}
+          {/* LEFT — THE RECORD (P2): taken down · dealings · earlier;
+              finishes render here only on past pages (July 29 re-ruling) */}
           <section className="min-w-0 md:pr-11">
             <div className="eyebrow mb-3">The Record</div>
-            <ReadRoom lens={lens} />
+            <RecordColumn lens={lens} />
           </section>
 
           {/* CENTER — THE VERDICTS seam (triage lives behind it) */}

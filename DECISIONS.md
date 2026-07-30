@@ -30,6 +30,24 @@ confirm. Next: **T5 — the V1 walk**, gated on Chris's two device passes.
 
 ## The log (newest first)
 
+### July 29, 2026 — FINISHED moves to the center column (Paper re-ruling)
+The center column reads top-to-bottom as the **obligation lifecycle**:
+THE VERDICTS (undecided) → TO DO (decided, standing) → FINISHED (done,
+with times). Today's completed tasks render under TO DO, not at the
+record column's foot. A done-circle tap moves the row from TO DO to
+FINISHED with a quiet settle — same row grammar, checkmark, muted —
+undo pill intact.
+
+The record column drops its FINISHED section **for today only**. The
+archive keeps the whole day: a past day opened via EARLIER includes its
+finishes — a past page has no live center column to defer to, and the
+record's completeness law (Read is the scroll of the life) outranks
+today's layout. The day's dealings colophon is unchanged.
+
+Ticket homes adjusted: FINISHED-in-center belongs to P5 with TO DO;
+P2 builds the record column without today's finishes but with the
+past-page inclusion.
+
 ### July 29, 2026 — The Paper: cut approved (P1–P7) · the seven flags ruled
 Chris approved the seven-ticket cut. The flag rulings, now law:
 1. **Shadows** — the focus layer is the sheet family and inherits the
