@@ -1,44 +1,26 @@
 /**
- * The theme, two ways: light · dark — with SYSTEM as the default.
+ * THE THEME FOLLOWS THE SYSTEM. There is no user-facing control, by
+ * ruling (July 30, 2026): the OS already knows the preference and does
+ * not need a second one. Dark earns its place at 10:30pm; the media query
+ * in index.css does that with zero JavaScript.
  *
  * Arc — the app lit by the real sun — was built (M6 T1, rebuilt July 28)
- * and REMOVED on July 30, 2026 (see DECISIONS.md). It cost a document-wide
+ * and REMOVED July 30, 2026 (see DECISIONS.md): it cost a document-wide
  * style recalc and a 350ms full-viewport transition every 60 seconds,
- * forever; Safari reloaded the page for excessive energy use. Time-of-day
- * theming is out of scope for v2. What survives is the palette itself,
- * static, and the contrast floors — asserted once at build time in
- * contrast.test.ts instead of enforced every tick.
+ * forever, and Safari reloaded the page for excessive energy. The palette
+ * and the contrast floors survive it — the floors as a static build-time
+ * assertion in contrast.test.ts.
  *
- * No stored choice = follow the system (the CSS media query does that with
- * zero JavaScript). An explicit choice adds .light or .dark.
+ * All this function does now is clear preferences left by the old
+ * three-way toggle, so nobody stays pinned to a mode they can no longer
+ * change. It can be deleted once no live browser carries the key.
  */
 const KEY = 'deb-theme'
-
-export type Theme = 'system' | 'light' | 'dark'
-
-export function getTheme(): Theme {
-  const t = localStorage.getItem(KEY)
-  return t === 'light' || t === 'dark' ? t : 'system'
-}
-
-function apply(theme: Theme): void {
-  const root = document.documentElement
-  root.classList.remove('dark', 'light')
-  if (theme !== 'system') root.classList.add(theme)
-}
+const LEGACY_MIGRATION_KEY = 'deb-theme-v2'
 
 export function initTheme(): void {
-  // one-time migration: a stored 'arc' means nothing now — fall to system
-  if (localStorage.getItem(KEY) === 'arc') localStorage.removeItem(KEY)
-  apply(getTheme())
-}
-
-/** system → light → dark → system. Returns the new mode (for a label). */
-export function cycleTheme(): Theme {
-  const order: Theme[] = ['system', 'light', 'dark']
-  const next = order[(order.indexOf(getTheme()) + 1) % order.length]
-  if (next === 'system') localStorage.removeItem(KEY)
-  else localStorage.setItem(KEY, next)
-  apply(next)
-  return next
+  localStorage.removeItem(KEY)
+  localStorage.removeItem(LEGACY_MIGRATION_KEY)
+  // any class the old toggle left on the root would outrank the media query
+  document.documentElement.classList.remove('dark', 'light')
 }

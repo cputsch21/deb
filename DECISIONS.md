@@ -30,6 +30,51 @@ confirm. Next: **T5 — the V1 walk**, gated on Chris's two device passes.
 
 ## The log (newest first)
 
+### July 30, 2026 — The token taxonomy · the mark-as-text audit · D1 cut
+**The floors apply to TEXT tokens only.** Writing them as if they applied
+to every token was a category error — it made decorative colors look like
+failures. The taxonomy, recorded because it will come up every time a
+token is added:
+
+| class | tokens | rule |
+|---|---|---|
+| **TEXT** | ink · muted · dim | must clear the floors vs paper: ink ≥7:1, muted ≥5.5:1, dim ≥4.5:1. **Live values win** (13.84 / 6.29 / 5.14); the prototype's hex list is discarded for these three. |
+| **SURFACE** | paper · well · well2 · hairline | never measured against text floors. Must only be reliably DISTINGUISHABLE — asserted as a perceptual separation, **ΔL\* ≥ 1.5**, measured on the wells AS RENDERED (they are rgba over paper, not flat hexes). |
+| **MARK** | silver · gold · the six world colors | decorative. Not measured at all. |
+
+`src/lib/contrast.test.ts` encodes all three tiers, so it stops
+over-constraining. WCAG luminance is not perceptually uniform — the same
+visible step measures 0.076 on paper and 0.009 on charcoal — so surface
+separation uses CIE L\*, where one threshold works for both schemes.
+
+**THE MARK EXCEPTION, and the audit it demanded:** a mark token rendered
+AS TEXT is, in that use, a text token and must clear 4.5:1. Audited July
+30 — **and it is a real bug, currently shipping:**
+- `--t-accent` is silver at home and **the world's color in a lens**, and
+  it is used as a text color in 16 places (lens name, note kinds, counts,
+  "deb", the ✓, brief lines, the undo pill's action).
+- Silver at home is fine: **#656a71 = 5.14:1**.
+- World colors as text are not. Of the prototype's six: CTDI 3.68 · ISO
+  4.08 · Fam 3.71 all **fail**; Subseven 4.79 · Poplar 5.00 · Cribl 5.18
+  pass. `TriageFocus` also renders the world NAME in `world.color`.
+- Worst of all, world colors are **user data** — `randomProjectColor()`
+  can produce a default as low as **1.33:1**.
+- Not yet fixed: the fix changes visible color and belongs to Chris's
+  ruling. The proposal is a derived `--world-ink`, clamped to 4.5:1, used
+  only where the world color renders as letterforms — colors that already
+  pass render unchanged.
+
+**D1 — CUT, NOT STARTED (by ruling):** reconcile SURFACE and MARK tokens
+to the prototype (design law), leave TEXT tokens at the live values that
+pass, and report before/after of the Record and the masthead so the change
+can be ruled on. Text tokens are settled above and are out of D1's scope.
+
+**Theme, settled:** it follows the system; there is no user-facing
+control and none is to be added. The OS already knows the preference.
+`theme.ts` is now only a migration that clears preferences left by the
+old three-way toggle so nobody stays pinned to a mode they can no longer
+change.
+
 ### July 30, 2026 — The distillate is a distillate (spec + hard ceiling)
 **The bug:** a reMarkable page rendered as ~200 words of near-verbatim
 re-flowed prose in the distillate slot, eating the whole column. The
@@ -86,10 +131,28 @@ label scale, in dim: metadata, not voice.
 ("5. July") to be added to "A2's reader". **No such reader exists** —
 nothing in the codebase parses a date out of page content. `entry_day` is
 the app-day the material arrived (the received-day rule approved with the
-email chute). Making a page's own dateline set its filing day is a real
-product change that would collide with that rule and with the living
-day-entry's same-day versioning — it needs its own ruling, so it was not
-built here.
+email chute). Stood down July 30: A2 is a ticket not yet filed, and
+nothing about content-dated filing is in scope until it lands. The
+styling fix was the right and only move.
+
+**Forward note for A2 (asked and answered July 30):** the two-date model
+— ARRIVED immutable, DATED driving filing, same-day merging keyed off
+DATED — has **no structural blocker** in the current entry model.
+`entries.created_at` and `ingest_log.created_at` already hold ARRIVED
+immutably (the ledger is append-only by RLS), so A2 adds a nullable
+`dated` column and repoints the filing day; no data is lost or rewritten.
+Three consequences to decide *inside* A2, not after:
+1. **The edition number** ("No. N" = days since the record began) reads
+   the earliest entry day. If DATED drives it, back-dating an old page
+   retroactively changes today's issue number. It should almost certainly
+   key off ARRIVED.
+2. **The brief and "today, in your words"** are built from the words of
+   the drop being filed. A back-dated page must not drive today's brief —
+   the brief should stay on ARRIVED/app-day while the page files to DATED.
+3. **Version merging on DATED** means a page dated three weeks ago merges
+   into that old day's entry rather than today's — correct for the model,
+   but it means a drop can silently change a page well behind the current
+   one, so the undo pill's copy needs to name the day it grew.
 
 ### July 30, 2026 — ARC REMOVED (reversal of the July 27–28 Arc rulings)
 **Arc is cut — not deprecated, not feature-flagged. Removed.** This entry
