@@ -40,6 +40,20 @@ pnpm test     # vitest
 Supabase schema changes = dated idempotent `.sql` files in `supabase/`,
 applied by hand in the Supabase SQL editor. Never assume a migration ran.
 
+## GITHUB IS THE ONLY SHARED SURFACE (standing law, July 30 2026)
+Work that isn't committed and pushed does not exist to any other session.
+- **End every session** with everything committed and pushed, or
+  deliberately archived to a branch. Never leave unpushed commits. Never
+  leave a dirty tree.
+- **Start every session** by fetching and confirming local `main` is not
+  behind. `git status` reporting "2 ahead" while silently 53 behind is how
+  two sessions built the same ticket twice (see DECISIONS, July 30).
+- **Enforce this on Chris, out loud**, if a session opens onto a dirty tree
+  or unpushed commits — before doing anything else.
+- Abandoned work is archived to a pushed `abandoned/*` branch, never
+  stashed and never deleted. A stash is invisible; a branch is permanent.
+- When main is on fire, `docs/ESCAPE.md` has the tested revert commands.
+
 ## Engineering law (non-negotiable, from DECISIONS.md)
 - Every visible mutation is optimistic (<50ms): patch the cache
   synchronously, persist in background, reconcile on failure.

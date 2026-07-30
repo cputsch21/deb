@@ -30,6 +30,64 @@ confirm. Next: **T5 — the V1 walk**, gated on Chris's two device passes.
 
 ## The log (newest first)
 
+### July 30, 2026 — The parallel session: work built twice · GITHUB IS THE ONLY SHARED SURFACE
+**What happened.** A local session on Chris's MacBook built design-reckoning
+rulings 1, 2, and 12 — Deb's goal hands, the inline solemn signing, the
+generalized card doors, the self-planting first message — and committed them
+as `382d492`, never pushed. In parallel, a cloud session built the same
+rulings and shipped them as `28a2b30` + `64c5bf1`. **Origin's version won
+because origin's version is the one that deployed.** The local commit is
+superseded in full; nothing in it is missing from main.
+
+The same session also left ten uncommitted files carrying a partial build of
+rulings 4/6/7/10/11 (the purple delegate token, the `:focus-visible`
+deepened well, the floating composer, the silver home-dot gradient, the
+verdict-scrim removal). Origin already shipped all of it. Six of those ten
+files no longer exist on main at all — THE PAPER deleted `Shell.tsx`,
+`LensRail.tsx`, `ReactRoom.tsx`, `ReadRoom.tsx`, `MobileHeader.tsx`,
+`WorldSheet.tsx`; X1 deleted `sun.ts`. They were edits to a house already
+torn down.
+
+**Why it happened — the cause, not the symptom.** A cloud session cannot see
+a local commit. GitHub is the only surface two sessions share. Local `main`
+sat two commits ahead and **fifty-three behind** simultaneously, and
+`git status` says only "ahead by 2" — the reassuring half of the truth. Both
+sessions read that and each believed it held the current app.
+
+**What was NOT done, deliberately.** No rebase. Rebasing `3212fee` would
+have replayed a duplicate feature commit onto vanished files, and its one
+genuine contribution — six mobile design prototypes — touches no source at
+all. Its other half deleted seven components; six were already deleted on
+main, and the seventh (`VerdictConfirm.tsx`) is still imported by
+`Reflect.tsx` inside `Paper.tsx` and would have broken the build. The
+correct operation was never a merge.
+
+**What was done.**
+- Everything — both commits, the ten edits, seven older scratch prototypes —
+  archived intact to the pushed branch
+  **`abandoned/local-parallel-2026-07-30`** (`d07e123`). It is never merged.
+  A stash is local and invisible; a pushed branch is permanent and visible
+  to every future session, and costs nothing.
+- `main` reset to `origin/main` — the one authorized `reset --hard`, and only
+  because the archive was already confirmed on the remote first.
+- Six prototypes lifted across byte-identical as `b4e8855`; the diff against
+  `bad1d86` is six static files and zero source lines.
+
+**THE STANDING LAW, born here: GITHUB IS THE ONLY SHARED SURFACE.**
+Work that is not committed and pushed does not exist to any other session.
+Every working session ends with everything committed and pushed, or
+deliberately archived to a branch — never with unpushed commits and never
+with a dirty tree. **Corollary:** before starting work anywhere, fetch and
+confirm local `main` is not behind. "2 ahead" while silently 53 behind is
+exactly how one ticket gets built twice. Any future session that opens onto
+a dirty tree enforces this out loud, before doing anything else.
+
+Also corrected the same day: the escape hatch in circulation ran
+`git revert -m 1 bad1d86 85378a1`. `bad1d86` is not a merge commit, so `-m 1`
+errors and the whole line fails. The working form is two reverts —
+`git revert bad1d86 && git revert -m 1 85378a1` — now in `docs/ESCAPE.md`
+and tested on a scratch branch. An untested escape hatch is a superstition.
+
 ### July 30, 2026 — The token taxonomy · the mark-as-text audit · D1 cut
 **The floors apply to TEXT tokens only.** Writing them as if they applied
 to every token was a category error — it made decorative colors look like
