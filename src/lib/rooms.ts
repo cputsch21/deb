@@ -1,19 +1,18 @@
 import { create } from 'zustand'
 
 /**
- * The four rooms (top nav). One spine under all four; Reflect is the default —
- * the thread with Deb is where the app opens.
+ * The focus bridge (THE PAPER, July 29). The V1 rooms are gone; the
+ * store survives because every door in the app speaks its language:
+ *   'read'    → the page (no focus)
+ *   'reflect' → CONVERSATION focus (the thread at full measure)
+ *   'react'   → TRIAGE focus (the card center-stage)
+ *   'review'  → the dossier
+ * setRoom('reflect') from any door is "open the conversation" — the
+ * plumbing carried over whole when the rooms became focus states.
  */
 export type Room = 'read' | 'review' | 'react' | 'reflect'
 
-export const ROOMS: { id: Room; label: string }[] = [
-  { id: 'read', label: 'Read' },
-  { id: 'review', label: 'Review' },
-  { id: 'react', label: 'React' },
-  { id: 'reflect', label: 'Reflect' },
-]
-
 export const useRoom = create<{ room: Room; setRoom: (room: Room) => void }>((set) => ({
-  room: 'reflect',
+  room: 'read', // the Paper opens on the page
   setRoom: (room) => set({ room }),
 }))

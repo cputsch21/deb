@@ -59,13 +59,6 @@ export function Paper() {
   // rhythms materialize as normal tasks at app open + on return
   useMaterializer()
 
-  // the paper opens on the page, not a focus (the store's V1 default
-  // was the Reflect room — on the Paper, 'read' IS the page)
-  useEffect(() => {
-    useRoom.getState().setRoom('read')
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
   // A brand-new account's thread is never silent (T4 ruling 12).
   const qc = useQueryClient()
   useEffect(() => {
@@ -127,7 +120,7 @@ export function Paper() {
     <div className="relative h-full overflow-y-auto">
       {/* ================= THE PAGE ================= */}
       <div
-        className={`mx-auto max-w-[1420px] px-5 pt-7 pb-24 transition-[opacity,transform] duration-200 md:px-14 md:pt-9 md:pb-18 ${
+        className={`mx-auto max-w-[1420px] px-5 pt-[max(1.5rem,env(safe-area-inset-top))] pb-24 transition-[opacity,transform] duration-200 md:px-14 md:pt-9 md:pb-18 ${
           focus ? 'pointer-events-none scale-[0.985] opacity-40 select-none' : ''
         }`}
       >
@@ -155,7 +148,7 @@ export function Paper() {
           </div>
           <div className="flex flex-col gap-4 pb-5 md:flex-row md:items-end md:justify-between md:gap-10 md:pb-6">
             <div className="min-w-0">
-              <h1 className="font-serif text-[38px] leading-[0.95] font-medium tracking-[-0.018em] whitespace-nowrap md:text-[88px] md:leading-[0.92]">
+              <h1 className="font-serif text-[24px] leading-[1] font-medium tracking-[-0.012em] whitespace-nowrap md:text-[88px] md:leading-[0.92] md:tracking-[-0.018em]">
                 {dateLabel}
               </h1>
               {/* the epigraph — words, not state: reprinted, never checked */}
@@ -236,14 +229,16 @@ export function Paper() {
         {/* ---------- the sheet: record · verdicts · deb ---------- */}
         <div className="mt-6 grid grid-cols-1 items-start md:grid-cols-[1.35fr_1fr_1.04fr]">
           {/* LEFT — THE RECORD (P2): taken down · dealings · earlier;
-              finishes render here only on past pages (July 29 re-ruling) */}
-          <section className="min-w-0 md:pr-11">
+              finishes render here only on past pages (July 29 re-ruling).
+              Mobile stacks the paper in the target's order: deb first,
+              the lifecycle second, the record third. */}
+          <section className="order-3 min-w-0 md:order-none md:pr-11">
             <div className="eyebrow mb-3">The Record</div>
             <RecordColumn lens={lens} />
           </section>
 
           {/* CENTER — THE VERDICTS seam (triage lives behind it) */}
-          <section className="mt-8 min-w-0 border-hair md:mt-0 md:border-l md:px-10">
+          <section className="order-2 mt-8 min-w-0 border-hair md:order-none md:mt-0 md:border-l md:px-10">
             <div className="eyebrow mb-3">The Verdicts</div>
             {stack.length === 0 ? (
               <>
@@ -300,7 +295,7 @@ export function Paper() {
           {/* RIGHT — DEB, THE COLUMNIST (P3): the brief as her lead piece,
               her latest remarks beneath — a read of the thread, never new
               state; the whole column a door into CONVERSATION focus */}
-          <section className="mt-8 flex min-w-0 flex-col border-hair md:mt-0 md:min-h-full md:border-l md:pl-10">
+          <section className="order-1 flex min-w-0 flex-col border-hair md:order-none md:mt-0 md:min-h-full md:border-l md:pl-10">
             <div className="eyebrow mb-3">Deb</div>
             <DebColumn lens={lens} onOpen={() => setRoom('reflect')} />
             <div className="flex-1" />
