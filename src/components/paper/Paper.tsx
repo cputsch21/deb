@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useProjects } from '../../db/queries/projects'
 import { useTasks } from '../../db/queries/tasks'
-import { useFirstEntryDay } from '../../db/queries/entries'
+import { useEntryMeta, useFirstEntryDay } from '../../db/queries/entries'
 import { messageKeys, plantFirstMessage } from '../../db/queries/messages'
 import { useBrief } from '../../lib/brief'
 import { useLens } from '../../lib/lens'
@@ -10,12 +10,13 @@ import { useRoom } from '../../lib/rooms'
 import { useMaterializer } from '../../lib/materialize'
 import { useIsMobile } from '../../lib/useIsMobile'
 import { paintWorld } from '../../lib/worldTheme'
-import { dealStack, todayKey } from '../../lib/line'
-import { epigraphLine, issueNumber } from '../../lib/paper'
+import { applyDebOrder, dealStack, deriveLine, todayKey } from '../../lib/line'
+import { useLineWhys } from '../../lib/lineWhys'
+import { epigraphLine, issueNumber, worldGlance, type WorldGlance } from '../../lib/paper'
 import { LoadFailed } from '../LoadFailed'
 import { ProjectSheet } from '../ProjectSheet'
 import { MemorySheet } from '../MemorySheet'
-import { ArrivalsSheet } from '../rooms/ArrivalsSheet'
+import { ArrivalsOverlay } from './ArrivalsOverlay'
 import { UndoPill } from '../UndoPill'
 import { RecordColumn } from './RecordColumn'
 import { DebColumn } from './DebColumn'
@@ -99,6 +100,19 @@ export function Paper() {
   const epigraph = epigraphLine(briefQ.data?.items)
   const edition = issueNumber(firstDayQ.data ?? null, today)
 
+  // the worlds-band glance: honest derivations, muted mono (flag 6)
+  const { data: entryMeta = [] } = useEntryMeta()
+  const whys = useLineWhys(true)
+  const wholeLine = useMemo(
+    () => applyDebOrder(deriveLine(tasks, null, today), whys.order),
+    [tasks, today, whys.order],
+  )
+  const glances = useMemo(() => {
+    const m = new Map<string, WorldGlance>()
+    for (const p of projects) m.set(p.id, worldGlance(p.id, tasks, entryMeta, wholeLine, today))
+    return m
+  }, [projects, tasks, entryMeta, wholeLine, today])
+
   const dateLabel = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
     month: 'long',
@@ -123,12 +137,21 @@ export function Paper() {
             <span className="eyebrow text-dim">
               Deb · The whole life, daily · No. {edition}
             </span>
-            <button
-              onClick={() => setArrivalsOpen(true)}
-              className="eyebrow -my-2 flex min-h-11 items-center rounded-full px-3.5 text-muted transition-colors hover:bg-fill hover:text-ink"
-            >
-              arrivals ↗
-            </button>
+            <span className="flex items-center gap-1">
+              {/* the masthead furniture: memory beside the ledger (P6) */}
+              <button
+                onClick={() => setMemoryOpen(true)}
+                className="eyebrow -my-2 flex min-h-11 items-center rounded-full px-3.5 text-muted transition-colors hover:bg-fill hover:text-ink"
+              >
+                memory
+              </button>
+              <button
+                onClick={() => setArrivalsOpen(true)}
+                className="eyebrow -my-2 flex min-h-11 items-center rounded-full px-3.5 text-muted transition-colors hover:bg-fill hover:text-ink"
+              >
+                arrivals ↗
+              </button>
+            </span>
           </div>
           <div className="flex flex-col gap-4 pb-5 md:flex-row md:items-end md:justify-between md:gap-10 md:pb-6">
             <div className="min-w-0">
@@ -299,6 +322,7 @@ export function Paper() {
               <WorldTile
                 key={p.id}
                 world={p}
+                glance={glances.get(p.id)}
                 active={lens === p.id}
                 dimmed={lens !== null && lens !== p.id}
                 onPick={() => setLens(lens === p.id ? null : p.id)}
@@ -314,16 +338,10 @@ export function Paper() {
         </section>
 
         {/* ---------- colophon ---------- */}
-        <div className="mt-14 flex items-center justify-center gap-6 text-center">
+        <div className="mt-14 text-center">
           <span className="eyebrow text-[0.55rem] text-dim">
             Printed this morning by Deb · Nothing leaves this page
           </span>
-          <button
-            onClick={() => setMemoryOpen(true)}
-            className="eyebrow -my-2 flex min-h-11 items-center text-[0.55rem] text-dim opacity-70 transition-opacity hover:opacity-100"
-          >
-            memory
-          </button>
         </div>
       </div>
 
@@ -359,7 +377,17 @@ export function Paper() {
                 </div>
               ))}
             {room === 'react' && <TriageFocus lens={lens} />}
-            {room === 'review' && <Review lens={lens} />}
+            {room === 'review' &&
+              (isMobile ? (
+                <Review lens={lens} />
+              ) : (
+                /* the dossier floats like the conversation does */
+                <div className="flex min-h-0 flex-1 items-start justify-center overflow-hidden px-6 pb-8">
+                  <div className="flex h-full w-[860px] max-w-[94vw] flex-col overflow-hidden rounded-[18px] bg-bg shadow-[0_30px_80px_rgba(25,23,19,0.18),0_6px_20px_rgba(25,23,19,0.1)]">
+                    <Review lens={lens} />
+                  </div>
+                </div>
+              ))}
           </div>
         </div>
       )}
@@ -374,7 +402,7 @@ export function Paper() {
         />
       )}
       <MemorySheet open={memoryOpen} onClose={() => setMemoryOpen(false)} />
-      <ArrivalsSheet open={arrivalsOpen} onClose={() => setArrivalsOpen(false)} />
+      <ArrivalsOverlay open={arrivalsOpen} onClose={() => setArrivalsOpen(false)} />
       <UndoPill />
     </div>
   )
@@ -435,11 +463,13 @@ function ComposerDoor({ onOpen }: { onOpen: () => void }) {
 
 function WorldTile({
   world,
+  glance,
   active,
   dimmed,
   onPick,
 }: {
   world: Project
+  glance: WorldGlance | undefined
   active: boolean
   dimmed: boolean
   onPick: () => void
@@ -457,6 +487,11 @@ function WorldTile({
           style={{ backgroundColor: world.color }}
         />
         {active && <span className="eyebrow text-[0.58rem] text-accent">in the lens</span>}
+        {/* status in the same muted mono as everything (flag 6): the word
+            carries the information, guilt-free */}
+        {glance && (
+          <span className="eyebrow ml-auto text-[0.56rem] text-dim">{glance.status}</span>
+        )}
       </span>
       <span
         className={`mt-2.5 block font-serif font-medium tracking-[-0.005em] transition-[font-size] duration-200 ${
@@ -468,6 +503,23 @@ function WorldTile({
       {world.mission && (
         <span className="mt-1 block font-serif text-[14px] leading-[1.5] text-muted italic">
           {world.mission}
+        </span>
+      )}
+      {glance?.next && (
+        <span className="mt-3 flex items-baseline gap-2.5">
+          <span className="eyebrow min-w-[34px] text-[0.52rem] text-dim">next</span>
+          <span className="truncate text-[13px] font-medium text-ink">{glance.next}</span>
+        </span>
+      )}
+      {glance?.owed && (
+        <span className="mt-1.5 flex items-baseline gap-2.5">
+          <span className="eyebrow min-w-[34px] text-[0.52rem] text-dim">owed</span>
+          <span className="truncate text-[13px] font-medium text-ink">{glance.owed}</span>
+        </span>
+      )}
+      {glance && (
+        <span className="eyebrow mt-3 block text-[0.56rem] tracking-[0.13em] text-dim">
+          {glance.week}
         </span>
       )}
     </button>
