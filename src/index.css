@@ -2,16 +2,20 @@
 
 /*
   Deb — Warm Glass foundation (locked July 22, 2026; see DECISIONS.md).
-  Tokens are runtime CSS variables so light/dark (and later, Arc and
-  project schemes) swap by changing variables, never classes in markup.
+  Tokens are runtime CSS variables so light/dark and project schemes swap
+  by changing variables, never classes in markup.
+
+  These values are STATIC. Arc — the time-of-day sweep that derived them
+  every minute — was removed July 30, 2026 (DECISIONS.md); the palette and
+  its contrast floors survive it. The floors are asserted against this file
+  at build time by src/lib/contrast.test.ts: edit a text token below its
+  floor and the build fails.
 */
 
 :root {
   /* light — warm paper. Text tokens sit AT the ruled contrast floors
      (July 28 legibility ruling, floors separated same day: ink ≥7:1,
-     muted ≥5.5:1, dim/eyebrow ≥4.5:1, accent's text uses ≥4.5:1 —
-     against every surface incl. the white card), byte-equal to Arc's
-     noon so the system stays one. */
+     muted ≥5.5:1, dim/eyebrow ≥4.5:1). */
   --t-bg: #faf8f4;
   --t-ink: #2b2823;
   --t-muted: #5f5c54;

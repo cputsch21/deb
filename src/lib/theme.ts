@@ -1,43 +1,26 @@
-import { startArc, stopArc } from './sun'
-
 /**
- * The theme, three ways (M6 T1): light · dark · Arc — with ARC THE DEFAULT.
- * Arc is the app lit by the real sun (see sun.ts); light and dark are the
- * manual overrides, honored exactly as before. A choice persists; no choice
- * means Arc. (One-time migration: the old two-way toggle's stored value is
- * cleared so Arc actually becomes the default it was ruled to be.)
+ * THE THEME FOLLOWS THE SYSTEM. There is no user-facing control, by
+ * ruling (July 30, 2026): the OS already knows the preference and does
+ * not need a second one. Dark earns its place at 10:30pm; the media query
+ * in index.css does that with zero JavaScript.
+ *
+ * Arc — the app lit by the real sun — was built (M6 T1, rebuilt July 28)
+ * and REMOVED July 30, 2026 (see DECISIONS.md): it cost a document-wide
+ * style recalc and a 350ms full-viewport transition every 60 seconds,
+ * forever, and Safari reloaded the page for excessive energy. The palette
+ * and the contrast floors survive it — the floors as a static build-time
+ * assertion in contrast.test.ts.
+ *
+ * All this function does now is clear preferences left by the old
+ * three-way toggle, so nobody stays pinned to a mode they can no longer
+ * change. It can be deleted once no live browser carries the key.
  */
 const KEY = 'deb-theme'
-const MIGRATED = 'deb-theme-v2'
-
-export type Theme = 'arc' | 'light' | 'dark'
-
-export function getTheme(): Theme {
-  const t = localStorage.getItem(KEY)
-  return t === 'light' || t === 'dark' ? t : 'arc'
-}
-
-function apply(theme: Theme): void {
-  const root = document.documentElement
-  stopArc()
-  root.classList.remove('dark', 'light')
-  if (theme === 'arc') startArc()
-  else root.classList.add(theme)
-}
+const LEGACY_MIGRATION_KEY = 'deb-theme-v2'
 
 export function initTheme(): void {
-  if (!localStorage.getItem(MIGRATED)) {
-    localStorage.removeItem(KEY) // pre-Arc choice made under a two-way toggle
-    localStorage.setItem(MIGRATED, '1')
-  }
-  apply(getTheme())
-}
-
-/** arc → light → dark → arc. Returns the new mode (for the toggle's label). */
-export function cycleTheme(): Theme {
-  const order: Theme[] = ['arc', 'light', 'dark']
-  const next = order[(order.indexOf(getTheme()) + 1) % order.length]
-  localStorage.setItem(KEY, next)
-  apply(next)
-  return next
+  localStorage.removeItem(KEY)
+  localStorage.removeItem(LEGACY_MIGRATION_KEY)
+  // any class the old toggle left on the root would outrank the media query
+  document.documentElement.classList.remove('dark', 'light')
 }

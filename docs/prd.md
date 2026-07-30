@@ -164,8 +164,10 @@ the stack with note-species cards · the Line · People/Waiting-on ·
 the record building invisibly beneath.
 
 **Deliberately waiting:** email/Slack/Teams as card species · calendar ·
-Arc (the app lit by the real sun — dawn to midnight) · voice capture's
-dedicated moment · proactivity of any kind, if ever.
+voice capture's dedicated moment · proactivity of any kind, if ever.
+
+*Arc (the app lit by the real sun) was built in M6 T1 and **removed July 30,
+2026** for energy cost — out of scope for v2. See DECISIONS.md.*
 
 ---
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useEntries, useEntryNotes, useEntryRaw, useEntryRevisions } from '../../db/queries/entries'
 import { useProjects } from '../../db/queries/projects'
 import { useTasks } from '../../db/queries/tasks'
@@ -231,17 +231,24 @@ function EntryCard({
         </span>
       </div>
 
-      {/* an emailed entry wears its subject — the envelope, not the letter */}
+      {/* The envelope, not the letter — and not his voice either (R2,
+          July 30): a source subject is machine-generated metadata, so it
+          renders as a mono label in dim. Italic quotes are the styling for
+          Chris's own words and must never wrap a string he didn't write. */}
       {entry.source_meta?.subject && (
-        <p className="mt-2.5 font-serif text-[13px] text-muted italic">
-          &ldquo;{entry.source_meta.subject}&rdquo;
+        <p className="eyebrow mt-2.5 text-[0.56rem] leading-[1.5] text-dim normal-case">
+          {entry.source_meta.subject}
         </p>
       )}
 
+      {/* NO ENTRY OWNS THE COLUMN (R2, July 30): the 36-word ceiling makes
+          new distillates short, but entries filed before it still hold long
+          text — so the collapsed height is also guarded here. Opening the
+          raw un-clamps it; the full page is always one tap away. */}
       <div
         className={`mt-3 font-serif leading-[1.55] text-ink ${
           lead ? 'text-[20px] leading-[1.5]' : 'text-[17.5px]'
-        }`}
+        } ${rawOpen ? '' : 'line-clamp-[9]'}`}
       >
         {entry.distillate ? (
           renderDistillate(entry.distillate)
@@ -343,9 +350,27 @@ function FinishedRow({ task, world }: { task: Task; world: Project | null }) {
   )
 }
 
-/** The raw beneath — a deeper well, honest when it can't load. */
+/**
+ * The raw beneath — a deeper well, honest when it can't load.
+ *
+ * DISPLAY CAP (R2, July 30): a long page is capped at ~40vh with a soft
+ * paper-coloured fade and ONE affordance — READ THE PAGE — that opens it
+ * fully. No scrollbar inside the well. Nothing is destroyed; the raw is
+ * byte-identical either way, this is display only.
+ */
 function RawWell({ rawId }: { rawId: string }) {
   const rawQ = useEntryRaw(rawId, true)
+  const [full, setFull] = useState(false)
+  const [clipped, setClipped] = useState(false)
+  const bodyRef = useRef<HTMLDivElement | null>(null)
+
+  // measure once the text lands: is there more page than the cap shows?
+  useEffect(() => {
+    const el = bodyRef.current
+    if (!el) return
+    setClipped(el.scrollHeight > el.clientHeight + 4)
+  }, [rawQ.data, full])
+
   if (rawQ.isError) {
     return (
       <div className="mt-2 rounded-xl bg-fill2 px-4 py-3 text-[12.5px] text-muted">
@@ -356,9 +381,30 @@ function RawWell({ rawId }: { rawId: string }) {
       </div>
     )
   }
+
   return (
-    <div className="mt-2 rounded-xl bg-fill2 px-4 py-3.5 text-[13px] leading-[1.65] whitespace-pre-wrap text-muted">
-      {rawQ.data ?? '…'}
+    <div className="mt-2">
+      <div className="relative">
+        <div
+          ref={bodyRef}
+          style={full ? undefined : { maxHeight: '40vh', overflow: 'hidden' }}
+          className="rounded-xl bg-fill2 px-4 py-3.5 text-[13px] leading-[1.65] whitespace-pre-wrap text-muted"
+        >
+          {rawQ.data ?? '…'}
+        </div>
+        {!full && clipped && (
+          // the fade sits ON the well, paper-coloured, and never eats taps
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 rounded-b-xl bg-gradient-to-t from-[var(--t-bg)] to-transparent" />
+        )}
+      </div>
+      {clipped && (
+        <button
+          onClick={() => setFull((v) => !v)}
+          className="eyebrow -ml-2.5 mt-1 flex min-h-11 items-center rounded-lg px-2.5 text-[0.58rem] text-dim transition-colors hover:bg-fill2 hover:text-ink"
+        >
+          {full ? 'shorter' : 'read the page'}
+        </button>
+      )}
     </div>
   )
 }

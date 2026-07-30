@@ -30,6 +30,180 @@ confirm. Next: **T5 — the V1 walk**, gated on Chris's two device passes.
 
 ## The log (newest first)
 
+### July 30, 2026 — The token taxonomy · the mark-as-text audit · D1 cut
+**The floors apply to TEXT tokens only.** Writing them as if they applied
+to every token was a category error — it made decorative colors look like
+failures. The taxonomy, recorded because it will come up every time a
+token is added:
+
+| class | tokens | rule |
+|---|---|---|
+| **TEXT** | ink · muted · dim | must clear the floors vs paper: ink ≥7:1, muted ≥5.5:1, dim ≥4.5:1. **Live values win** (13.84 / 6.29 / 5.14); the prototype's hex list is discarded for these three. |
+| **SURFACE** | paper · well · well2 · hairline | never measured against text floors. Must only be reliably DISTINGUISHABLE — asserted as a perceptual separation, **ΔL\* ≥ 1.5**, measured on the wells AS RENDERED (they are rgba over paper, not flat hexes). |
+| **MARK** | silver · gold · the six world colors | decorative. Not measured at all. |
+
+`src/lib/contrast.test.ts` encodes all three tiers, so it stops
+over-constraining. WCAG luminance is not perceptually uniform — the same
+visible step measures 0.076 on paper and 0.009 on charcoal — so surface
+separation uses CIE L\*, where one threshold works for both schemes.
+
+**THE MARK EXCEPTION, and the audit it demanded:** a mark token rendered
+AS TEXT is, in that use, a text token and must clear 4.5:1. Audited July
+30 — **and it is a real bug, currently shipping:**
+- `--t-accent` is silver at home and **the world's color in a lens**, and
+  it is used as a text color in 16 places (lens name, note kinds, counts,
+  "deb", the ✓, brief lines, the undo pill's action).
+- Silver at home is fine: **#656a71 = 5.14:1**.
+- World colors as text are not. Of the prototype's six: CTDI 3.68 · ISO
+  4.08 · Fam 3.71 all **fail**; Subseven 4.79 · Poplar 5.00 · Cribl 5.18
+  pass. `TriageFocus` also renders the world NAME in `world.color`.
+- Worst of all, world colors are **user data** — `randomProjectColor()`
+  can produce a default as low as **1.33:1**.
+- Not yet fixed: the fix changes visible color and belongs to Chris's
+  ruling. The proposal is a derived `--world-ink`, clamped to 4.5:1, used
+  only where the world color renders as letterforms — colors that already
+  pass render unchanged.
+
+**D1 — CUT, NOT STARTED (by ruling):** reconcile SURFACE and MARK tokens
+to the prototype (design law), leave TEXT tokens at the live values that
+pass, and report before/after of the Record and the masthead so the change
+can be ruled on. Text tokens are settled above and are out of D1's scope.
+
+**Theme, settled:** it follows the system; there is no user-facing
+control and none is to be added. The OS already knows the preference.
+`theme.ts` is now only a migration that clears preferences left by the
+old three-way toggle so nobody stays pinned to a mode they can no longer
+change.
+
+### July 30, 2026 — The distillate is a distillate (spec + hard ceiling)
+**The bug:** a reMarkable page rendered as ~200 words of near-verbatim
+re-flowed prose in the distillate slot, eating the whole column. The
+cause was in the prompt, in writing: step 2 said *"this is a
+distillation, not a summary: it may be long if the material earns it."*
+That sentence is gone.
+
+**What a distillate is — spec, not vibe. EXTRACTIVE, NOT ABSTRACTIVE.**
+It is assembled from Chris's OWN phrases, selected and trimmed, and never
+contains a sentence he did not write. No invented sentences, no new
+facts, no editorialising, no third person. Phrases from different parts
+of a page join with " · " or " — "; ellipsis never appears. **Deb's
+reading of the page goes in her NOTE, never in the distillate** — the
+note is visibly hers, the distillate visibly his, and the two are never
+blurred. Target shapes: DAY-OPEN (the prayer/gratitude fragment + the
+stated goals) · DAY-CLOSE (what happened + what's carried) · MEETING
+(who + the decision or ask) · DUMP (the two or three load-bearing
+phrases). The bar is the locked prototype's 24 words covering a full
+page.
+
+**The ceiling is enforced in code, not requested in the prompt:** 240
+characters AND 36 words, whichever binds first, measured after generation
+and before persist. Overrun behaviour, in order: (1) one regeneration at
+a tightened budget with the overrun stated back to the model ("you
+produced 210 words; the ceiling is 36"), (2) still over → a deterministic
+extract from the page itself — its first complete sentence plus its
+stated goals line when parseable, (3) never a mid-word truncation, never
+an appended "…", never a persisted overrun. **Every path logs which one
+fired**; path 3 firing regularly means the prompt is wrong, and that
+should be visible in the logs rather than on the page.
+
+**Provenance is tested, not hoped for.** `api/_lib/distill.test.ts`
+asserts phrase-level provenance against a fixture page: every content
+word of the output must trace back to the page. A distillate containing
+a sentence Chris did not write fails the build.
+
+**The raw doesn't go away, it goes behind.** The full page stays one tap
+away, byte-identical. The raw well caps at ~40vh with a soft
+paper-coloured fade and a single affordance — READ THE PAGE — with no
+scrollbar inside the well. Display only; nothing is ever destroyed.
+
+**No entry owns the column.** A collapsed entry's distillate is clamped
+in layout independently of the ceiling — entries filed before this ruling
+still hold long text, and one entry filling the column is a layout bug
+regardless of how good the summary is.
+
+**A provenance leak, fixed in the same pass:** a source subject
+("Document from my reMarkable: 5. July") was rendering in italic quotes —
+the styling reserved for Chris's own words — which implied he wrote a
+machine-generated email subject. Source subjects now render as mono at
+label scale, in dim: metadata, not voice.
+
+*Flagged, not built:* the same ruling asked for day-first datelines
+("5. July") to be added to "A2's reader". **No such reader exists** —
+nothing in the codebase parses a date out of page content. `entry_day` is
+the app-day the material arrived (the received-day rule approved with the
+email chute). Stood down July 30: A2 is a ticket not yet filed, and
+nothing about content-dated filing is in scope until it lands. The
+styling fix was the right and only move.
+
+**Forward note for A2 (asked and answered July 30):** the two-date model
+— ARRIVED immutable, DATED driving filing, same-day merging keyed off
+DATED — has **no structural blocker** in the current entry model.
+`entries.created_at` and `ingest_log.created_at` already hold ARRIVED
+immutably (the ledger is append-only by RLS), so A2 adds a nullable
+`dated` column and repoints the filing day; no data is lost or rewritten.
+Three consequences to decide *inside* A2, not after:
+1. **The edition number** ("No. N" = days since the record began) reads
+   the earliest entry day. If DATED drives it, back-dating an old page
+   retroactively changes today's issue number. It should almost certainly
+   key off ARRIVED.
+2. **The brief and "today, in your words"** are built from the words of
+   the drop being filed. A back-dated page must not drive today's brief —
+   the brief should stay on ARRIVED/app-day while the page files to DATED.
+3. **Version merging on DATED** means a page dated three weeks ago merges
+   into that old day's entry rather than today's — correct for the model,
+   but it means a drop can silently change a page well behind the current
+   one, so the undo pill's copy needs to name the day it grew.
+
+### July 30, 2026 — ARC REMOVED (reversal of the July 27–28 Arc rulings)
+**Arc is cut — not deprecated, not feature-flagged. Removed.** This entry
+is a REVERSAL, kept beside the rulings it overturns: the Arc entries of
+July 27 (M6 T1) and July 28 (the legibility rebuild) describe a system
+that no longer exists. They stand as the record of what was built and
+why; this entry stands as the record of why it went.
+
+**What Arc was:** the app lit by the real sun — four keyframe palettes
+(night · dawn · day · dusk) interpolated in OKLCH, with every text token
+re-derived each tick to a fixed contrast floor against the current
+surfaces, plus a 24h × 1-minute sweep test (~104k assertions) proving no
+minute of any day fell below the floors.
+
+**Why it went — cost, not taste.** Safari reloaded the page for
+excessive energy use. Profiled before removal (July 30):
+- `setInterval(tick, 60_000)` ran for the entire session, always, for
+  every user — Arc was the DEFAULT theme, and after the Paper landed
+  there was no UI left to turn it off.
+- Every tick recomputed the palette unconditionally, never checking
+  whether a keyframe boundary had been crossed. Through the whole DAY
+  phase it re-derived a bit-identical result ~600 times a day. Measured:
+  114 µs/tick steady, 535 µs/tick interpolating — the JS itself was
+  cheap.
+- The real cost: each tick wrote 12 CSS custom properties onto
+  `documentElement`. Custom properties on `:root` are inherited by every
+  element, so each write invalidated style for the ENTIRE document, and
+  `body` carries a 350ms `background-color` transition behind two
+  full-viewport fixed radial-gradient layers. Every 60 seconds, forever,
+  an idle page ran a full-document recalc and a 350ms full-screen
+  composite. With a very tall entry mounted the recalc covered a much
+  larger tree — which is how it surfaced.
+
+**Time-of-day theming is out of scope for v2.** If it ever returns it
+must be event-driven (a timeout to the next boundary, not a poll),
+must not touch `:root` variables on a schedule, and must be provably
+free when nothing is changing.
+
+**What survives — these were never Arc:**
+- The Warm Glass palette, now plainly STATIC in `src/index.css`
+  (light + dark), and the world colors, untouched.
+- **The contrast floors**, converted from a swept runtime invariant to a
+  static build-time assertion: ink ≥ 7:1, muted ≥ 5.5:1, dim/eyebrow
+  ≥ 4.5:1 against the paper of their own scheme. `src/lib/contrast.test.ts`
+  reads the REAL tokens out of index.css (no second list to drift) and
+  checks every block that defines a paper — light, system-dark, and the
+  explicit `.dark` override. Edit a token below its floor and the build
+  fails. Legibility by construction survives; only the sun goes away.
+- The theme is now light · dark with SYSTEM as the default; a stored
+  `'arc'` preference migrates to system on next load.
+
 ### July 29, 2026 — The page slot · the channel law, full triptych
 **The channel law, recorded whole: the composer converses · email
 files · the page slot files.** Anything needing her engagement goes
