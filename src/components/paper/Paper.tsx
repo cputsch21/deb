@@ -19,7 +19,8 @@ import { ArrivalsSheet } from '../rooms/ArrivalsSheet'
 import { UndoPill } from '../UndoPill'
 import { RecordColumn } from './RecordColumn'
 import { DebColumn } from './DebColumn'
-import { ReactRoom } from '../rooms/ReactRoom'
+import { TodoList } from './TodoList'
+import { TriageFocus } from './TriageFocus'
 import { Review } from '../rooms/Review'
 import { Reflect } from '../rooms/Reflect'
 import type { Project } from '../../db/types'
@@ -267,6 +268,10 @@ export function Paper() {
                 </button>
               </>
             )}
+
+            {/* the lifecycle continues: decided things standing, then done
+                things with their times (July 29 re-ruling) */}
+            <TodoList lens={lens} />
           </section>
 
           {/* RIGHT — DEB, THE COLUMNIST (P3): the brief as her lead piece,
@@ -353,7 +358,7 @@ export function Paper() {
                   </div>
                 </div>
               ))}
-            {room === 'react' && <ReactRoom lens={lens} />}
+            {room === 'react' && <TriageFocus lens={lens} />}
             {room === 'review' && <Review lens={lens} />}
           </div>
         </div>
