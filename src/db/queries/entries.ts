@@ -32,6 +32,25 @@ export function useEntryMeta() {
   return useQuery({ queryKey: entryKeys.meta, queryFn: fetchEntryMeta })
 }
 
+/** The day the record began — the masthead's edition count runs from it
+ *  (time, not performance; July 29). Includes hidden entries: the record
+ *  began when it began. */
+export function useFirstEntryDay() {
+  return useQuery({
+    queryKey: ['first-entry-day'] as const,
+    staleTime: 60 * 60_000, // it changes once, ever
+    queryFn: async (): Promise<string | null> => {
+      const { data, error } = await supabase
+        .from('entries')
+        .select('entry_day')
+        .order('entry_day', { ascending: true })
+        .limit(1)
+      if (error) throw error
+      return data && data.length > 0 ? String(data[0].entry_day) : null
+    },
+  })
+}
+
 /** Hide the entry surface (undo-of-filing). The raw beneath is untouchable. */
 export function useEntryMutations() {
   const qc = useQueryClient()

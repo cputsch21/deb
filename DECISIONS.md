@@ -30,6 +30,37 @@ confirm. Next: **T5 — the V1 walk**, gated on Chris's two device passes.
 
 ## The log (newest first)
 
+### July 29, 2026 — The Paper: cut approved (P1–P7) · the seven flags ruled
+Chris approved the seven-ticket cut. The flag rulings, now law:
+1. **Shadows** — the focus layer is the sheet family and inherits the
+   sanctioned shadow, NARROWED to surfaces that genuinely float: the
+   triage card, the conversation sheet, the choosers, the undo pill.
+   Small furniture riding those surfaces (back buttons, verb pills,
+   labels) stays flat wells. Fewest shadows that sell the elevation.
+2. **Elevated surface** — never `#fff`; a token-derived elevated surface
+   Arc can repaint (`--t-card` family).
+3. **THE DAY renders as absence** — no empty scaffold, no placeholder.
+   The section does not exist until the calendar pillar lands in V2.
+   The page never shows a placeholder for a feature that isn't real.
+4. **EARLIER** — the record pages back a day via a quiet mono door in
+   the record column's furniture, same grammar as the Arrivals ledger.
+5. **Enter finishes in triage, no new visual.** The law that makes it
+   coherent: for chase cards ✓ was always a first-class verdict ("it
+   came back done"); for ordinary cards Enter is the keyboard-only
+   admission that the thing already happened between capture and
+   triage. Both are verdicts — triage's jurisdiction still ends at the
+   verdict; nothing is being dealt to do.
+6. **World status recolors never** — "QUIET 6 DAYS" renders in the same
+   muted mono as everything else. The word carries the information.
+7. **The chooser slider opens at 3** (supersedes the July 29 default of
+   2) — it matches the "in 3 days" preset's center of gravity.
+
+**The issue number is time, not performance:** the masthead's "No. N"
+is a pure edition count — days since the record began, incrementing
+unconditionally whether or not a page was written that day. A
+days-with-pages count is a streak wearing a monocle; the graveyard
+takes it.
+
 ### July 29, 2026 — THE PAPER: the V2 shell. One page, two focus states
 **The four-rooms shell is superseded.** The app becomes one page — The
 Paper. No rooms, no tabs, no navigation. Masthead (date · epigraph ·
