@@ -36,6 +36,10 @@ export type FilingOpts = {
   ownerId?: string | null
   /** cruft-stripped text for the ENGINE only; the raw stays verbatim */
   distillInput?: string | null
+  /** the ledger's FROM column for mouths with no envelope — e.g. "the
+   *  page slot" (July 29 channel-law triptych). Ledger row only; the
+   *  entry itself is untouched. */
+  ledgerFrom?: string | null
 }
 
 /** What a completed filing hands the caller. `versioned` carries
@@ -271,7 +275,8 @@ export async function performFiling(
   // whatever mouth fed it ('filed' = the composer, by its ledger name)
   const ledgerSource = opts.source && opts.source !== 'filed' ? opts.source : ('composer' as const)
   const ledgerSender =
-    typeof opts.sourceMeta?.from === 'string' ? (opts.sourceMeta.from as string) : null
+    opts.ledgerFrom ??
+    (typeof opts.sourceMeta?.from === 'string' ? (opts.sourceMeta.from as string) : null)
   const ledgerSummary =
     opts.subject ??
     raw

@@ -9,6 +9,7 @@ import { useRoom } from '../../lib/rooms'
 import { localDayString } from '../../lib/day'
 import { addDays, shortDay, todayKey } from '../../lib/line'
 import { DaysDealings } from '../rooms/DaysDealings'
+import { PageSlot } from './PageSlot'
 import type { Entry, EntryNote, EntrySource, Project, Task } from '../../db/types'
 
 /**
@@ -104,6 +105,10 @@ export function RecordColumn({ lens }: { lens: string | null }) {
 
   return (
     <div>
+      {/* the page slot (July 29): the quiet third mouth — today only;
+          an archive page takes no drops */}
+      {day === today && <PageSlot lens={lens} />}
+
       {/* a past page announces itself — the reader always knows the day */}
       {day !== today && (
         <p className="mb-4 font-serif text-[14.5px] text-dim italic">

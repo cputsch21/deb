@@ -30,6 +30,34 @@ confirm. Next: **T5 — the V1 walk**, gated on Chris's two device passes.
 
 ## The log (newest first)
 
+### July 29, 2026 — The page slot · the channel law, full triptych
+**The channel law, recorded whole: the composer converses · email
+files · the page slot files.** Anything needing her engagement goes
+through the composer, always.
+
+The page slot: a one-line, near-invisible well in the record column's
+furniture — dim "Drop a note onto the page…", expanding a few lines on
+focus (caret only, per law). Paste or type, ⌘Enter files it with
+quiet-channel semantics: material through the standard engine (routing,
+distillation, margins, answers, minting, versioning against the living
+day-entry), spoken_in = the current lens, no conversational engagement
+— the in-app equivalent of the email chute, not the composer. The
+entry materializing under TAKEN DOWN is the receipt, the standard undo
+pill the take-back. Arrivals logs it (entry source `filed`; the
+ledger's FROM column names the page slot). Today only — an archive
+page takes no drops. Mobile: same slot, same place; the bottom
+composer bar untouched.
+
+**The slot never grows buttons, attachments UI, or options.** It is a
+slot, not an import screen — the moment it wants chrome, it is
+violating the one-door spirit and gets cut back.
+
+*Fence note:* the Paper fence (presentation only) was deliberately
+crossed by two additive lines: `FilingOpts.ledgerFrom`, so a mouth with
+no envelope can name itself in the ledger, plus the new `/api/file`
+endpoint — the third inlet consuming the one throat under the user's
+own JWT. One throat, forever; the engine's behavior is unchanged.
+
 ### July 29, 2026 — FINISHED moves to the center column (Paper re-ruling)
 The center column reads top-to-bottom as the **obligation lifecycle**:
 THE VERDICTS (undecided) → TO DO (decided, standing) → FINISHED (done,
