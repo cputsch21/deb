@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deb — TUNE · working prototype</title>
+<style>
+:root{
+  --paper:#FAF8F4; --ink:#191713; --muted:#5f5c54; --dim:#8a867e;
+  --well:#f0ede6; --well2:#e9e5dc; --well3:#e2ded5;
+  --silver:#a5a198; --gold:#c9a15a; --acc:#a5a198;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#d8d4cb;font-family:Inter,-apple-system,'Segoe UI',sans-serif;color:var(--ink)}
+.serif{font-family:Georgia,'Times New Roman',serif}
+.mono{font-family:'SF Mono',ui-monospace,Menlo,monospace;letter-spacing:.14em;text-transform:uppercase}
+.eyebrow{font-family:'SF Mono',ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+.tag{font-family:'SF Mono',ui-monospace,Menlo,monospace;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;flex-shrink:0}
+button{font-family:inherit;border:none;background:none;cursor:pointer;color:inherit}
+
+/* chrome */
+#chrome{position:fixed;top:0;left:0;right:0;z-index:300;background:#191713;color:#c9c5bc;display:flex;align-items:center;gap:8px;padding:9px 16px;font-size:12px}
+#chrome .t{font-family:'SF Mono',ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.16em;color:#8a867e;margin-right:8px}
+#chrome button{background:#2a261f;color:#c9c5bc;border-radius:8px;padding:6px 13px;font-size:12px}
+#chrome button.on{background:#FAF8F4;color:#191713;font-weight:600}
+
+/* app frame */
+#appwrap{padding-top:38px;min-height:100vh;display:flex;justify-content:center;align-items:flex-start}
+#app{background:var(--paper);width:100%;min-height:calc(100vh - 38px);position:relative;overflow:hidden}
+body.ph #appwrap{padding:58px 0 30px}
+body.ph #app{width:392px;min-height:780px;max-height:780px;border-radius:38px;box-shadow:0 30px 80px rgba(25,23,19,.35);overflow:hidden;display:flex;flex-direction:column}
+
+/* ————— DESKTOP SHELL ————— */
+#rail{position:absolute;left:0;top:0;bottom:0;width:54px;display:flex;flex-direction:column;align-items:center;padding:20px 0 16px}
+body.ph #rail{display:none}
+.raildot{position:relative;border-radius:50%;margin:8px 0;cursor:pointer;transition:transform .15s}
+.raildot:hover{transform:scale(1.25)}
+.raildot:hover::after{content:attr(data-w);position:absolute;left:24px;top:50%;transform:translateY(-50%);background:var(--ink);color:var(--paper);font-size:11px;padding:4px 10px;border-radius:8px;white-space:nowrap;z-index:50}
+#railrooms{margin-top:auto;display:flex;flex-direction:column;gap:16px;align-items:center}
+#railrooms span{writing-mode:vertical-rl;font-family:'SF Mono',ui-monospace,Menlo,monospace;font-size:9.5px;letter-spacing:.2em;color:var(--dim);cursor:pointer;padding:2px}
+#railrooms span.on{color:var(--ink)}
+#dhead{display:flex;align-items:center;justify-content:space-between;padding:20px 200px 0 78px}
+body.ph #dhead{display:none}
+#chip{display:flex;gap:9px;align-items:center;cursor:pointer;background:var(--well);border-radius:99px;padding:7px 16px;transition:background .15s}
+#chip:hover{background:var(--well2)}
+#chip:hover .backhint{opacity:1}
+.backhint{font-family:'SF Mono',ui-monospace,Menlo,monospace;font-size:8.5px;letter-spacing:.14em;color:var(--dim);opacity:0;transition:opacity .15s}
+#main{padding:10px 200px 60px 78px;min-height:70vh}
+body.ph #main{padding:0;flex:1;overflow:auto}
+
+/* ————— TO DO DOCK (desktop) ————— */
+#dock{position:absolute;right:22px;top:70px;width:272px;z-index:40;transition:all .2s}
+body.ph #dock{display:none}
+#dock .head{display:flex;justify-content:space-between;align-items:center;cursor:pointer;padding:8px 12px;background:var(--well);border-radius:12px}
+#dock.open .head{border-radius:12px 12px 0 0}
+#dock .body{display:none;background:var(--well);border-radius:0 0 14px 14px;padding:6px 10px 12px;max-height:56vh;overflow:auto}
+#dock.open .body{display:block}
+.todo-row{display:flex;align-items:flex-start;gap:9px;background:var(--paper);border-radius:11px;padding:10px 12px;margin-top:7px;font-size:12.5px;line-height:1.35}
+.todo-row .why{font-family:Georgia,serif;font-style:italic;font-size:11.5px;color:#6b6860;display:block;margin-top:3px}
+.todo-row .age{font-family:'SF Mono',ui-monospace,Menlo,monospace;font-size:8.5px;color:var(--dim);letter-spacing:.1em}
+.circ{width:17px;height:17px;border:1.5px solid var(--dim);border-radius:50%;margin-left:auto;flex-shrink:0;cursor:pointer;transition:all .15s}
+.circ:hover{border-color:var(--acc);background:var(--acc)}
+.todo-row .dot{margin-top:3px}
+
+/* rooms shared */
+.roomwrap{max-width:740px;margin:26px auto 0}
+body.ph .roomwrap{max-width:none;margin:0;padding:14px 18px 90px}
+.dayhead{display:flex;align-items:baseline;justify-content:space-between}
+.dayhead h2{font-family:Georgia,serif;font-weight:500;font-size:25px}
+body.ph .dayhead h2{font-size:20px}
+.arr-chip{font-family:'SF Mono',ui-monospace,Menlo,monospace;font-size:9.5px;letter-spacing:.15em;color:var(--dim);cursor:pointer;background:var(--well);padding:7px 12px;border-radius:9px}
+.arr-chip:hover{background:var(--well2)}
+.evrow{display:flex;gap:10px;align-items:center;font-size:13px;color:var(--muted);padding:6px 0}
+.evrow .time{font-family:'SF Mono',ui-monospace,Menlo,monospace;font-size:10px;color:var(--dim);width:58px;letter-spacing:.1em}
+.entry{background:var(--well);border-radius:14px;padding:17px 19px;margin:12px 0}
+.entry .src{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.entry p{font-family:Georgia,serif;font-size:15px;line-height:1.55;color:#2e2c26}
+.rawbtn{margin-top:10px;font-family:'SF Mono',ui-monospace,Menlo,monospace;font-size:9.5px;letter-spacing:.14em;color:var(--dim);cursor:pointer}
+.rawblock{display:none;margin-top:10px;background:var(--well2);border-radius:10px;padding:12px 14px;font-size:12.5px;color:#55524b;font-family:'SF Mono',ui-monospace,Menlo,monospace;letter-spacing:.02em;line-height:1.6}
+.entry.rawopen .rawblock{display:block}
+.margin-note{border-left:2px solid var(--well3);margin:10px 0 0 4px;padding:3px 0 3px 12px;font-family:Georgia,serif;font-style:italic;font-size:13px;color:#55524b;cursor:pointer}
+.margin-note:hover{color:var(--ink)}
+.margin-note .k{font-family:'SF Mono',ui-monospace,Menlo,monospace;font-style:normal;font-size:8.5px;letter-spacing:.16em;color:var(--dim);display:block;margin-bottom:2px}
+.donel{display:flex;gap:10px;align-items:center;padding:5px 0;font-size:13.5px;color:var(--muted)}
+.donel .chk{color:var(--acc);font-size:13px}
+.colo{margin-top:20px;padding-top:13px;border-top:1px solid var(--well3)}
+.colo .l{display:flex;gap:9px;align-items:center;font-size:12.5px;color:var(--dim);padding:4px 0}
+
+/* review */
+.wgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:15px;margin-top:24px}
+body.ph .wgrid{grid-template-columns:1fr}
+.wtile{background:var(--well);border-radius:16px;padding:16px 18px;cursor:pointer;transition:background .15s}
+.wtile:hover{background:var(--well2)}
+.wtile .mission{font-family:Georgia,serif;font-style:italic;font-size:13px;color:#4a473f;margin:7px 0 9px;line-height:1.45}
+.wtile .row{display:flex;gap:8px;align-items:baseline;font-size:11.5px;color:var(--muted);padding:2.5px 0}
+.wtile .row .k{font-family:'SF Mono',ui-monospace,Menlo,monospace;font-size:8px;letter-spacing:.14em;color:var(--dim);width:44px;flex-shrink:0}
+
+/* react */
+#stackzone{display:flex;flex-direction:column;align-items:center;margin-top:30px}
+.tcard{background:#fff;border-radius:18px;padding:24px 28px;box-shadow:0 14px 40px rgba(25,23,19,.10);width:min(430px,90%)}
+.tcard h3{font-family:Georgia,serif;font-weight:500;font-size:19px;margin:6px 0 9px}
+.tcard .exc{font-family:Georgia,serif;font-style:italic;font-size:13px;color:#6b6860;line-height:1.5;margin-bottom:9px}
+.tcard .meta{display:flex;gap:12px;align-items:center}
+.hintbar{display:flex;justify-content:space-between;width:min(430px,90%);margin-top:16px}
+.hintbar span{font-family:'SF Mono',ui-monospace,Menlo,monospace;font-size:9px;letter-spacing:.16em;color:var(--dim);cursor:pointer;padding:6px 8px;border-radius:8px}
+.hintbar span:hover{background:var(--well);color:var(--ink)}
+.chooser{background:#fff;border-radius:16px;box-shadow:0 14px 40px rgba(25,23,19,.12);padding:20px 22px;width:min(400px,90%)}
+.chooser .opt-row{background:var(--well);border-radius:11px;padding:11px 14px;margin:8px 0;font-size:13.5px;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+.chooser .opt-row:hover{background:var(--well2)}
+.chooser input[type=text]{width:100%;background:var(--well);border:none;border-radius:11px;padding:11px 14px;font-size:13.5px;font-family:inherit;outline:none;margin:4px 0 8px}
+.chooser input[type=range]{width:70%;accent-color:var(--acc)}
+.nevermind{text-align:center;color:var(--dim);font-size:12.5px;margin-top:10px;cursor:pointer}
+#clear{display:none;flex-direction:column;align-items:center;margin-top:70px;text-align:center}
+#clear .sent{font-family:Georgia,serif;font-size:20px;font-style:italic;color:#3a382f;margin-top:14px}
+
+/* reflect */
+.thread{display:flex;flex-direction:column}
+.msg{margin-bottom:18px;max-width:92%}
+.msg .attr{display:flex;gap:7px;align-items:center;font-family:'SF Mono',ui-monospace,Menlo,monospace;font-size:9.5px;letter-spacing:.15em;color:var(--dim);margin-bottom:5px}
+.msg.deb p{font-family:Georgia,serif;font-size:15px;line-height:1.55}
+.msg.me{margin-left:auto;text-align:right}
+.msg.me .attr{justify-content:flex-end}
+.msg.me p{font-size:14px;color:#33312b}
+.quoteobj{background:var(--well);border-radius:12px;padding:12px 16px;margin-bottom:16px;max-width:88%}
+.quoteobj .q{font-family:Georgia,serif;font-style:italic;font-size:13.5px;color:#4a473f}
+.filedobj{background:var(--well);border-radius:12px;padding:11px 15px;margin-bottom:18px;max-width:70%;cursor:pointer}
+.filedobj:hover{background:var(--well2)}
+.composer{background:var(--well);border-radius:16px;padding:12px 17px;color:var(--dim);font-size:14px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 8px 26px rgba(25,23,19,.09);margin-top:16px}
+.composer .send{width:29px;height:29px;border-radius:50%;background:var(--gold);opacity:.85}
+
+/* overlays */
+.overlay{position:absolute;inset:0;background:var(--paper);z-index:100;display:none;padding:30px 48px;overflow:auto}
+body.ph .overlay{padding:22px 20px}
+.overlay.on{display:block}
+.backbtn{font-family:'SF Mono',ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.16em;color:var(--dim);cursor:pointer;padding:6px 0}
+.backbtn:hover{color:var(--ink)}
+#arrv table{width:100%;border-collapse:collapse;margin-top:22px}
+#arrv th{text-align:left;font-family:'SF Mono',ui-monospace,Menlo,monospace;font-size:9px;letter-spacing:.16em;color:var(--dim);padding:9px 12px;border-bottom:1px solid var(--well3)}
+#arrv td{padding:11px 12px;font-size:13px;border-bottom:1px solid var(--well);color:#33312b}
+#arrv td.m2{font-family:'SF Mono',ui-monospace,Menlo,monospace;font-size:10.5px;color:var(--dim)}
+#arrv tr.ck{cursor:pointer}
+#arrv tr.ck:hover td{background:var(--well)}
+body.ph #arrv th:nth-child(2),body.ph #arrv td:nth-child(2){display:none}
+
+/* undo pill */
+#undo{position:absolute;bottom:26px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:var(--paper);
+  border-radius:99px;padding:10px 18px;font-size:12.5px;display:flex;gap:16px;align-items:center;z-index:150;transition:transform .25s}
+#undo.on{transform:translateX(-50%) translateY(0)}
+#undo b{cursor:pointer;font-family:'SF Mono',ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.14em;color:#e8c98a}
+
+/* ————— PHONE SHELL ————— */
+#phead{display:none}
+body.ph #phead{display:block;padding:14px 16px 0;flex-shrink:0}
+#ppillrow{display:flex;justify-content:center}
+#ppill{display:flex;gap:8px;align-items:center;background:var(--well);border-radius:99px;padding:7px 16px;cursor:pointer}
+#ppill .serif{font-size:14px}
+#pverbs{display:flex;justify-content:center;gap:4px;margin-top:10px}
+#pverbs span{font-family:'SF Mono',ui-monospace,Menlo,monospace;font-size:9px;letter-spacing:.18em;color:var(--dim);padding:5px 9px;cursor:pointer;border-radius:7px}
+#pverbs span.on{color:var(--ink)}
+#pbottom{display:none}
+body.ph #pbottom{display:flex;flex-shrink:0;align-items:center;gap:10px;padding:10px 14px 16px}
+#pbottom .composer{flex:1;margin-top:0;box-shadow:none}
+#ptodo{font-family:'SF Mono',ui-monospace,Menlo,monospace;font-size:9px;letter-spacing:.12em;color:var(--dim);background:var(--well);border-radius:99px;padding:10px 12px;cursor:pointer;white-space:nowrap}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--paper);border-radius:26px 26px 0 0;box-shadow:0 -12px 44px rgba(25,23,19,.22);z-index:200;padding:12px 22px 30px;display:none}
+.sheet.on{display:block}
+.sheet .handle{width:44px;height:4px;background:var(--well3);border-radius:4px;margin:0 auto 14px;cursor:pointer}
+.sheet .close{position:absolute;top:16px;right:20px;font-family:'SF Mono',ui-monospace,Menlo,monospace;font-size:9.5px;letter-spacing:.16em;color:var(--dim);cursor:pointer;padding:6px}
+.sheet .wrow{display:flex;gap:11px;align-items:center;padding:11px 6px;font-size:15px;cursor:pointer;border-radius:10px}
+.sheet .wrow:hover{background:var(--well)}
+</style>
+
+<style>
+#chrome{display:none!important}
+#appwrap{padding:0!important;display:block!important}
+body.ph #app{width:100%!important;min-height:100dvh!important;max-height:none!important;
+  border-radius:0!important;box-shadow:none!important;height:100dvh}
+body{background:var(--paper)!important}
+</style>
+</head>
+<body class="ph">
+
+<div id="chrome">
+  <span class="t">DEB · TUNE + DOCK · WORKING PROTOTYPE</span>
+  <button class="on" id="cdesk" onclick="setMode(false)">DESKTOP</button>
+  <button id="cph" onclick="setMode(true)">PHONE</button>
+  <span style="color:#8a867e;font-size:11.5px;font-style:italic;margin-left:10px">everything is clickable — worlds, rooms, verdicts, doors, done circles, arrivals</span>
+</div>
+
+<div id="appwrap"><div id="app">
+  <!-- desktop rail -->
+  <div id="rail">
+    <div class="raildot" data-w="Whole life" onclick="setWorld(null)" style="width:15px;height:15px;background:radial-gradient(circle at 35% 30%,#dedbd4,#807c74)"></div>
+    <div style="height:8px"></div>
+    <div id="raildots"></div>
+    <div id="railrooms">
+      <span data-r="read" onclick="setRoom('read')">READ</span>
+      <span data-r="review" onclick="setRoom('review')">REVIEW</span>
+      <span data-r="react" onclick="setRoom('react')">REACT</span>
+      <span data-r="reflect" onclick="setRoom('reflect')">REFLECT</span>
+    </div>
+  </div>
+
+  <!-- desktop header -->
+  <div id="dhead">
+    <div id="chip" onclick="setWorld(null)"></div>
+    <span class="serif" style="font-size:16px">Wed, Jul 29</span>
+  </div>
+
+  <!-- phone header -->
+  <div id="phead">
+    <div id="ppillrow"><div id="ppill" onclick="toggleSheet('wsheet')"></div></div>
+    <div id="pverbs">
+      <span data-r="read" onclick="setRoom('read')">READ</span>
+      <span data-r="review" onclick="setRoom('review')">REVIEW</span>
+      <span data-r="react" onclick="setRoom('react')">REACT</span>
+      <span data-r="reflect" onclick="setRoom('reflect')">REFLECT</span>
+    </div>
+  </div>
+
+  <!-- main -->
+  <div id="main"></div>
+
+  <!-- phone bottom bar -->
+  <div id="pbottom">
+    <div class="composer"><span>Tell Deb anything…</span><div class="send"></div></div>
+    <div id="ptodo" onclick="toggleSheet('tsheet')">TO DO · <span id="ptodon"></span></div>
+  </div>
+
+  <!-- TO DO dock (desktop) -->
+  <div id="dock" class="open">
+    <div class="head" onclick="document.getElementById('dock').classList.toggle('open')">
+      <span class="eyebrow">TO DO · <span id="dockn"></span></span>
+      <span class="tag" style="color:var(--dim)">▾</span>
+    </div>
+    <div class="body" id="dockbody"></div>
+  </div>
+
+  <!-- sheets (phone) -->
+  <div class="sheet" id="wsheet">
+    <div class="handle" onclick="toggleSheet('wsheet')"></div>
+    <span class="close" onclick="toggleSheet('wsheet')">CLOSE</span>
+    <div id="wsheetrows"></div>
+    <div class="tag" style="color:var(--dim);padding:12px 6px 0">+ NEW WORLD</div>
+    <div style="display:flex;gap:16px;padding:14px 6px 0"><span class="tag" style="color:var(--dim)">◐ ARC</span><span class="tag" style="color:var(--dim)">MEMORY</span><span class="tag" style="color:var(--dim)">SETTINGS</span></div>
+  </div>
+  <div class="sheet" id="tsheet">
+    <div class="handle" onclick="toggleSheet('tsheet')"></div>
+    <span class="close" onclick="toggleSheet('tsheet')">CLOSE</span>
+    <span class="eyebrow">TO DO · <span id="ptodon2"></span></span>
+    <div id="tsheetbody" style="margin-top:6px;max-height:420px;overflow:auto"></div>
+  </div>
+
+  <!-- ARRIVALS overlay -->
+  <div class="overlay" id="arrv">
+    <div class="backbtn" onclick="hideOv('arrv')">← BACK</div>
+    <div class="dayhead" style="margin-top:6px"><h2 class="serif" style="font-weight:500">Arrivals</h2><span class="eyebrow">LAST 30 DAYS</span></div>
+    <p class="serif" style="font-style:italic;color:var(--muted);font-size:13.5px;margin-top:4px">Everything that has arrived at the door — and what became of it. Tap a row for the raw.</p>
+    <table>
+      <tr><th>WHEN</th><th>FROM</th><th>WHAT</th><th>OUTCOME</th></tr>
+      <tr class="ck" onclick="showRaw('rm')"><td class="m2">JUL 29 · 2:14P</td><td class="m2">my@remarkable.com</td><td>5. July — converted page</td><td><span class="dot" style="background:#7a5f9e"></span> filed → 150 Poplar · 2 cards</td></tr>
+      <tr class="ck" onclick="showRaw('pl')"><td class="m2">JUL 29 · 1:47P</td><td class="m2">no-reply@plaud.ai</td><td>HXD sync — transcript</td><td><span class="dot" style="background:#5f8a76"></span> filed → CTDI · 3 cards</td></tr>
+      <tr class="ck" onclick="showRaw('mp')"><td class="m2">JUL 29 · 8:02A</td><td class="m2">composer</td><td>Morning pages</td><td><span class="dot" style="background:#a5a198"></span> grew today's page</td></tr>
+      <tr><td class="m2">JUL 29 · 7:41A</td><td class="m2">unknown@spam.io</td><td>—</td><td style="color:var(--dim)">dropped — sender not allowed</td></tr>
+    </table>
+  </div>
+
+  <!-- RAW overlay -->
+  <div class="overlay" id="rawov">
+    <div class="backbtn" onclick="hideOv('rawov');showOv('arrv')">← ARRIVALS</div>
+    <div style="max-width:680px;margin:14px auto 0">
+      <span class="eyebrow" id="rawtitle"></span>
+      <div style="background:var(--well);border-radius:14px;padding:20px 22px;margin-top:12px;font-family:'SF Mono',ui-monospace,Menlo,monospace;font-size:12px;line-height:1.7;color:#44423b" id="rawbody"></div>
+    </div>
+  </div>
+
+  <!-- undo pill -->
+  <div id="undo"><span id="undotxt"></span><b onclick="doUndo()">UNDO</b></div>
+</div></div>
+
+<script>
+/* ————————— DATA ————————— */
+const W = [
+  {id:'ctdi', name:'CTDI', tag:'HXD', c:'#5f8a76', mission:'Make HXD the team’s proudest ship of the year.', status:'MOVING', next:'Chase Karthik — HXD scope', owed:'Karthik / Manish · chase Aug 1', week:'5 finished · 3 open · page grew 4 days'},
+  {id:'sub', name:'Subseven', tag:'S7', c:'#54718f', mission:'A second income that runs on rails, not adrenaline.', status:'MOVING', next:'App plan review', owed:'—', week:'2 finished · 2 open'},
+  {id:'iso', name:'ISO Experiences', tag:'ISO', c:'#b0673f', mission:'The audit passes in October without a single scramble.', status:'QUIET 6 DAYS', quiet:true, next:'Evidence binder · Fri', owed:'—', week:'0 finished · 2 open · last entry Jul 23'},
+  {id:'pop', name:'150 Poplar', tag:'HOME', c:'#7a5f9e', mission:'A house that runs itself by Christmas.', status:'SETTLED', next:'Geyser propane · Thu', owed:'—', week:'2 finished · 1 open · plumber saga closed'},
+  {id:'fam', name:'Fam Finances', tag:'FAM', c:'#4f8a8b', mission:'Every dollar knows its job.', status:'SETTLED', next:'August budget pass', owed:'—', week:'1 finished · 1 open'},
+  {id:'cribl', name:'Cribl', tag:'CRB', c:'#a05252', mission:'Earn the promotion without losing the evenings.', status:'MOVING', next:'Q3 goals draft', owed:'—', week:'3 finished · 2 open'},
+];
+const wby = id => W.find(w=>w.id===id);
+
+let todos = [
+  {id:1,t:'Chase Karthik / Manish — HXD scope', w:'ctdi', why:'The whole sprint stands behind this one.', age:'TODAY'},
+  {id:2,t:'Review HXD panel copy', w:'ctdi', age:'1 DAY'},
+  {id:3,t:'Evidence binder', w:'iso', age:'FRI'},
+  {id:4,t:'Geyser propane', w:'pop', age:'THU'},
+];
+let queue = [
+  {id:11,t:'Send Karthik the HXD spec', w:'ctdi', src:'FROM TODAY’S PLAUD CALL', exc:'“Karthik said he can’t start until he sees the spec — I told him this week.”'},
+  {id:12,t:'Ask Manish about the reporting dependency', w:'ctdi', src:'FROM TODAY’S PLAUD CALL', exc:'“Manish flagged the reporting dependency again — second call in a row.”'},
+  {id:13,t:'Get propane quote from second supplier', w:'pop', src:'FROM 5. JULY · REMARKABLE', exc:'“geyser guy says winter rates start Sept — get a second number before committing”'},
+];
+const RAWS = {
+  rm:{t:'RAW · MY@REMARKABLE.COM · JUL 29 · 2:14 PM', b:'5. July\n\n- plumber PAID. done with this saga\n- geyser guy says winter rates start Sept — get a second number before committing\n- G’s furniture: build Sat morning?\n- why does the porch light flicker when the AC kicks on??'},
+  pl:{t:'RAW · NO-REPLY@PLAUD.AI · JUL 29 · 1:47 PM', b:'[Karthik] I can’t really start until the spec lands on my desk.\n[Chris] Fair — you’ll have it this week.\n[Manish] Reporting dependency is still open, that’s the risk.\n[Chris] Panel copy freezes Friday, let’s hold that line.'},
+  mp:{t:'RAW · COMPOSER · JUL 29 · 8:02 AM', b:'Slept badly but the head is clear. Three things matter today: the HXD sync, the plumber’s final invoice, and not letting the ISO binder slide again.'}
+};
+
+/* ————————— STATE ————————— */
+let world = null;       // null = whole life
+let room = 'react';
+let lastAction = null;  // for undo
+let chooser = null;     // 'delay' | 'delegate'
+let sliderVal = 3;
+let quoted = null;      // margin-note carried into reflect
+
+/* ————————— HELPERS ————————— */
+const $ = id => document.getElementById(id);
+const acc = () => world ? wby(world).c : 'var(--silver)';
+function setMode(ph){ return;  document.body.classList.toggle('ph',ph);
+  $('cdesk').classList.toggle('on',!ph); $('cph').classList.toggle('on',ph); render(); }
+function setWorld(w){ world=w; document.documentElement.style.setProperty('--acc', w?wby(w).c:'#a5a198'); render(); }
+function setRoom(r){ room=r; render(); }
+function toggleSheet(id){ $(id).classList.toggle('on'); if(id==='wsheet') renderSheets(); }
+function showOv(id){ $(id).classList.add('on'); }
+function hideOv(id){ $(id).classList.remove('on'); }
+function showRaw(k){ hideOv('arrv'); $('rawtitle').textContent=RAWS[k].t; $('rawbody').innerText=RAWS[k].b; showOv('rawov'); }
+function toast(txt){ $('undotxt').textContent=txt; $('undo').classList.add('on');
+  clearTimeout(window._ut); window._ut=setTimeout(()=>$('undo').classList.remove('on'),3800); }
+function snapshot(msg){ lastAction={todos:JSON.parse(JSON.stringify(todos)),queue:JSON.parse(JSON.stringify(queue))}; toast(msg); }
+function doUndo(){ if(!lastAction) return; todos=lastAction.todos; queue=lastAction.queue; lastAction=null;
+  $('undo').classList.remove('on'); render(); }
+
+/* ————————— VERDICTS ————————— */
+function vDo(){ const c=queue[0]; snapshot('On the list for '+wby(c.w).name);
+  todos.unshift({id:c.id,t:c.t,w:c.w,age:'TODAY'}); queue.shift(); chooser=null; render(); }
+function vDelete(){ const c=queue[0]; snapshot('Gone — the extractor learns'); queue.shift(); chooser=null; render(); }
+function vDelay(){ chooser='delay'; sliderVal=3; render(); }
+function vDelegate(){ chooser='delegate'; sliderVal=3; render(); }
+function commitDelay(label){ snapshot('Sleeping until '+label); queue.shift(); chooser=null; render(); }
+function commitDelegate(label){ snapshot('Handed off — chase '+label); queue.shift(); chooser=null; render(); }
+function doneTodo(id){ const t=todos.find(x=>x.id===id); snapshot('Done — '+t.t.slice(0,32)+'…');
+  todos=todos.filter(x=>x.id!==id); render(); }
+function openDoor(kind){ quoted=kind; room='reflect'; render(); }
+
+/* ————————— RENDER ————————— */
+function chipHTML(){
+  if(!world) return `<span class="dot" style="width:12px;height:12px;background:radial-gradient(circle at 35% 30%,#dedbd4,#807c74)"></span>
+    <span class="serif" style="font-size:15px">Whole life</span>`;
+  const w=wby(world);
+  return `<span class="dot" style="background:${w.c}"></span><span class="serif" style="font-size:15px">${w.name}</span>
+    <span class="tag" style="color:var(--dim)">· ${w.tag}</span><span class="backhint">← ALL</span>`;
+}
+function filtTodos(){ return world? todos.filter(t=>t.w===world) : todos; }
+function filtQueue(){ return world? queue.filter(t=>t.w===world) : queue; }
+
+function todoRows(list){
+  return list.map((t,i)=>`<div class="todo-row"><span class="dot" style="background:${wby(t.w).c}"></span>
+    <div>${t.t}${i===0&&t.why?`<span class="why">${t.why}</span>`:''}
+    ${t.age?`<span class="age"> · ${t.age}</span>`:''}</div>
+    <div class="circ" onclick="doneTodo(${t.id})" title="done"></div></div>`).join('');
+}
+
+function renderDock(){
+  const list=filtTodos();
+  $('dockn').textContent=list.length; $('ptodon').textContent=list.length; $('ptodon2').textContent=list.length;
+  $('dockbody').innerHTML = list.length? todoRows(list) :
+    `<div class="serif" style="font-style:italic;color:var(--dim);font-size:13px;padding:14px 6px">Nothing standing. Go live it.</div>`;
+  $('tsheetbody').innerHTML = $('dockbody').innerHTML;
+}
+
+function renderSheets(){
+  $('wsheetrows').innerHTML =
+    `<div class="wrow" onclick="setWorld(null);toggleSheet('wsheet')">
+      <span class="dot" style="width:12px;height:12px;background:radial-gradient(circle at 35% 30%,#dedbd4,#807c74)"></span>Whole life</div>` +
+    W.map(w=>`<div class="wrow" onclick="setWorld('${w.id}');toggleSheet('wsheet')">
+      <span class="dot" style="background:${w.c}"></span>${w.name}</div>`).join('');
+}
+
+/* rooms */
+function rmRead(){
+  const isW = world && world!=='pop';
+  return `<div class="roomwrap">
+    <div class="dayhead"><h2>Wednesday, July 29</h2>
+      <span class="arr-chip" onclick="showOv('arrv')">ARRIVALS ↗</span></div>
+    <div style="margin:14px 0 18px">
+      <span class="eyebrow">THE DAY</span>
+      <div class="evrow"><span class="time">9:00</span> CTDI standup</div>
+      <div class="evrow"><span class="time">1:00</span> Karthik / Manish — HXD sync</div>
+    </div>
+    <span class="eyebrow">TAKEN DOWN</span>
+    ${(!world)?`
+    <div class="entry" id="e1">
+      <div class="src"><span class="dot" style="background:var(--silver)"></span><span class="tag" style="color:var(--dim)">MORNING PAGES · REMARKABLE · 8:02 AM</span></div>
+      <p>Slept badly but the head is clear. Three things matter today: the HXD sync, the plumber’s invoice, and not letting the ISO binder slide again.</p>
+      <div class="margin-note" onclick="openDoor('keep')"><span class="k">THE KEEP</span>Holding you to the binder — Friday’s afternoon is still yours.</div>
+      <div class="rawbtn" onclick="this.parentElement.classList.toggle('rawopen')">RAW ▾</div>
+      <div class="rawblock">Slept badly but the head is clear. 3 things matter today — HXD sync, plumber invoice, ISO binder. dont let it slide again</div>
+    </div>`:''}
+    ${(!world||world==='ctdi')?`
+    <div class="entry">
+      <div class="src"><span class="dot" style="background:#5f8a76"></span><span class="tag" style="color:var(--dim)">HXD SYNC · PLAUD · 1:47 PM</span></div>
+      <p>Karthik can’t start until the spec lands. Manish flagged the reporting dependency. Decision: panel copy freezes Friday.</p>
+      <div class="margin-note" onclick="openDoor('answer')"><span class="k">THE ANSWER</span>You asked when the last HXD milestone slipped — June 12, by four days, same dependency.</div>
+      <div class="rawbtn" onclick="this.parentElement.classList.toggle('rawopen')">RAW ▾</div>
+      <div class="rawblock">[Karthik] I can’t really start until the spec lands on my desk. [Chris] Fair — you’ll have it this week. [Manish] Reporting dependency is still open…</div>
+    </div>`:''}
+    ${(world&&world!=='ctdi')?`<div class="serif" style="font-style:italic;color:var(--dim);font-size:14px;padding:14px 4px">Nothing taken down in this world today.</div>`:''}
+    <div style="margin-top:16px"><span class="eyebrow">FINISHED</span></div>
+    ${(!world||world==='pop')?`<div class="donel"><span class="chk">✓</span> Pay the plumber’s final invoice <span class="dot" style="background:#7a5f9e"></span></div>`:''}
+    ${(!world||world==='sub')?`<div class="donel"><span class="chk">✓</span> Send structured app plan <span class="dot" style="background:#54718f"></span></div>`:''}
+    ${isW&&world!=='sub'&&world!=='ctdi'?`<div class="serif" style="font-style:italic;color:var(--dim);font-size:13px;padding:8px 4px">Nothing finished here yet today.</div>`:''}
+    <div class="colo"><span class="eyebrow">THE DAY’S DEALINGS</span>
+      <div class="l"><span class="dot" style="background:#5f8a76"></span>3 cards minted from the HXD call · 1 handed to Karthik, chase Aug 1</div>
+      <div class="l"><span class="dot" style="background:#7a5f9e"></span>Poplar’s last open loop closed</div>
+    </div>
+  </div>`;
+}
+
+function rmReview(){
+  if(world){ const w=wby(world);
+    return `<div class="roomwrap">
+      <div class="dayhead"><h2 style="display:flex;align-items:center;gap:10px"><span class="dot" style="background:${w.c};width:12px;height:12px"></span>${w.name}</h2>
+      <span class="tag" style="color:${w.quiet?'#b0673f':'var(--dim)'}">${w.status}</span></div>
+      <p class="serif" style="font-style:italic;font-size:16px;color:#4a473f;margin:14px 0 22px">“${w.mission}”</p>
+      <span class="eyebrow">NEXT</span><div style="font-size:14px;padding:6px 0 16px">${w.next}</div>
+      <span class="eyebrow">WAITING ON</span><div style="font-size:14px;padding:6px 0 16px">${w.owed}</div>
+      <span class="eyebrow">THIS WEEK</span><div style="font-size:14px;padding:6px 0 16px">${w.week}</div>
+      <span class="eyebrow">RECENTLY</span>
+      <div class="colo" style="margin-top:6px;border:none;padding:0">
+        <div class="l">JUL 29 — sync held; copy freeze decided</div>
+        <div class="l">JUL 28 — 2 loops closed</div>
+        <div class="l">JUL 25 — mission set</div>
+      </div></div>`;
+  }
+  return `<div class="roomwrap" style="max-width:900px">
+    <div class="dayhead"><h2>The worlds, at a glance</h2><span class="eyebrow">TAP ONE TO STEP IN</span></div>
+    <div class="wgrid">${W.map(w=>`
+      <div class="wtile" onclick="setWorld('${w.id}')">
+        <div style="display:flex;gap:8px;align-items:center"><span class="dot" style="background:${w.c}"></span>
+          <b style="font-size:14px">${w.name}</b>
+          <span class="tag" style="color:${w.quiet?'#b0673f':'var(--dim)'};margin-left:auto">${w.status}</span></div>
+        <div class="mission">“${w.mission}”</div>
+        <div class="row"><span class="k">NEXT</span>${w.next}</div>
+        <div class="row"><span class="k">OWED</span>${w.owed}</div>
+        <div class="row"><span class="k">WEEK</span>${w.week}</div>
+      </div>`).join('')}
+    </div></div>`;
+}
+
+function rmReact(){
+  const q=filtQueue();
+  if(chooser){
+    const isD = chooser==='delay';
+    return `<div id="stackzone">
+      <div class="chooser">
+        <div class="eyebrow" style="text-align:center;margin-bottom:10px">${isD?'UNTIL WHEN…':'HAND IT TO…'}</div>
+        ${isD?'':'<input type="text" value="Karthik / Manish" />'}
+        <div class="opt-row" onclick="${isD?`commitDelay('tomorrow')`:`commitDelegate('in 3 days')`}"><span>${isD?'tomorrow':'chase in 3 days'}</span><span class="tag" style="color:var(--dim)">${isD?'JUL 30':'AUG 1'}</span></div>
+        <div class="opt-row" onclick="${isD?`commitDelay('next week')`:`commitDelegate('next week')`}"><span>${isD?'next week':'chase next week'}</span><span class="tag" style="color:var(--dim)">AUG 5</span></div>
+        <div class="opt-row" style="cursor:default">
+          <input type="range" min="1" max="5" value="${sliderVal}" oninput="sliderVal=this.value;this.nextElementSibling.textContent=(${isD}?'in ':'chase in ')+this.value+(this.value==1?' day':' days')" onclick="event.stopPropagation()">
+          <span class="tag" style="color:var(--muted)" onclick="${isD?'commitDelay':'commitDelegate'}('in '+sliderVal+' days')">${isD?'in':'chase in'} ${sliderVal} days</span>
+        </div>
+        <div class="nevermind" onclick="chooser=null;render()">never mind</div>
+      </div></div>`;
+  }
+  if(!q.length){
+    return `<div id="stackzone" style="display:flex">
+      <span class="eyebrow">TRIAGE CLEAR · WED JUL 29</span>
+      <div class="serif" style="font-family:Georgia,serif;font-size:20px;font-style:italic;color:#3a382f;margin-top:14px">Clear. Every loop has a verdict. Go live it.</div>
+    </div>`;
+  }
+  const c=q[0]; const w=wby(c.w);
+  return `<div id="stackzone">
+    <span class="eyebrow" style="margin-bottom:16px;cursor:pointer" onclick="vDelay()">↑ DELAY</span>
+    <div class="tcard">
+      <span class="eyebrow">${c.src}</span>
+      <h3>${c.t}</h3>
+      <div class="exc">${c.exc}</div>
+      <div class="meta"><span class="dot" style="background:${w.c}"></span><span class="tag" style="color:${w.c}">${w.name}</span>
+        <span class="tag" style="color:var(--dim)">MINTED TODAY</span></div>
+    </div>
+    <div class="hintbar">
+      <span onclick="vDelegate()">← DELEGATE</span>
+      <span onclick="vDelete()">↓ DELETE</span>
+      <span onclick="vDo()">DO →</span>
+    </div>
+    <span class="eyebrow" style="margin-top:22px">${q.length} WAITING</span>
+  </div>`;
+}
+
+function rmReflect(){
+  let qhtml='';
+  if(quoted){
+    const map={keep:{k:'FROM THE MARGIN · THE KEEP',q:'Holding you to the binder — Friday’s afternoon is still yours.',
+      r:'I wrote that this morning because the binder has slipped twice, and Friday is its last honest window before the audit gets tight. Want me to guard the afternoon — nothing new lands on Friday?'},
+      answer:{k:'FROM THE MARGIN · THE ANSWER',q:'Last HXD milestone slip: June 12, by four days, same dependency.',
+      r:'Same dependency both times — Manish’s reporting thread. If it slips a third time it’s not a coincidence, it’s a pattern with a name on it. Worth raising directly?'}}[quoted];
+    qhtml=`<div class="quoteobj"><span class="eyebrow">${map.k}</span><div class="q" style="margin-top:5px">${map.q}</div></div>
+      <div class="msg deb"><div class="attr"><span class="dot" style="background:var(--acc)"></span>DEB · NOW</div><p>${map.r}</p></div>`;
+    quoted=null;
+  }
+  return `<div class="roomwrap" style="max-width:660px">
+    <div class="thread" style="margin-top:8px">
+      <div class="msg deb"><div class="attr"><span class="dot" style="background:var(--silver)"></span>DEB · THE BRIEF · 8:04 AM</div>
+        <p>Your own words this morning: HXD, the invoice, the binder. The invoice is done, HXD moved — the binder is the one Friday keeps threatening. Defend the afternoon.</p></div>
+      <div class="filedobj" onclick="setRoom('read')"><span class="eyebrow">● FILED · 150 POPLAR · 2:14 PM</span>
+        <div style="font-size:13px;margin-top:4px;color:#44423b">5. July — converted page · 2 cards dealt to React</div></div>
+      <div class="msg me"><div class="attr">CHRIS · 2:20 PM</div><p>notes from the HXD sync — did I just overcommit?</p></div>
+      <div class="msg deb"><div class="attr"><span class="dot" style="background:var(--acc)"></span>DEB · 2:20 PM</div>
+        <p>Not quite — but Friday now carries the panel-copy freeze <em>and</em> the binder. One of them moves or Friday breaks. My vote: the freeze holds; the binder has slipped twice.</p></div>
+      ${qhtml}
+    </div>
+    ${document.body.classList.contains('ph')?'':`<div class="composer"><span>Tell Deb anything…</span><div class="send"></div></div>`}
+  </div>`;
+}
+
+function render(){
+  $('chip').innerHTML=chipHTML();
+  $('ppill').innerHTML=chipHTML();
+  document.querySelectorAll('#railrooms span,#pverbs span').forEach(s=>s.classList.toggle('on',s.dataset.r===room));
+  const R={read:rmRead,review:rmReview,react:rmReact,reflect:rmReflect};
+  $('main').innerHTML=R[room]();
+  renderDock();
+}
+renderSheets();
+document.getElementById('raildots').outerHTML = W.map(w=>
+  `<div class="raildot" data-w="${w.name}" onclick="setWorld('${w.id}')" style="width:12px;height:12px;background:${w.c}"></div>`).join('');
+render();
+</script>
+</body>
+</html>

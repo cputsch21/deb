@@ -93,7 +93,7 @@ export function WorldSheet({
               onClick={() => pick(null)}
               className="flex min-h-11 items-center gap-3 rounded-xl px-2 py-3 text-left active:bg-fill"
             >
-              <span className="h-2.5 w-2.5 rounded-full bg-silver" />
+              <span className="home-dot h-2.5 w-2.5 rounded-full" />
               <span className="text-[15px] text-ink">Deb — whole life</span>
             </button>
           )}

@@ -16,7 +16,7 @@ export function LensRail({ onNewProject }: { onNewProject: () => void }) {
         onClick={() => setLens(null)}
         title="Deb"
         aria-label="Home — the Mentor"
-        className={`h-3 w-3 rotate-45 rounded-[3px] bg-silver transition-all duration-150 ${
+        className={`home-dot h-3 w-3 rotate-45 rounded-[3px] transition-all duration-150 ${
           lens === null ? 'scale-110 opacity-100' : 'opacity-55 hover:opacity-100'
         }`}
       />

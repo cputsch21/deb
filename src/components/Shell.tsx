@@ -164,7 +164,9 @@ export function Shell(_props: { email: string }) {
         ) : isMobile ? (
           <RoomsPager>{[rooms.read, rooms.review, rooms.react, rooms.reflect]}</RoomsPager>
         ) : (
-          rooms[room]
+          <div key={room} className="room-rise flex min-h-0 flex-1 flex-col">
+            {rooms[room]}
+          </div>
         )}
       </main>
 

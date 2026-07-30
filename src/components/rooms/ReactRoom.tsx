@@ -521,7 +521,7 @@ function DirLit({ lit }: { lit: 'up' | 'down' | 'left' | 'right' | null }) {
     const colors: Record<string, string> = {
       right: 'var(--t-ok)',
       up: 'var(--t-accent)',
-      left: 'var(--t-ink)',
+      left: 'var(--t-purple)',
       down: 'var(--t-bad)',
     }
     const map: Record<string, string> = { up: 'top', down: 'bottom', left: 'left', right: 'right' }

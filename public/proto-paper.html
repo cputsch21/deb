@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deb — Wednesday, July 29</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAF8F4; --ink:#191713; --muted:#5f5c54; --dim:#8a867e;
+    --well:#f0ede6; --well2:#e9e5dc; --hair:#e2ded5; --silver:#a5a198; --gold:#c9a15a;
+    --acc:#a5a198;
+    --serif:"Fraunces", Georgia, serif;
+    --sans:"Inter", -apple-system, sans-serif;
+    --mono:"JetBrains Mono", monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--paper); color:var(--ink); font-family:var(--sans);
+    font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+  ::selection{background:var(--well2);}
+  button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;}
+  input{font:inherit;color:inherit;border:none;background:none;outline:none;}
+
+  .mono{font-family:var(--mono);text-transform:uppercase;letter-spacing:.16em;font-size:9.5px;font-weight:500;}
+
+  .paper{max-width:1420px;margin:0 auto;padding:36px 56px 72px;}
+
+  /* ---------------- MASTHEAD ---------------- */
+  .mast-top{display:flex;justify-content:space-between;align-items:center;padding-bottom:26px;}
+  .mast-top .mono{color:var(--dim);}
+  .chip{
+    font-family:var(--mono);text-transform:uppercase;letter-spacing:.16em;font-size:9.5px;font-weight:500;
+    color:var(--muted);padding:8px 14px;border-radius:999px;transition:background .18s ease,color .18s ease;
+  }
+  .chip:hover{background:var(--well);color:var(--ink);}
+  .mast-main{display:flex;align-items:flex-end;justify-content:space-between;padding-bottom:26px;gap:40px;}
+  .mast-date{
+    font-family:var(--serif);font-variation-settings:"opsz" 144;font-weight:540;
+    font-size:88px;line-height:.92;letter-spacing:-.018em;white-space:nowrap;
+  }
+  .mast-right{display:flex;flex-direction:column;align-items:flex-end;gap:10px;padding-bottom:8px;}
+  .lensname{font-family:var(--mono);text-transform:uppercase;letter-spacing:.17em;font-size:9.5px;font-weight:600;color:var(--acc);transition:color .18s ease;min-height:13px;}
+  .dots{display:flex;gap:4px;}
+  .dotbtn{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;transition:background .18s ease;position:relative;}
+  .dotbtn:hover{background:var(--well2);}
+  .dotbtn.active{background:var(--well2);}
+  .dotbtn .dot{width:15px;height:15px;border-radius:50%;transition:transform .18s ease;}
+  .dotbtn.active .dot{transform:scale(1.18);}
+  .dot-home{background:radial-gradient(circle at 35% 30%, #dedbd4, #807c74);}
+  .rule{border:none;border-top:1px solid var(--hair);}
+  .strap{display:flex;align-items:center;gap:10px;padding:14px 2px 0;min-height:20px;
+    font-family:var(--serif);font-style:italic;font-variation-settings:"opsz" 40;
+    font-size:15px;color:var(--muted);transition:opacity .2s ease;}
+  .strap .mdot{flex:none;}
+  .strap.hidden{opacity:0;}
+
+  /* ---------------- SHEET GRID ---------------- */
+  .sheet{display:grid;grid-template-columns:1.35fr 1fr 1.04fr;margin-top:26px;align-items:start;}
+  .col{min-width:0;}
+  .col-record{padding-right:44px;}
+  .col-verdicts{border-left:1px solid var(--hair);padding:0 40px;}
+  .col-deb{border-left:1px solid var(--hair);padding-left:40px;display:flex;flex-direction:column;min-height:100%;}
+  .colhead{font-family:var(--mono);text-transform:uppercase;letter-spacing:.18em;font-size:10px;font-weight:600;color:var(--ink);padding-bottom:6px;}
+  .colhead .cnt{color:var(--acc);margin-left:8px;transition:color .18s ease;}
+
+  .mdot{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none;}
+  .mdot.sm{width:8px;height:8px;}
+  .mdot-home{background:radial-gradient(circle at 35% 30%, #dedbd4, #807c74);}
+
+  .quietline{font-family:var(--serif);font-style:italic;font-variation-settings:"opsz" 40;font-size:14.5px;color:var(--dim);padding:14px 0;}
+
+  /* ---------------- THE RECORD ---------------- */
+  .evtblock{margin-top:20px;}
+  .evt{display:flex;align-items:baseline;gap:12px;padding:5px 0;}
+  .evt .time{font-family:var(--mono);letter-spacing:.14em;font-size:9.5px;font-weight:500;color:var(--dim);min-width:64px;text-align:right;}
+  .evt .title{font-size:14px;color:var(--muted);font-weight:500;}
+  .evt .mdot{align-self:center;}
+
+  .entry{margin-top:40px;}
+  .marker{display:flex;align-items:center;gap:9px;}
+  .marker .tag{font-family:var(--mono);text-transform:uppercase;letter-spacing:.15em;font-size:9.5px;font-weight:500;color:var(--dim);}
+  .distillate{font-family:var(--serif);font-variation-settings:"opsz" 52;font-weight:420;
+    font-size:18px;line-height:1.58;letter-spacing:.002em;margin-top:12px;color:var(--ink);}
+  .entry.lead .distillate{font-size:21.5px;line-height:1.5;font-variation-settings:"opsz" 60;font-weight:440;}
+
+  .note{margin:16px 0 0 20px;padding:13px 16px 14px;border-radius:12px;cursor:pointer;transition:background .18s ease;}
+  .note:hover{background:var(--well);}
+  .notehead{display:flex;align-items:baseline;justify-content:space-between;gap:12px;}
+  .notekind{font-family:var(--mono);text-transform:uppercase;letter-spacing:.17em;font-size:9px;font-weight:600;color:var(--acc);transition:color .18s ease;}
+  .notedoor{font-family:var(--mono);text-transform:uppercase;letter-spacing:.15em;font-size:9px;color:var(--dim);opacity:0;transition:opacity .18s ease;}
+  .note:hover .notedoor{opacity:1;}
+  .notetext{font-family:var(--serif);font-style:italic;font-variation-settings:"opsz" 40;font-weight:430;
+    font-size:15.5px;line-height:1.55;color:var(--muted);margin-top:6px;}
+
+  .rawbtn{font-family:var(--mono);text-transform:uppercase;letter-spacing:.16em;font-size:9.5px;font-weight:500;
+    color:var(--dim);margin-top:14px;padding:6px 10px;margin-left:-10px;border-radius:8px;transition:background .18s ease,color .18s ease;}
+  .rawbtn:hover{background:var(--well);color:var(--ink);}
+  .rawwell{background:var(--well2);border-radius:12px;padding:15px 18px;margin-top:10px;
+    font-size:13px;line-height:1.65;color:var(--muted);white-space:pre-line;
+    overflow:hidden;transition:opacity .2s ease;}
+  .rawwell .spk{font-family:var(--mono);text-transform:uppercase;letter-spacing:.14em;font-size:9px;font-weight:600;color:var(--dim);margin-right:6px;}
+
+  .finblock{margin-top:44px;}
+  .fin{display:flex;align-items:baseline;gap:11px;padding:6px 0;}
+  .fin .chk{color:var(--acc);font-size:13px;line-height:1;align-self:center;transition:color .18s ease;}
+  .fin .title{font-size:14px;color:var(--muted);}
+  .fin .mdot{align-self:center;}
+  .fin .time{font-family:var(--mono);letter-spacing:.14em;font-size:9px;color:var(--dim);margin-left:auto;}
+
+  /* ---------------- TRIAGE ---------------- */
+  .seamcount{font-family:var(--mono);text-transform:uppercase;letter-spacing:.16em;font-size:9px;font-weight:500;color:var(--acc);margin-top:20px;transition:color .18s ease;}
+  .tcard{background:#fff;border-radius:16px;padding:24px 26px 20px;margin-top:12px;
+    box-shadow:0 14px 40px rgba(25,23,19,.09), 0 3px 10px rgba(25,23,19,.05);
+    animation:cardin .2s ease;}
+  @keyframes cardin{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+  .tsource{font-family:var(--mono);text-transform:uppercase;letter-spacing:.16em;font-size:9px;font-weight:500;color:var(--dim);}
+  .ttitle{font-family:var(--serif);font-variation-settings:"opsz" 80;font-weight:540;
+    font-size:22px;line-height:1.25;letter-spacing:-.005em;margin-top:10px;}
+  .texcerpt{font-family:var(--serif);font-style:italic;font-variation-settings:"opsz" 40;font-weight:420;
+    font-size:15px;line-height:1.55;color:var(--muted);margin-top:12px;}
+  .tmarker{display:flex;align-items:center;gap:8px;margin-top:16px;}
+  .tmarker .tag{font-family:var(--mono);text-transform:uppercase;letter-spacing:.16em;font-size:9.5px;font-weight:600;color:var(--muted);}
+  .verdicts{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:20px;}
+  .vbtn{font-family:var(--mono);text-transform:uppercase;letter-spacing:.13em;font-size:9.5px;font-weight:600;
+    color:var(--muted);padding:11px 4px;border-radius:10px;text-align:center;white-space:nowrap;
+    transition:background .18s ease,color .18s ease;}
+  .vbtn:hover{background:var(--well);color:var(--ink);}
+  .vbtn.do{background:var(--well);color:var(--ink);}
+  .vbtn.do:hover{background:var(--well2);}
+
+  .chooser{background:#fff;border-radius:14px;padding:18px 20px;margin-top:10px;
+    box-shadow:0 14px 40px rgba(25,23,19,.1), 0 3px 10px rgba(25,23,19,.05);
+    animation:cardin .18s ease;}
+  .chooser .clabel{font-family:var(--mono);text-transform:uppercase;letter-spacing:.16em;font-size:9px;font-weight:500;color:var(--dim);}
+  .copts{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;}
+  .cbtn{font-family:var(--mono);text-transform:uppercase;letter-spacing:.13em;font-size:9.5px;font-weight:600;
+    color:var(--muted);padding:9px 14px;border-radius:10px;background:var(--well);
+    transition:background .18s ease,color .18s ease;}
+  .cbtn:hover{background:var(--well2);color:var(--ink);}
+  .cslide{display:flex;align-items:center;gap:14px;margin-top:14px;}
+  .cslide input[type=range]{-webkit-appearance:none;appearance:none;flex:1;height:16px;background:transparent;cursor:pointer;}
+  .cslide input[type=range]::-webkit-slider-runnable-track{height:2px;background:var(--hair);border-radius:2px;}
+  .cslide input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;background:var(--ink);margin-top:-6.5px;transition:transform .15s ease;}
+  .cslide input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15);}
+  .cslide input[type=range]::-moz-range-track{height:2px;background:var(--hair);border-radius:2px;}
+  .cslide input[type=range]::-moz-range-thumb{width:15px;height:15px;border-radius:50%;background:var(--ink);border:none;}
+  .cname{background:var(--well);border-radius:10px;padding:10px 14px;margin-top:12px;width:100%;
+    font-size:14px;font-weight:500;color:var(--ink);}
+
+  .clear{margin-top:22px;}
+  .clear .sentence{font-family:var(--serif);font-style:italic;font-variation-settings:"opsz" 48;font-weight:430;
+    font-size:19px;line-height:1.5;color:var(--muted);margin-top:12px;}
+
+  /* ---------------- TO DO ---------------- */
+  .todoblock{margin-top:48px;}
+  .todo{display:flex;align-items:flex-start;gap:13px;padding:11px 12px;margin:2px -12px;border-radius:12px;transition:background .18s ease,opacity .3s ease,transform .3s ease;}
+  .todo:hover{background:var(--well);}
+  .todo.going{opacity:0;transform:translateX(6px);}
+  .tcircle{width:19px;height:19px;border-radius:50%;background:var(--well2);flex:none;margin-top:1px;
+    display:grid;place-items:center;transition:background .18s ease;font-size:10px;line-height:1;color:#fff;}
+  .todo:hover .tcircle{background:#ddd8cc;}
+  .tcircle:hover{background:var(--silver) !important;}
+  .tcircle.done{background:var(--acc) !important;}
+  .tbody{flex:1;min-width:0;}
+  .trow{display:flex;align-items:center;gap:9px;}
+  .trow .title{font-size:14.5px;font-weight:500;line-height:1.35;}
+  .twhy{font-family:var(--serif);font-style:italic;font-variation-settings:"opsz" 40;font-weight:430;
+    font-size:14px;color:var(--muted);margin-top:4px;line-height:1.5;}
+  .tage{font-family:var(--mono);text-transform:uppercase;letter-spacing:.14em;font-size:9px;font-weight:500;color:var(--dim);margin-top:4px;margin-left:2px;white-space:nowrap;}
+
+  /* ---------------- DEB ---------------- */
+  .brief{margin-top:20px;}
+  .attr{font-family:var(--mono);text-transform:uppercase;letter-spacing:.16em;font-size:9px;font-weight:600;color:var(--dim);}
+  .attr .who{color:var(--acc);transition:color .18s ease;}
+  .debtext{font-family:var(--serif);font-variation-settings:"opsz" 48;font-weight:430;
+    font-size:17px;line-height:1.62;margin-top:9px;color:var(--ink);}
+  .msg{margin-top:26px;animation:msgin .25s ease;}
+  @keyframes msgin{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+  .usertext{font-size:14px;line-height:1.6;color:var(--ink);margin-top:8px;}
+  .quoteobj{background:var(--well);border-radius:12px;padding:13px 16px;margin-top:8px;}
+  .quoteobj .qkind{font-family:var(--mono);text-transform:uppercase;letter-spacing:.16em;font-size:8.5px;font-weight:600;color:var(--dim);}
+  .quoteobj .qtext{font-family:var(--serif);font-style:italic;font-variation-settings:"opsz" 40;font-weight:430;
+    font-size:14.5px;line-height:1.55;color:var(--muted);margin-top:5px;}
+  .thread-scroll{flex:1;}
+
+  .composer{position:sticky;bottom:0;margin-top:40px;padding:28px 0 20px;
+    background:linear-gradient(to top, var(--paper) 78%, rgba(250,248,244,0));}
+  .composer-inner{display:flex;align-items:center;gap:10px;background:var(--well);border-radius:999px;padding:8px 8px 8px 20px;transition:background .18s ease;}
+  .composer-inner:focus-within{background:var(--well2);}
+  .composer input{flex:1;font-size:14px;}
+  .composer input::placeholder{color:var(--dim);}
+  .send{width:36px;height:36px;border-radius:50%;background:var(--gold);color:#fff;font-size:15px;
+    display:grid;place-items:center;flex:none;transition:transform .15s ease;}
+  .send:hover{transform:scale(1.06);}
+  .send:active{transform:scale(.95);}
+
+  /* ---------------- WORLDS BAND ---------------- */
+  .worlds{margin-top:64px;}
+  .worlds .rule{margin-bottom:22px;}
+  .wgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px 24px;margin-top:14px;}
+  .wtile{padding:18px 20px 16px;border-radius:14px;cursor:pointer;transition:background .18s ease,opacity .25s ease;}
+  .wtile:hover{background:var(--well);}
+  .wtile.active{background:var(--well);}
+  .wtile.dimmed{opacity:.35;}
+  .wtile.dimmed:hover{opacity:.7;}
+  .whead{display:flex;align-items:center;gap:8px;}
+  .whead .tag{font-family:var(--mono);text-transform:uppercase;letter-spacing:.16em;font-size:9px;font-weight:600;color:var(--muted);}
+  .wstatus{font-family:var(--mono);text-transform:uppercase;letter-spacing:.15em;font-size:9px;font-weight:600;margin-left:auto;color:var(--dim);}
+  .wstatus.moving{color:var(--muted);}
+  .wname{font-family:var(--serif);font-variation-settings:"opsz" 80;font-weight:560;font-size:20px;letter-spacing:-.005em;margin-top:10px;}
+  .wmission{font-family:var(--serif);font-style:italic;font-variation-settings:"opsz" 40;font-weight:430;
+    font-size:14px;line-height:1.5;color:var(--muted);margin-top:5px;}
+  .wnext{display:flex;align-items:baseline;gap:9px;margin-top:12px;}
+  .wnext .lbl{font-family:var(--mono);text-transform:uppercase;letter-spacing:.16em;font-size:8.5px;font-weight:600;color:var(--dim);}
+  .wnext .val{font-size:13px;font-weight:500;color:var(--ink);}
+  .wweek{font-family:var(--mono);text-transform:uppercase;letter-spacing:.13em;font-size:9px;font-weight:500;color:var(--dim);margin-top:11px;}
+
+  .colophon{margin-top:60px;text-align:center;}
+  .colophon .mono{color:var(--dim);font-size:9px;}
+
+  /* ---------------- UNDO PILL ---------------- */
+  .undopill{position:fixed;bottom:30px;left:50%;transform:translate(-50%,10px);opacity:0;pointer-events:none;
+    background:var(--ink);color:#f5f2ec;border-radius:999px;padding:11px 10px 11px 20px;
+    display:flex;align-items:center;gap:16px;z-index:60;
+    box-shadow:0 16px 44px rgba(25,23,19,.28), 0 4px 12px rgba(25,23,19,.2);
+    transition:opacity .2s ease,transform .2s ease;max-width:640px;}
+  .undopill.show{opacity:1;transform:translate(-50%,0);pointer-events:auto;}
+  .undopill .umsg{font-size:13.5px;color:#e8e4dc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .undopill .ubtn{font-family:var(--mono);text-transform:uppercase;letter-spacing:.16em;font-size:10px;font-weight:600;
+    color:var(--gold);padding:7px 14px;border-radius:999px;transition:background .18s ease;}
+  .undopill .ubtn:hover{background:rgba(255,255,255,.08);}
+
+  /* ---------------- ARRIVALS OVERLAY ---------------- */
+  .overlay{position:fixed;inset:0;background:var(--paper);z-index:50;overflow-y:auto;
+    opacity:0;pointer-events:none;transition:opacity .2s ease;}
+  .overlay.show{opacity:1;pointer-events:auto;}
+  .ov-inner{max-width:1180px;margin:0 auto;padding:44px 56px 80px;}
+  .ov-back{font-family:var(--mono);text-transform:uppercase;letter-spacing:.16em;font-size:10px;font-weight:600;
+    color:var(--muted);padding:8px 14px;margin-left:-14px;border-radius:999px;transition:background .18s ease,color .18s ease;}
+  .ov-back:hover{background:var(--well);color:var(--ink);}
+  .ov-title{font-family:var(--serif);font-variation-settings:"opsz" 144;font-weight:540;font-size:52px;letter-spacing:-.015em;margin-top:18px;}
+  .ov-sub{font-family:var(--serif);font-style:italic;font-variation-settings:"opsz" 40;font-size:15.5px;color:var(--muted);margin-top:10px;}
+  .ov-table{margin-top:36px;}
+  .ov-hrow{display:grid;grid-template-columns:150px 240px 1fr 280px;gap:16px;padding:0 18px 12px;}
+  .ov-hrow span{font-family:var(--mono);text-transform:uppercase;letter-spacing:.17em;font-size:9px;font-weight:600;color:var(--dim);}
+  .ov-row{display:grid;grid-template-columns:150px 240px 1fr 280px;gap:16px;padding:15px 18px;border-radius:12px;
+    align-items:baseline;transition:background .18s ease;}
+  .ov-row.click{cursor:pointer;}
+  .ov-row.click:hover{background:var(--well);}
+  .ov-row.muted{opacity:.42;}
+  .ov-row .when{font-family:var(--mono);letter-spacing:.13em;font-size:9.5px;font-weight:500;color:var(--dim);text-transform:uppercase;}
+  .ov-row .from{font-family:var(--mono);letter-spacing:.06em;font-size:10px;font-weight:500;color:var(--muted);text-transform:none;}
+  .ov-row .what{font-family:var(--serif);font-variation-settings:"opsz" 48;font-weight:480;font-size:15.5px;}
+  .ov-row .outcome{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);}
+  .ov-raw{margin-top:36px;animation:msgin .2s ease;}
+  .ov-rawmeta{font-family:var(--mono);text-transform:uppercase;letter-spacing:.15em;font-size:9.5px;color:var(--dim);margin-top:24px;}
+  .ov-rawtitle{font-family:var(--serif);font-variation-settings:"opsz" 90;font-weight:540;font-size:30px;margin-top:10px;}
+  .ov-rawbody{background:var(--well2);border-radius:14px;padding:22px 26px;margin-top:20px;max-width:760px;
+    font-size:13.5px;line-height:1.7;color:var(--muted);white-space:pre-line;}
+  .ov-rawbody .spk{font-family:var(--mono);text-transform:uppercase;letter-spacing:.14em;font-size:9px;font-weight:600;color:var(--dim);margin-right:6px;}
+</style>
+</head>
+<body>
+<div class="paper">
+
+  <!-- MASTHEAD -->
+  <header>
+    <div class="mast-top">
+      <span class="mono">Deb · The whole life, daily · No. 210</span>
+      <button class="chip" id="arrivalsChip">Arrivals ↗</button>
+    </div>
+    <div class="mast-main">
+      <h1 class="mast-date">Wednesday, July&nbsp;29</h1>
+      <div class="mast-right">
+        <span class="lensname" id="lensName">Whole life</span>
+        <div class="dots" id="dots"></div>
+      </div>
+    </div>
+    <hr class="rule">
+    <div class="strap hidden" id="strap"></div>
+  </header>
+
+  <!-- SHEET -->
+  <div class="sheet">
+
+    <!-- LEFT: THE RECORD -->
+    <section class="col col-record">
+      <div class="colhead">The Record</div>
+      <div id="recordBody"></div>
+    </section>
+
+    <!-- CENTER: THE VERDICTS -->
+    <section class="col col-verdicts">
+      <div class="colhead">The Verdicts</div>
+      <div id="triageBody"></div>
+      <div class="todoblock">
+        <div class="colhead">To Do <span class="cnt" id="todoCount"></span></div>
+        <div id="todoBody" style="margin-top:12px;"></div>
+      </div>
+    </section>
+
+    <!-- RIGHT: DEB -->
+    <section class="col col-deb">
+      <div class="colhead">Deb</div>
+      <div class="thread-scroll" id="threadBody"></div>
+      <div class="composer">
+        <div class="composer-inner">
+          <input type="text" placeholder="Tell Deb anything…" aria-label="Tell Deb anything">
+          <button class="send" title="Send">↑</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- WORLDS BAND -->
+  <section class="worlds">
+    <hr class="rule">
+    <div class="colhead">The Worlds</div>
+    <div class="wgrid" id="worldsBody"></div>
+  </section>
+
+  <div class="colophon">
+    <span class="mono">Printed this morning by Deb · Nothing leaves this page</span>
+  </div>
+</div>
+
+<!-- UNDO PILL -->
+<div class="undopill" id="undoPill">
+  <span class="umsg" id="undoMsg"></span>
+  <button class="ubtn" id="undoBtn">Undo</button>
+</div>
+
+<!-- ARRIVALS OVERLAY -->
+<div class="overlay" id="overlay">
+  <div class="ov-inner" id="overlayInner"></div>
+</div>
+
+<script>
+/* ============ DATA ============ */
+const WORLDS = {
+  home:{id:'home', name:'Whole life', tag:'', color:''},
+  ctdi:{id:'ctdi', name:'CTDI', tag:'HXD', color:'#5f8a76',
+    mission:"Make HXD the team's proudest ship of the year.", status:'MOVING', statusKind:'moving',
+    next:'Chase Karthik — HXD scope', owed:'Karthik & Manish · chase Aug 1', week:'5 finished · 3 open · page grew 4 days'},
+  sub:{id:'sub', name:'Subseven', tag:'S7', color:'#54718f',
+    mission:'A second income that runs on rails, not adrenaline.', status:'MOVING', statusKind:'moving',
+    next:'App plan review', owed:null, week:'2 finished · 2 open'},
+  iso:{id:'iso', name:'ISO Experiences', tag:'ISO', color:'#b0673f',
+    mission:'The audit passes in October without a single scramble.', status:'QUIET 6 DAYS', statusKind:'quiet',
+    next:'Evidence binder · Fri', owed:null, week:'0 finished · 2 open · last entry Jul 23'},
+  pop:{id:'pop', name:'150 Poplar', tag:'HOME', color:'#7a5f9e',
+    mission:'A house that runs itself by Christmas.', status:'SETTLED', statusKind:'settled',
+    next:'Geyser propane · Thu', owed:null, week:'2 finished · 1 open · plumber saga closed'},
+  fam:{id:'fam', name:'Fam Finances', tag:'FAM', color:'#4f8a8b',
+    mission:'Every dollar knows its job.', status:'SETTLED', statusKind:'settled',
+    next:'August budget pass', owed:null, week:'1 finished · 1 open'},
+  cribl:{id:'cribl', name:'Cribl', tag:'CRB', color:'#a05252',
+    mission:'Earn the promotion without losing the evenings.', status:'MOVING', statusKind:'moving',
+    next:'Q3 goals draft', owed:null, week:'3 finished · 2 open'}
+};
+const WORLD_ORDER = ['ctdi','sub','iso','pop','fam','cribl'];
+
+const state = {
+  lens:'home',
+  todos:[
+    {id:'t1', title:'Chase Karthik & Manish — HXD scope', world:'ctdi', why:'The whole sprint stands behind this one.', age:'TODAY'},
+    {id:'t2', title:'Review HXD panel copy', world:'ctdi', why:null, age:'1 DAY'},
+    {id:'t3', title:'Evidence binder', world:'iso', why:null, age:'FRI'},
+    {id:'t4', title:'Geyser propane', world:'pop', why:null, age:'THU'}
+  ],
+  queue:[
+    {id:'q1', title:'Send Karthik the HXD spec', world:'ctdi', source:"FROM TODAY'S PLAUD CALL",
+      excerpt:"Karthik said he can't start until he sees the spec — I told him this week."},
+    {id:'q2', title:'Ask Manish about the reporting dependency', world:'ctdi', source:"FROM TODAY'S PLAUD CALL",
+      excerpt:"Manish flagged the reporting dependency again — second call in a row."},
+    {id:'q3', title:'Get propane quote from second supplier', world:'pop', source:'FROM 5. JULY · REMARKABLE',
+      excerpt:'geyser guy says winter rates start Sept — get a second number before committing'}
+  ],
+  finished:[
+    {title:"Pay the plumber's final invoice", world:'pop', time:'11:14 AM'},
+    {title:'Send structured app plan', world:'sub', time:'3:05 PM'}
+  ],
+  chooser:null, /* {cardId, kind:'delay'|'delegate', sliderVal, name} */
+  rawOpen:{},   /* entryId -> bool */
+  thread:[
+    {type:'deb', attr:'DEB · THE BRIEF · 8:04 AM',
+      text:'Your own words this morning: HXD, the invoice, the binder. The invoice is done, HXD moved — the binder is the one Friday keeps threatening. Defend the afternoon.'},
+    {type:'user', attr:'CHRIS · 2:20 PM',
+      text:'notes from the HXD sync — did I just overcommit?'},
+    {type:'deb', attr:'DEB · 2:21 PM',
+      text:'Not quite — but Friday now carries the panel-copy freeze AND the binder. One of them moves or Friday breaks. My vote: the freeze holds; the binder has slipped twice.'}
+  ],
+  undo:null, undoTimer:null
+};
+
+const EVENTS = [
+  {time:'9:00', title:'CTDI standup', world:'ctdi'},
+  {time:'1:00', title:'Karthik & Manish — HXD sync', world:'ctdi'}
+];
+
+const ENTRIES = [
+  {id:'e1', world:'home', lead:true, source:'MORNING PAGES · REMARKABLE · 8:02 AM',
+   distillate:"Slept badly but the head is clear. Three things matter today: the HXD sync, the plumber's invoice, and not letting the ISO binder slide again.",
+   note:{kind:'THE KEEP', text:"Holding you to the binder — Friday's afternoon is still yours.",
+     reply:"Friday, 2 to 5, is fenced for the binder. I'll say nothing more about it until Thursday — then I'll say plenty."},
+   raw:"slept bad. head clear tho. 3 things — HXD sync, plumber inv, ISO binder (don't let it slide AGAIN). coffee first, then the day."},
+  {id:'e2', world:'ctdi', lead:false, source:'HXD SYNC · PLAUD · 1:47 PM',
+   distillate:'Karthik can\'t start until the spec lands. Manish flagged the reporting dependency. Decision: panel copy freezes Friday.',
+   note:{kind:'THE ANSWER', text:'You asked when the last HXD milestone slipped — June 12, by four days, same dependency.',
+     reply:"June 12 and today rhyme: same dependency, same silence from reporting. Want Manish's dependency at the top of tomorrow's chase?"},
+   raw:'transcript', /* rendered specially */
+   transcript:[
+     ['KARTHIK', "I can't start the build until the spec lands. I'm genuinely blocked."],
+     ['MANISH', "The reporting dependency is still open — that's the second call in a row I've raised it."],
+     ['CHRIS', "Understood. Panel copy freezes Friday. Spec goes out this week — I said it out loud, so now it's true."]
+   ]}
+];
+
+const ARRIVALS = [
+  {when:'JUL 29 2:14PM', from:'my@remarkable.com', what:'5. July — converted page', outWorld:'pop', outcome:'filed → 150 Poplar · 2 cards', click:true,
+   raw:"— converted from handwriting —\n\ngeyser guy came by. says winter rates start Sept — get a second number before committing. propane line check while he's up there? ask about tank size too.\n\n→ filed to 150 Poplar. 2 cards cut: “Get propane quote from second supplier” · “Schedule propane line check”."},
+  {when:'JUL 29 1:47PM', from:'no-reply@plaud.ai', what:'HXD sync — transcript', outWorld:'ctdi', outcome:'filed → CTDI · 3 cards', click:true,
+   raw:"— transcript, 41 min —\n\nKARTHIK|I can't start the build until the spec lands. I'm genuinely blocked.\nMANISH|The reporting dependency is still open — that's the second call in a row I've raised it.\nCHRIS|Understood. Panel copy freezes Friday. Spec goes out this week — I said it out loud, so now it's true.\n\n→ filed to CTDI. 3 cards cut: spec chase · Manish dependency · panel-copy freeze note."},
+  {when:'JUL 29 8:02AM', from:'composer', what:'Morning pages', outWorld:'home', outcome:"grew today's page", click:true,
+   raw:"slept bad. head clear tho. 3 things — HXD sync, plumber inv, ISO binder (don't let it slide AGAIN). coffee first, then the day.\n\n→ grew today's page. one keep set for Friday afternoon."},
+  {when:'JUL 29 7:41AM', from:'unknown@spam.io', what:'—', outWorld:null, outcome:'dropped — sender not allowed', click:false, raw:null}
+];
+
+/* ============ HELPERS ============ */
+const $ = id => document.getElementById(id);
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const dotHtml = (w, sz) => w==='home'
+  ? `<span class="mdot ${sz||''} mdot-home"></span>`
+  : `<span class="mdot ${sz||''}" style="background:${WORLDS[w].color}"></span>`;
+const inLens = w => state.lens==='home' || w===state.lens;
+const nowTime = () => {
+  const d = new Date(); let h = d.getHours(); const m = String(d.getMinutes()).padStart(2,'0');
+  const ap = h>=12?'PM':'AM'; h = h%12||12; return `${h}:${m} ${ap}`;
+};
+
+/* ============ MASTHEAD / LENS ============ */
+function renderDots(){
+  const dots = $('dots');
+  dots.innerHTML = ['home', ...WORLD_ORDER].map(id => `
+    <button class="dotbtn ${state.lens===id?'active':''}" data-w="${id}" aria-label="${WORLDS[id].name}">
+      ${id==='home' ? '<span class="dot dot-home"></span>' : `<span class="dot" style="background:${WORLDS[id].color}"></span>`}
+    </button>`).join('');
+  dots.querySelectorAll('.dotbtn').forEach(b=>{
+    const id = b.dataset.w;
+    b.addEventListener('click', ()=>setLens(id));
+    b.addEventListener('mouseenter', ()=>{ $('lensName').textContent = WORLDS[id].name; });
+    b.addEventListener('mouseleave', ()=>{ $('lensName').textContent = WORLDS[state.lens].name; });
+  });
+  $('lensName').textContent = WORLDS[state.lens].name;
+}
+function setLens(id){
+  state.lens = id;
+  state.chooser = null;
+  document.documentElement.style.setProperty('--acc', id==='home' ? '#a5a198' : WORLDS[id].color);
+  const strap = $('strap');
+  if(id==='home'){ strap.classList.add('hidden'); strap.innerHTML=''; }
+  else{
+    strap.classList.remove('hidden');
+    strap.innerHTML = `${dotHtml(id)} <span>${WORLDS[id].name} — ${esc(WORLDS[id].mission)}</span>`;
+  }
+  renderAll();
+}
+
+/* ============ THE RECORD ============ */
+function renderRecord(){
+  const el = $('recordBody');
+  let html = '';
+
+  const evts = EVENTS.filter(e=>inLens(e.world));
+  if(evts.length){
+    html += `<div class="evtblock">` + evts.map(e=>`
+      <div class="evt">
+        <span class="time">${e.time}</span>
+        ${dotHtml(e.world,'sm')}
+        <span class="title">${esc(e.title)}</span>
+      </div>`).join('') + `</div>`;
+  }
+
+  const entries = ENTRIES.filter(e=>inLens(e.world));
+  entries.forEach(e=>{
+    const open = state.rawOpen[e.id];
+    let rawInner;
+    if(e.transcript){
+      rawInner = e.transcript.map(([spk,line])=>`<div style="margin-bottom:7px;"><span class="spk">${spk}</span>${esc(line)}</div>`).join('');
+    } else {
+      rawInner = esc(e.raw);
+    }
+    html += `
+      <article class="entry ${e.lead?'lead':''}">
+        <div class="marker">${dotHtml(e.world)}<span class="tag">${e.source}</span></div>
+        <p class="distillate">${esc(e.distillate)}</p>
+        <div class="note" data-note="${e.id}" title="Open in the thread">
+          <div class="notehead">
+            <span class="notekind">${e.note.kind}</span>
+            <span class="notedoor">Open in thread →</span>
+          </div>
+          <div class="notetext">${esc(e.note.text)}</div>
+        </div>
+        <button class="rawbtn" data-raw="${e.id}">Raw ${open?'▴':'▾'}</button>
+        ${open?`<div class="rawwell">${rawInner}</div>`:''}
+      </article>`;
+  });
+
+  const fins = state.finished.filter(f=>inLens(f.world));
+  if(fins.length){
+    html += `<div class="finblock">
+      <div class="marker"><span class="tag">Finished today</span></div>
+      <div style="margin-top:8px;">` + fins.map(f=>`
+      <div class="fin">
+        <span class="chk">✓</span>
+        ${dotHtml(f.world,'sm')}
+        <span class="title">${esc(f.title)}</span>
+        <span class="time">${f.time}</span>
+      </div>`).join('') + `</div></div>`;
+  }
+
+  if(!evts.length && !entries.length && !fins.length){
+    html = `<div class="quietline">Nothing on the record in this lens today.</div>`;
+  }
+  el.innerHTML = html;
+
+  el.querySelectorAll('[data-raw]').forEach(b=>b.addEventListener('click',()=>{
+    state.rawOpen[b.dataset.raw] = !state.rawOpen[b.dataset.raw]; renderRecord();
+  }));
+  el.querySelectorAll('[data-note]').forEach(n=>n.addEventListener('click',()=>{
+    const e = ENTRIES.find(x=>x.id===n.dataset.note);
+    state.thread.push({type:'quote', kind:e.note.kind, text:e.note.text});
+    state.thread.push({type:'deb', attr:'DEB · NOW', text:e.note.reply});
+    renderThread();
+    document.querySelector('.col-deb').scrollIntoView({behavior:'smooth', block:'nearest'});
+    const last = $('threadBody').lastElementChild;
+    if(last) last.scrollIntoView({behavior:'smooth', block:'center'});
+  }));
+}
+
+/* ============ TRIAGE ============ */
+function renderTriage(){
+  const el = $('triageBody');
+  const visible = state.queue.filter(c=>inLens(c.world));
+  if(!visible.length){
+    el.innerHTML = `<div class="clear">
+      <span class="mono" style="color:var(--dim);">Triage clear</span>
+      <p class="sentence">Clear. Every loop has a verdict. Go live it.</p>
+    </div>`;
+    return;
+  }
+  const card = visible[0];
+  const w = WORLDS[card.world];
+  let html = `
+    <div class="seamcount">${visible.length===1?'1 waiting':`1 of ${visible.length} waiting`}</div>
+    <div class="tcard">
+      <div class="tsource">${card.source}</div>
+      <div class="ttitle">${esc(card.title)}</div>
+      <div class="texcerpt">“${esc(card.excerpt)}”</div>
+      <div class="tmarker">${dotHtml(card.world)}<span class="tag" style="color:${w.color}">${w.tag}</span></div>
+      <div class="verdicts">
+        <button class="vbtn" data-v="delay">↑ Delay</button>
+        <button class="vbtn" data-v="delegate">← Delegate</button>
+        <button class="vbtn" data-v="delete">↓ Delete</button>
+        <button class="vbtn do" data-v="do">Do →</button>
+      </div>
+    </div>`;
+
+  const ch = state.chooser;
+  if(ch && ch.cardId===card.id){
+    if(ch.kind==='delay'){
+      html += `<div class="chooser">
+        <div class="clabel">Delay until</div>
+        <div class="copts">
+          <button class="cbtn" data-pick="tomorrow">Tomorrow</button>
+          <button class="cbtn" data-pick="next week">Next week</button>
+        </div>
+        <div class="cslide">
+          <input type="range" min="1" max="5" value="${ch.sliderVal}" id="delaySlider">
+          <button class="cbtn" data-pick="slider" id="delaySliderBtn">↳ in ${ch.sliderVal} day${ch.sliderVal>1?'s':''}</button>
+        </div>
+      </div>`;
+    } else {
+      html += `<div class="chooser">
+        <div class="clabel">Delegate to</div>
+        <input class="cname" id="delegateName" value="${esc(ch.name)}">
+        <div class="copts">
+          <button class="cbtn" data-pick="chase in 3 days">Chase in 3 days</button>
+          <button class="cbtn" data-pick="chase next week">Chase next week</button>
+        </div>
+        <div class="cslide">
+          <input type="range" min="1" max="5" value="${ch.sliderVal}" id="delaySlider">
+          <button class="cbtn" data-pick="slider" id="delaySliderBtn">↳ chase in ${ch.sliderVal} day${ch.sliderVal>1?'s':''}</button>
+        </div>
+      </div>`;
+    }
+  }
+  el.innerHTML = html;
+
+  el.querySelectorAll('[data-v]').forEach(b=>b.addEventListener('click',()=>{
+    const v = b.dataset.v;
+    if(v==='delay'){
+      state.chooser = (ch && ch.kind==='delay') ? null : {cardId:card.id, kind:'delay', sliderVal:3};
+      renderTriage();
+    } else if(v==='delegate'){
+      state.chooser = (ch && ch.kind==='delegate') ? null : {cardId:card.id, kind:'delegate', sliderVal:3, name:'Karthik & Manish'};
+      renderTriage();
+    } else if(v==='delete'){
+      verdict(card, `Deleted — “${card.title}”`);
+    } else if(v==='do'){
+      const todo = {id:'t'+Date.now(), title:card.title, world:card.world, why:null, age:'NEW'};
+      state.todos.push(todo);
+      verdict(card, `On the list — “${card.title}”`, ()=>{
+        state.todos = state.todos.filter(t=>t.id!==todo.id);
+      });
+      renderTodo();
+    }
+  }));
+
+  const slider = el.querySelector('#delaySlider');
+  if(slider){
+    slider.addEventListener('input', ()=>{
+      state.chooser.sliderVal = +slider.value;
+      const btn = el.querySelector('#delaySliderBtn');
+      const v = +slider.value;
+      btn.textContent = (state.chooser.kind==='delay' ? `↳ in ${v} day${v>1?'s':''}` : `↳ chase in ${v} day${v>1?'s':''}`);
+    });
+  }
+  const nameInput = el.querySelector('#delegateName');
+  if(nameInput) nameInput.addEventListener('input', ()=>{ state.chooser.name = nameInput.value; });
+
+  el.querySelectorAll('[data-pick]').forEach(b=>b.addEventListener('click',()=>{
+    const pick = b.dataset.pick;
+    const c = state.chooser;
+    if(c.kind==='delay'){
+      const when = pick==='slider' ? `${c.sliderVal} day${c.sliderVal>1?'s':''}` : pick;
+      verdict(card, `Delayed ${pick==='tomorrow'?'to tomorrow':pick==='next week'?'to next week':`by ${when}`} — “${card.title}”`);
+    } else {
+      const chase = pick==='slider' ? `chase in ${c.sliderVal} day${c.sliderVal>1?'s':''}` : pick;
+      verdict(card, `Delegated to ${c.name} · ${chase} — “${card.title}”`);
+    }
+  }));
+}
+function verdict(card, msg, extraRevert){
+  const idx = state.queue.findIndex(c=>c.id===card.id);
+  state.queue.splice(idx,1);
+  state.chooser = null;
+  renderTriage();
+  showUndo(msg, ()=>{
+    state.queue.splice(Math.min(idx,state.queue.length),0,card);
+    if(extraRevert) extraRevert();
+    renderTriage(); renderTodo();
+  });
+}
+
+/* ============ TO DO ============ */
+function renderTodo(){
+  const el = $('todoBody');
+  const visible = state.todos.filter(t=>inLens(t.world));
+  $('todoCount').textContent = visible.length;
+  if(!visible.length){
+    el.innerHTML = `<div class="quietline">Nothing standing in this lens.</div>`;
+    return;
+  }
+  el.innerHTML = visible.map((t,i)=>`
+    <div class="todo" data-tid="${t.id}">
+      <button class="tcircle" data-done="${t.id}" title="Finish"></button>
+      <div class="tbody">
+        <div class="trow">${dotHtml(t.world,'sm')}<span class="title">${esc(t.title)}</span></div>
+        ${i===0 && t.why ? `<div class="twhy">${esc(t.why)}</div>`:''}
+        <div class="tage">${t.age}</div>
+      </div>
+    </div>`).join('');
+  el.querySelectorAll('[data-done]').forEach(b=>b.addEventListener('click',()=>{
+    const id = b.dataset.done;
+    const idx = state.todos.findIndex(t=>t.id===id);
+    const todo = state.todos[idx];
+    b.classList.add('done'); b.textContent='✓';
+    const row = el.querySelector(`[data-tid="${id}"]`);
+    row.classList.add('going');
+    setTimeout(()=>{
+      state.todos.splice(idx,1);
+      const fin = {title:todo.title, world:todo.world, time:nowTime()};
+      state.finished.push(fin);
+      renderTodo(); renderRecord();
+      showUndo(`Finished — “${todo.title}”`, ()=>{
+        state.finished = state.finished.filter(f=>f!==fin);
+        state.todos.splice(Math.min(idx,state.todos.length),0,todo);
+        renderTodo(); renderRecord();
+      });
+    }, 320);
+  }));
+}
+
+/* ============ THREAD ============ */
+function renderThread(){
+  const el = $('threadBody');
+  el.innerHTML = state.thread.map(m=>{
+    if(m.type==='quote'){
+      return `<div class="msg"><div class="quoteobj">
+        <div class="qkind">From the margin · ${m.kind}</div>
+        <div class="qtext">${esc(m.text)}</div>
+      </div></div>`;
+    }
+    if(m.type==='user'){
+      return `<div class="msg"><div class="attr">${m.attr}</div><div class="usertext">${esc(m.text)}</div></div>`;
+    }
+    return `<div class="msg"><div class="attr"><span class="who">${m.attr.split(' ·')[0]}</span> ·${m.attr.split('·').slice(1).join('·')}</div>
+      <div class="debtext">${esc(m.text)}</div></div>`;
+  }).join('');
+}
+
+/* ============ WORLDS BAND ============ */
+function renderWorlds(){
+  const el = $('worldsBody');
+  el.innerHTML = WORLD_ORDER.map(id=>{
+    const w = WORLDS[id];
+    const active = state.lens===id;
+    const dimmed = state.lens!=='home' && !active;
+    const stColor = w.statusKind==='quiet' ? `style="color:${w.color}"` : (w.statusKind==='moving'?'class="wstatus moving"':'');
+    return `<div class="wtile ${active?'active':''} ${dimmed?'dimmed':''}" data-world="${id}">
+      <div class="whead">
+        ${dotHtml(id)}
+        <span class="tag">${w.tag}</span>
+        <span class="wstatus ${w.statusKind==='moving'?'moving':''}" ${w.statusKind==='quiet'?`style="color:${w.color}"`:''}>${w.status}</span>
+      </div>
+      <div class="wname">${w.name}</div>
+      <div class="wmission">${esc(w.mission)}</div>
+      <div class="wnext"><span class="lbl">Next</span><span class="val">${esc(w.next)}</span></div>
+      ${w.owed?`<div class="wnext"><span class="lbl">Owed</span><span class="val">${esc(w.owed)}</span></div>`:''}
+      <div class="wweek">${w.week}</div>
+    </div>`;
+  }).join('');
+  el.querySelectorAll('[data-world]').forEach(t=>t.addEventListener('click',()=>{
+    const id = t.dataset.world;
+    setLens(state.lens===id ? 'home' : id);
+    window.scrollTo({top:0, behavior:'smooth'});
+  }));
+}
+
+/* ============ UNDO ============ */
+function showUndo(msg, revert){
+  clearTimeout(state.undoTimer);
+  state.undo = revert;
+  $('undoMsg').textContent = msg;
+  $('undoPill').classList.add('show');
+  state.undoTimer = setTimeout(hideUndo, 4200);
+}
+function hideUndo(){
+  $('undoPill').classList.remove('show');
+  state.undo = null;
+}
+$('undoBtn').addEventListener('click', ()=>{
+  if(state.undo) state.undo();
+  clearTimeout(state.undoTimer);
+  hideUndo();
+});
+
+/* ============ ARRIVALS OVERLAY ============ */
+function renderArrivalsTable(){
+  $('overlayInner').innerHTML = `
+    <button class="ov-back" id="ovBack">← Back</button>
+    <h2 class="ov-title">Arrivals</h2>
+    <p class="ov-sub">Everything that reached the paper today, and what became of it.</p>
+    <div class="ov-table">
+      <div class="ov-hrow"><span>When</span><span>From</span><span>What</span><span>Outcome</span></div>
+      ${ARRIVALS.map((a,i)=>`
+        <div class="ov-row ${a.click?'click':'muted'}" ${a.click?`data-arr="${i}"`:''}>
+          <span class="when">${a.when}</span>
+          <span class="from">${a.from}</span>
+          <span class="what">${a.what}</span>
+          <span class="outcome">${a.outWorld?dotHtml(a.outWorld,'sm'):''}<span>${a.outcome}</span></span>
+        </div>`).join('')}
+    </div>`;
+  $('ovBack').addEventListener('click', closeOverlay);
+  document.querySelectorAll('[data-arr]').forEach(r=>r.addEventListener('click',()=>renderArrivalRaw(+r.dataset.arr)));
+}
+function renderArrivalRaw(i){
+  const a = ARRIVALS[i];
+  const body = a.raw.split('\n').map(line=>{
+    const m = line.match(/^([A-Z]+)\|(.*)$/);
+    return m ? `<span class="spk">${m[1]}</span>${esc(m[2])}` : esc(line);
+  }).join('\n');
+  $('overlayInner').innerHTML = `
+    <button class="ov-back" id="ovBack2">← Arrivals</button>
+    <div class="ov-raw">
+      <div class="ov-rawmeta">${a.when} · ${a.from}</div>
+      <h3 class="ov-rawtitle">${a.what}</h3>
+      <div class="ov-rawbody">${body}</div>
+    </div>`;
+  $('ovBack2').addEventListener('click', renderArrivalsTable);
+}
+function openOverlay(){ renderArrivalsTable(); $('overlay').classList.add('show'); }
+function closeOverlay(){ $('overlay').classList.remove('show'); }
+$('arrivalsChip').addEventListener('click', openOverlay);
+document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closeOverlay(); if(state.chooser){state.chooser=null; renderTriage();} } });
+
+/* ============ BOOT ============ */
+function renderAll(){
+  renderDots();
+  renderRecord();
+  renderTriage();
+  renderTodo();
+  renderThread();
+  renderWorlds();
+}
+renderAll();
+</script>
+</body>
+</html>

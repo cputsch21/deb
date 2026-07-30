@@ -1,0 +1,771 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deb</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#FAF8F4; --ink:#191713; --muted:#5f5c54; --dim:#8a867e;
+  --well:#f0ede6; --well2:#e9e5dc; --hairline:#e2ded5; --silver:#a5a198; --gold:#c9a15a;
+  --debbg:#f6f3ed;
+  --acc:#a5a198;
+  --sh: 0 14px 38px rgba(25,23,19,.11), 0 3px 10px rgba(25,23,19,.06);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--paper); color:var(--ink);
+  font-family:"Inter",sans-serif; font-size:14px; line-height:1.5;
+  -webkit-font-smoothing:antialiased; overflow:hidden;
+}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+input{font:inherit;color:inherit;border:none;outline:none;background:none}
+::selection{background:var(--well2)}
+::-webkit-scrollbar{width:10px}
+::-webkit-scrollbar-thumb{background:var(--hairline);border-radius:99px;background-clip:padding-box;border:3px solid transparent}
+::-webkit-scrollbar-track{background:transparent}
+
+/* ---------- type helpers ---------- */
+.mono{
+  font-family:"JetBrains Mono",monospace; text-transform:uppercase;
+  letter-spacing:.16em; font-size:10px; font-weight:500;
+}
+.serif{font-family:"Fraunces",serif; font-variation-settings:"opsz" 44}
+.disp{font-family:"Fraunces",serif; font-variation-settings:"opsz" 80; font-weight:420}
+
+/* ---------- layout: the desk ---------- */
+#app{display:flex; height:100vh; width:100vw}
+#ws{flex:1; min-width:0; display:flex; flex-direction:column; background:var(--paper)}
+#deb{width:400px; flex:none; background:var(--debbg); display:flex; flex-direction:column; height:100vh}
+
+/* ---------- workspace header ---------- */
+#wshead{
+  flex:none; display:flex; align-items:center; gap:18px;
+  padding:26px 56px 18px 56px;
+}
+.homedot{
+  width:13px;height:13px;border-radius:50%;flex:none;display:inline-block;
+  background:radial-gradient(circle at 35% 30%, #dedbd4, #807c74);
+  transition:transform .18s ease;
+}
+button.homedot:hover{transform:scale(1.18)}
+#ctx{display:flex;align-items:center;gap:12px;min-width:0}
+.ctxlabel{color:var(--dim)}
+.ctxchip{
+  display:inline-flex;align-items:center;gap:8px;
+  background:var(--well);border-radius:999px;padding:7px 14px;
+  transition:background .18s ease;position:relative;
+}
+.ctxchip:hover{background:var(--well2)}
+.ctxchip .wname{white-space:nowrap}
+.ctxchip .back{
+  display:none; font-family:"Fraunces",serif;font-style:italic;
+  font-size:13px;letter-spacing:0;text-transform:none;color:var(--muted);
+  font-variation-settings:"opsz" 40;
+}
+.ctxchip:hover .wname{display:none}
+.ctxchip:hover .back{display:inline}
+#tabs{margin-left:auto;display:flex;gap:6px}
+.tab{
+  padding:8px 16px;border-radius:12px;color:var(--dim);
+  transition:background .18s ease,color .18s ease;
+}
+.tab:hover{background:var(--well2);color:var(--muted)}
+.tab.on{background:var(--well);color:var(--ink);font-weight:600}
+#hdate{color:var(--dim);margin-left:22px}
+
+/* ---------- workspace body ---------- */
+#wsbody{flex:1;overflow-y:auto;padding:18px 56px 80px 56px}
+.wsin{max-width:780px}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none}
+.dot.sv{background:radial-gradient(circle at 35% 30%, #dedbd4, #807c74)}
+.eyebrow{color:var(--dim);margin-bottom:14px}
+.sect{margin-top:44px}
+.sect:first-child{margin-top:8px}
+
+/* READ */
+.datehead{font-size:34px;line-height:1.15;letter-spacing:-.01em}
+.datesub{color:var(--dim);margin-top:10px}
+.readtop{display:flex;align-items:flex-end;justify-content:space-between;gap:24px}
+.chip{
+  display:inline-flex;align-items:center;gap:8px;
+  background:var(--well);border-radius:999px;padding:7px 14px;color:var(--muted);
+  transition:background .18s ease; white-space:nowrap;
+}
+.chip:hover{background:var(--well2)}
+.evrow{display:flex;align-items:baseline;gap:18px;padding:9px 2px}
+.evtime{color:var(--dim);width:64px;flex:none;text-align:right}
+.evtitle{font-size:14.5px}
+.entry{background:var(--well);border-radius:16px;padding:24px 26px 20px;margin-top:16px;transition:background .18s ease}
+.ehead{display:flex;align-items:center;gap:10px;color:var(--dim)}
+.edist{font-size:17px;line-height:1.62;margin-top:14px;font-variation-settings:"opsz" 44}
+.mnote{
+  margin-top:16px;padding:12px 14px;border-radius:12px;cursor:pointer;
+  transition:background .18s ease;display:block;text-align:left;width:100%;
+}
+.mnote:hover{background:var(--well2)}
+.mnote .kind{color:var(--acc-strong,var(--muted))}
+.mnote .kind{display:flex;align-items:center;gap:8px}
+.mnote .ntext{
+  font-family:"Fraunces",serif;font-style:italic;font-size:14.5px;color:var(--muted);
+  margin-top:7px;line-height:1.55;font-variation-settings:"opsz" 40;
+}
+.mnote .hint{
+  float:right;color:var(--dim);opacity:0;transition:opacity .18s ease;margin-top:2px;
+}
+.mnote:hover .hint{opacity:1}
+.rawtgl{margin-top:14px;color:var(--dim);padding:6px 10px;border-radius:10px;transition:background .18s ease,color .18s ease}
+.rawtgl:hover{background:var(--well2);color:var(--muted)}
+.rawbody{
+  background:var(--well2);border-radius:12px;padding:16px 18px;margin-top:10px;
+  font-size:13px;color:var(--muted);white-space:pre-line;line-height:1.7;
+  animation:rise .18s ease;
+}
+.finrow{display:flex;align-items:center;gap:12px;padding:8px 2px;color:var(--muted)}
+.fincheck{color:var(--dim);font-size:13px;width:16px;text-align:center}
+.fintitle{font-size:14px}
+.colophon{margin-top:18px;padding-top:6px}
+.colrow{display:flex;align-items:baseline;gap:10px;padding:6px 0}
+.colrow .dot{transform:translateY(1px)}
+.coltext{font-family:"Fraunces",serif;font-style:italic;font-size:14.5px;color:var(--muted);font-variation-settings:"opsz" 40}
+.emptyline{font-family:"Fraunces",serif;font-style:italic;color:var(--dim);font-size:14.5px;padding:6px 2px;font-variation-settings:"opsz" 40}
+
+/* REVIEW */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+.tile{
+  background:var(--well);border-radius:16px;padding:22px 24px 18px;text-align:left;
+  transition:background .18s ease;display:block;width:100%;
+}
+.tile:hover{background:var(--well2)}
+.tiletop{display:flex;align-items:center;gap:10px}
+.tilename{font-weight:600;font-size:14.5px}
+.tiletag{color:var(--dim)}
+.tilestatus{margin-left:auto;color:var(--dim)}
+.tilestatus.quiet{color:#b0673f}
+.tilemission{
+  font-family:"Fraunces",serif;font-style:italic;font-size:15px;color:var(--muted);
+  margin-top:12px;line-height:1.5;font-variation-settings:"opsz" 40;
+}
+.tilerows{margin-top:16px;display:grid;gap:7px}
+.trow{display:flex;gap:14px;align-items:baseline}
+.tkey{color:var(--dim);width:46px;flex:none}
+.tval{font-size:13px;color:var(--muted)}
+.dossier .dmission{font-size:30px;line-height:1.3;font-style:italic;font-weight:420;max-width:640px;letter-spacing:-.005em}
+.dhead{display:flex;align-items:center;gap:12px}
+.dname{font-size:15px;font-weight:600}
+.dsect{margin-top:36px}
+.dval{font-size:15px;margin-top:10px}
+.ledrow{display:flex;gap:18px;align-items:baseline;padding:8px 2px}
+.leddate{color:var(--dim);width:64px;flex:none}
+.ledtext{font-size:14px;color:var(--muted)}
+
+/* REACT */
+#reactwrap{display:flex;flex-direction:column;align-items:center;padding-top:36px}
+.vbtn{
+  padding:10px 18px;border-radius:999px;color:var(--muted);
+  transition:background .18s ease,color .18s ease;
+}
+.vbtn:hover{background:var(--well2);color:var(--ink)}
+.vbtn.do{background:var(--ink);color:var(--paper)}
+.vbtn.do:hover{background:#2c2922;color:var(--paper)}
+.tcard{
+  background:#fff;border-radius:18px;box-shadow:var(--sh);
+  width:540px;max-width:100%;padding:34px 38px 28px;margin:18px 0;
+  animation:rise .2s ease;
+}
+.tsrc{color:var(--dim)}
+.ttitle{font-size:25px;line-height:1.25;margin-top:14px;letter-spacing:-.01em}
+.texcerpt{
+  background:var(--well);border-radius:12px;padding:14px 18px;margin-top:18px;
+  font-family:"Fraunces",serif;font-style:italic;font-size:14.5px;color:var(--muted);
+  line-height:1.6;font-variation-settings:"opsz" 40;
+}
+.tfoot{display:flex;align-items:center;gap:10px;margin-top:20px;color:var(--dim)}
+.tfoot .sep{color:var(--hairline)}
+.vrow{display:flex;gap:12px;align-items:center}
+.qleft{margin-top:22px;color:var(--dim)}
+.chooser{
+  background:#fff;border-radius:16px;box-shadow:var(--sh);
+  padding:22px 26px;margin-top:18px;width:440px;max-width:100%;
+  animation:rise .18s ease;
+}
+.chtitle{color:var(--dim);margin-bottom:14px}
+.chops{display:flex;gap:10px;flex-wrap:wrap}
+.chop{background:var(--well);border-radius:999px;padding:8px 16px;font-size:13px;color:var(--muted);transition:background .18s ease,color .18s ease}
+.chop:hover{background:var(--well2);color:var(--ink)}
+.chsl{display:flex;align-items:center;gap:14px;margin-top:16px}
+.chsl input[type=range]{flex:1;accent-color:var(--acc);height:4px}
+.chlive{width:86px;text-align:right;color:var(--muted)}
+.chname{
+  background:var(--well);border-radius:12px;padding:10px 14px;width:100%;
+  font-size:14px;margin-bottom:14px;transition:background .18s ease;
+}
+.chname:focus{background:var(--well2)}
+.chfoot{display:flex;justify-content:space-between;align-items:center;margin-top:18px}
+.chcancel{color:var(--dim);padding:6px 10px;border-radius:10px;transition:background .18s ease}
+.chcancel:hover{background:var(--well)}
+.chgo{background:var(--ink);color:var(--paper);padding:9px 18px;border-radius:999px;transition:background .18s ease}
+.chgo:hover{background:#2c2922}
+.clearwrap{padding-top:110px;text-align:center}
+.clearline{
+  font-family:"Fraunces",serif;font-style:italic;font-size:23px;color:var(--muted);
+  margin-top:18px;font-variation-settings:"opsz" 56;
+}
+
+/* ---------- deb pane ---------- */
+#debhead{flex:none;display:flex;align-items:center;gap:10px;padding:30px 28px 16px}
+.accdot{width:9px;height:9px;border-radius:50%;flex:none}
+body.home .accdot{background:radial-gradient(circle at 35% 30%, #dedbd4, #807c74)}
+body:not(.home) .accdot{background:var(--acc)}
+#debhead .mono{color:var(--muted);letter-spacing:.2em}
+#thread{flex:1;overflow-y:auto;padding:8px 28px 20px;scroll-behavior:smooth}
+.msg{margin-top:26px;animation:rise .2s ease}
+.msg .att{display:flex;align-items:center;gap:8px;color:var(--dim)}
+.msg.deb .body{
+  font-family:"Fraunces",serif;font-size:15.5px;line-height:1.62;margin-top:9px;
+  font-variation-settings:"opsz" 44;color:var(--ink);
+}
+.msg.chris{display:flex;flex-direction:column;align-items:flex-end;text-align:right}
+.msg.chris .body{
+  background:#ece7dd;border-radius:14px 14px 4px 14px;padding:11px 15px;margin-top:8px;
+  font-size:13.5px;color:var(--ink);max-width:88%;text-align:left;line-height:1.55;
+}
+.filedchip{
+  display:flex;align-items:flex-start;gap:9px;background:#efebe1;border-radius:12px;
+  padding:12px 14px;margin-top:8px;text-align:left;width:100%;
+  transition:background .18s ease;line-height:1.9;
+}
+.filedchip:hover{background:var(--well2)}
+.filedchip .dot{margin-top:5px}
+.qobj{background:#efebe1;border-radius:12px;padding:13px 15px;margin-top:8px}
+.qobj .kind{display:flex;align-items:center;gap:8px;color:var(--dim)}
+.qobj .qtext{
+  font-family:"Fraunces",serif;font-style:italic;font-size:14px;color:var(--muted);
+  margin-top:7px;line-height:1.55;font-variation-settings:"opsz" 40;
+}
+
+/* to do strip */
+#todostrip{flex:none;background:#f1ede4;border-radius:16px 16px 0 0;margin:0 12px}
+#todohead{
+  width:100%;display:flex;align-items:center;gap:8px;padding:14px 18px;
+  color:var(--muted);transition:background .18s ease;border-radius:16px 16px 0 0;
+}
+#todohead:hover{background:var(--well2)}
+#todohead .arr{margin-left:auto;letter-spacing:0}
+#todolist{max-height:0;overflow-y:auto;transition:max-height .2s ease;padding:0 10px}
+#todostrip.open #todolist{max-height:40vh;padding-bottom:10px}
+.todorow{display:flex;gap:11px;padding:9px 8px;border-radius:12px;transition:background .18s ease;align-items:flex-start}
+.todorow:hover{background:var(--well2)}
+.donec{
+  width:15px;height:15px;border-radius:50%;background:var(--hairline);flex:none;margin-top:3px;
+  transition:background .18s ease,transform .18s ease;
+}
+.donec:hover{background:var(--acc);transform:scale(1.12)}
+.todomain{flex:1;min-width:0}
+.todotitle{font-size:13.5px;line-height:1.4;display:flex;gap:8px;align-items:baseline}
+.todotitle .dot{transform:translateY(1px)}
+.todowhy{
+  font-family:"Fraunces",serif;font-style:italic;font-size:12.5px;color:var(--dim);
+  margin-top:3px;margin-left:17px;font-variation-settings:"opsz" 40;
+}
+.todoage{color:var(--dim);flex:none;margin-top:4px}
+.todoempty{font-family:"Fraunces",serif;font-style:italic;color:var(--dim);font-size:13px;padding:10px 14px 4px;font-variation-settings:"opsz" 40}
+
+/* composer */
+#composer{flex:none;display:flex;align-items:center;gap:10px;padding:14px 16px 18px}
+#msg{
+  flex:1;background:#efebe1;border-radius:14px;padding:12px 16px;font-size:13.5px;
+  transition:background .18s ease;
+}
+#msg::placeholder{color:var(--dim)}
+#msg:focus{background:#ece7dc}
+#send{
+  width:38px;height:38px;border-radius:50%;background:var(--gold);color:#fff;
+  font-size:16px;flex:none;display:flex;align-items:center;justify-content:center;
+  transition:transform .18s ease,background .18s ease;
+}
+#send:hover{transform:scale(1.07);background:#d2ab66}
+
+/* ---------- arrivals overlay ---------- */
+#overlay{
+  position:fixed;inset:0;background:var(--paper);z-index:40;overflow-y:auto;
+  animation:fade .2s ease;
+}
+#overlay .ovin{max-width:920px;margin:0 auto;padding:48px 40px 80px}
+.ovback{color:var(--dim);padding:8px 14px;border-radius:999px;transition:background .18s ease,color .18s ease}
+.ovback:hover{background:var(--well);color:var(--ink)}
+.ovtitle{font-size:32px;margin-top:26px;letter-spacing:-.01em}
+.arrtable{margin-top:34px}
+.arrhead,.arrrow{
+  display:grid;grid-template-columns:150px 210px 1fr 240px;gap:18px;align-items:center;
+  padding:13px 16px;
+}
+.arrhead{color:var(--dim)}
+.arrrow{border-radius:12px;transition:background .18s ease;text-align:left;width:100%}
+.arrrow.live:hover{background:var(--well2)}
+.arrrow.live{background:var(--well);margin-top:8px;cursor:pointer}
+.arrrow.muted{background:transparent;color:var(--dim);margin-top:8px;cursor:default}
+.arrwhen{color:var(--dim)}
+.arrfrom{font-size:13px;color:var(--muted)}
+.arrwhat{font-size:14px}
+.arrout{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted)}
+.arrraw{background:var(--well);border-radius:16px;padding:28px 32px;margin-top:30px;animation:rise .2s ease}
+.arrraw .rawbody{background:var(--well2)}
+
+/* ---------- undo pill ---------- */
+#pill{
+  position:fixed;bottom:30px;left:calc((100% - 400px)/2);transform:translateX(-50%) translateY(80px);
+  background:var(--ink);color:var(--paper);border-radius:999px;box-shadow:var(--sh);
+  padding:11px 10px 11px 20px;display:flex;align-items:center;gap:14px;z-index:60;
+  opacity:0;transition:transform .2s ease,opacity .2s ease;pointer-events:none;
+  max-width:520px;
+}
+#pill.show{transform:translateX(-50%) translateY(0);opacity:1;pointer-events:auto}
+#pilltext{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#pillundo{color:var(--gold);padding:6px 14px;border-radius:999px;transition:background .18s ease}
+#pillundo:hover{background:rgba(255,255,255,.09)}
+
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+[hidden]{display:none !important}
+</style>
+</head>
+<body class="home">
+<div id="app">
+  <main id="ws">
+    <header id="wshead">
+      <button class="homedot" id="homedot" title="Whole life" onclick="setLens(null)"></button>
+      <div id="ctx"></div>
+      <nav id="tabs">
+        <button class="tab mono" data-room="read" onclick="setRoom('read')">READ</button>
+        <button class="tab mono" data-room="review" onclick="setRoom('review')">REVIEW</button>
+        <button class="tab mono" data-room="react" onclick="setRoom('react')">REACT</button>
+      </nav>
+      <span class="mono" id="hdate">WED · JUL 29</span>
+    </header>
+    <div id="wsbody"></div>
+  </main>
+
+  <aside id="deb">
+    <div id="debhead"><span class="accdot"></span><span class="mono">DEB</span></div>
+    <div id="thread"></div>
+    <div id="todostrip">
+      <button id="todohead" onclick="toggleTodo()">
+        <span class="mono" id="todocount">TO DO · 0</span>
+        <span class="arr" id="todoarr">▾</span>
+      </button>
+      <div id="todolist"></div>
+    </div>
+    <div id="composer">
+      <input id="msg" placeholder="Tell Deb anything…" onkeydown="if(event.key==='Enter')sendMsg()">
+      <button id="send" onclick="sendMsg()" title="Send">↑</button>
+    </div>
+  </aside>
+</div>
+
+<div id="overlay" hidden></div>
+
+<div id="pill">
+  <span id="pilltext"></span>
+  <button id="pillundo" class="mono" onclick="doUndo()">UNDO</button>
+</div>
+
+<script>
+/* ================= data ================= */
+const WORLDS={
+  ctdi:{name:"CTDI",tag:"HXD",color:"#5f8a76",mission:"Make HXD the team's proudest ship of the year.",status:"MOVING",next:"Chase Karthik — HXD scope",owed:"Karthik & Manish · chase Aug 1",week:"5 finished · 3 open · page grew 4 days"},
+  sub:{name:"Subseven",tag:"S7",color:"#54718f",mission:"A second income that runs on rails, not adrenaline.",status:"MOVING",next:"App plan review",owed:null,week:"2 finished · 2 open"},
+  iso:{name:"ISO Experiences",tag:"ISO",color:"#b0673f",mission:"The audit passes in October without a single scramble.",status:"QUIET 6 DAYS",quiet:true,next:"Evidence binder · Fri",owed:null,week:"0 finished · 2 open · last entry Jul 23"},
+  pop:{name:"150 Poplar",tag:"HOME",color:"#7a5f9e",mission:"A house that runs itself by Christmas.",status:"SETTLED",next:"Geyser propane · Thu",owed:null,week:"2 finished · 1 open · plumber saga closed"},
+  fam:{name:"Fam Finances",tag:"FAM",color:"#4f8a8b",mission:"Every dollar knows its job.",status:"SETTLED",next:"August budget pass",owed:null,week:"1 finished · 1 open"},
+  cribl:{name:"Cribl",tag:"CRB",color:"#a05252",mission:"Earn the promotion without losing the evenings.",status:"MOVING",next:"Q3 goals draft",owed:null,week:"3 finished · 2 open"}
+};
+const ORDER=["ctdi","sub","iso","pop","fam","cribl"];
+const RECENT={
+  ctdi:[["JUL 29","HXD sync · 3 cards minted, 1 handed off"],["JUL 28","Panel copy draft v2 sent to the team"],["JUL 25","Spec outline started · page grew"]],
+  sub:[["JUL 28","Structured app plan sent"],["JUL 24","Pricing sketch parked for review"]],
+  iso:[["JUL 23","Control-matrix notes · last entry"],["JUL 18","Evidence folder skeleton laid out"]],
+  pop:[["JUL 29","Plumber's final invoice paid · saga closed"],["JUL 27","First propane quote came in"]],
+  fam:[["JUL 26","July close reconciled"],["JUL 21","Subscriptions audit · two cancelled"]],
+  cribl:[["JUL 28","Q3 goals draft started"],["JUL 24","1:1 notes filed"]]
+};
+let todos=[
+  {id:1,title:"Chase Karthik & Manish — HXD scope",world:"ctdi",why:"The whole sprint stands behind this one.",age:"TODAY"},
+  {id:2,title:"Review HXD panel copy",world:"ctdi",age:"1 DAY"},
+  {id:3,title:"Evidence binder",world:"iso",age:"FRI"},
+  {id:4,title:"Geyser propane",world:"pop",age:"THU"}
+];
+let queue=[
+  {id:"t1",title:"Send Karthik the HXD spec",world:"ctdi",src:"FROM TODAY'S PLAUD CALL",excerpt:"Karthik said he can't start until he sees the spec — I told him this week."},
+  {id:"t2",title:"Ask Manish about the reporting dependency",world:"ctdi",src:"FROM TODAY'S PLAUD CALL",excerpt:"Manish flagged the reporting dependency again — second call in a row."},
+  {id:"t3",title:"Get propane quote from second supplier",world:"pop",src:"FROM 5. JULY · REMARKABLE",excerpt:"geyser guy says winter rates start Sept — get a second number before committing"}
+];
+let finished=[
+  {world:"pop",title:"Pay the plumber's final invoice"},
+  {world:"sub",title:"Send structured app plan"}
+];
+const EVENTS=[{time:"9:00",title:"CTDI standup",world:"ctdi"},{time:"1:00",title:"Karthik & Manish — HXD sync",world:"ctdi"}];
+const RAW1="slept like garbage. head weirdly clear though.\ntoday — HXD sync (SPEC??), plumber invoice (just pay it), ISO binder AGAIN.\ndo not let friday eat the binder. coffee first, then the spec.";
+const RAW2="KARTHIK — I can't start the build until the spec lands. I'm genuinely blocked.\nCHRIS — You'll have it this week. Saying it out loud so it's real.\nMANISH — The reporting dependency is still open. Second call in a row I'm flagging it.\nCHRIS — Heard. Panel copy freezes Friday regardless.";
+const ENTRIES=[
+  {world:null,src:"MORNING PAGES · REMARKABLE · 8:02 AM",
+   dist:"Slept badly but the head is clear. Three things matter today: the HXD sync, the plumber's invoice, and not letting the ISO binder slide again.",
+   note:{kind:"THE KEEP",text:"Holding you to the binder — Friday's afternoon is still yours.",
+     reply:"You brought the binder back to the desk yourself. Friday afternoon stays clear — two hours, door shut. If the panel-copy freeze starts crowding it, you will hear from me before noon, not after."},
+   raw:RAW1},
+  {world:"ctdi",src:"HXD SYNC · PLAUD · 1:47 PM",
+   dist:"Karthik can't start until the spec lands. Manish flagged the reporting dependency. Decision: panel copy freezes Friday.",
+   note:{kind:"THE ANSWER",text:"You asked when the last HXD milestone slipped — June 12, by four days, same dependency.",
+     reply:"Same dependency both times — Manish's reporting piece. June 12 slipped four days because it surfaced late. This time it surfaced on the call, which is earlier than you managed last round. Corner it before Friday and the freeze holds."},
+   raw:RAW2}
+];
+const DEALINGS=[
+  {world:"ctdi",text:"3 cards minted from the HXD call · 1 handed to Karthik, chase Aug 1"},
+  {world:"pop",text:"Poplar's last open loop closed"}
+];
+const ARRIVALS=[
+  {when:"JUL 29 · 2:14 PM",from:"my@remarkable.com",what:"5. July — converted page",dotWorld:"pop",out:"filed → 150 Poplar · 2 cards",
+   raw:"5. July\n\ngeyser guy says winter rates start Sept — get a second number before committing\nplumber final invoice came in — just pay it, close the saga\npropane: ask the co-op about a fixed rate?"},
+  {when:"JUL 29 · 1:47 PM",from:"no-reply@plaud.ai",what:"HXD sync — transcript",dotWorld:"ctdi",out:"filed → CTDI · 3 cards",raw:RAW2},
+  {when:"JUL 29 · 8:02 AM",from:"composer",what:"Morning pages",dotWorld:null,out:"grew today's page",raw:RAW1},
+  {when:"JUL 29 · 7:41 AM",from:"unknown@spam.io",what:"—",muted:true,out:"dropped — sender not allowed"}
+];
+let thread=[
+  {kind:"deb",time:"8:04 AM",text:"Your own words this morning: HXD, the invoice, the binder. The invoice is done, HXD moved — the binder is the one Friday keeps threatening. Defend the afternoon."},
+  {kind:"filed"},
+  {kind:"chris",time:"2:20 PM",text:"notes from the HXD sync — did I just overcommit?"},
+  {kind:"deb",time:"2:20 PM",text:"Not quite — but Friday now carries the panel-copy freeze AND the binder. One of them moves or Friday breaks. My vote: the freeze holds; the binder has slipped twice."}
+];
+
+/* ================= state ================= */
+let lens=null, room="read", rawOpen={}, chooser=null, chVal=3, chName="Karthik & Manish";
+let todoOpen=false, undoSnap=null, pillTimer=null, arrView=null;
+const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const W=id=>WORLDS[id];
+const dotHtml=id=>id?`<span class="dot" style="background:${W(id).color}"></span>`:`<span class="dot sv"></span>`;
+
+/* ================= lens / rooms ================= */
+function setLens(id){
+  lens=id;
+  document.body.classList.toggle("home",!lens);
+  document.documentElement.style.setProperty("--acc", lens?W(lens).color:"#a5a198");
+  renderAll();
+}
+function setRoom(r){room=r;chooser=null;renderWs();renderTabs();}
+function renderTabs(){
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.room===room));
+}
+function renderCtx(){
+  const c=document.getElementById("ctx");
+  if(!lens){
+    c.innerHTML=`<span class="mono ctxlabel">WHOLE LIFE</span>`;
+  }else{
+    const w=W(lens);
+    c.innerHTML=`<button class="ctxchip" onclick="setLens(null)" title="Back to whole life">
+      <span class="dot" style="background:${w.color}"></span>
+      <span class="mono wname">${esc(w.name)}</span>
+      <span class="back">← all</span></button>`;
+  }
+}
+
+/* ================= READ ================= */
+function renderRead(){
+  const inLens=!!lens;
+  const evs=inLens?EVENTS.filter(e=>e.world===lens):EVENTS;
+  const ents=inLens?ENTRIES.filter((e)=>e.world===lens):ENTRIES;
+  const fins=inLens?finished.filter(f=>f.world===lens):finished;
+  const deals=inLens?DEALINGS.filter(d=>d.world===lens):DEALINGS;
+  let h=`<div class="wsin">
+    <div class="readtop">
+      <div>
+        <h1 class="disp datehead">Wednesday, July 29</h1>
+        <div class="mono datesub">${inLens?esc(W(lens).name)+" · TODAY":"THE RECORD OF THE DAY"}</div>
+      </div>
+      <button class="chip mono" onclick="openArrivals()">ARRIVALS ↗</button>
+    </div>
+    <div class="sect"><div class="mono eyebrow">THE DAY</div>`;
+  h+=evs.length?evs.map(e=>`<div class="evrow"><span class="mono evtime">${e.time}</span>${dotHtml(e.world)}<span class="evtitle">${esc(e.title)}</span></div>`).join("")
+    :`<div class="emptyline">A quiet calendar.</div>`;
+  h+=`</div><div class="sect"><div class="mono eyebrow">TAKEN DOWN</div>`;
+  if(ents.length){
+    h+=ents.map(e=>{
+      const idx=ENTRIES.indexOf(e);
+      const open=rawOpen[idx];
+      const kc=e.world?W(e.world).color:"var(--dim)";
+      return `<div class="entry">
+        <div class="ehead">${dotHtml(e.world)}<span class="mono">${esc(e.src)}</span></div>
+        <p class="serif edist">${esc(e.dist)}</p>
+        <button class="mnote" onclick="marginDoor(${idx})" title="Carry this to Deb">
+          <span class="mono hint">→ TO DEB</span>
+          <span class="mono kind" style="color:${kc}">${dotHtml(e.world)}${esc(e.note.kind)}</span>
+          <span class="ntext">${esc(e.note.text)}</span>
+        </button>
+        <button class="mono rawtgl" onclick="toggleRaw(${idx})">RAW ${open?"▴":"▾"}</button>
+        ${open?`<div class="rawbody">${esc(e.raw)}</div>`:""}
+      </div>`;
+    }).join("");
+  }else h+=`<div class="emptyline">Nothing taken down in this world today.</div>`;
+  h+=`</div><div class="sect"><div class="mono eyebrow">FINISHED</div>`;
+  h+=fins.length?fins.map(f=>`<div class="finrow"><span class="fincheck">✓</span>${dotHtml(f.world)}<span class="fintitle">${esc(f.title)}</span></div>`).join("")
+    :`<div class="emptyline">Nothing crossed off here yet.</div>`;
+  h+=`</div>`;
+  if(deals.length){
+    h+=`<div class="sect colophon"><div class="mono eyebrow">THE DAY'S DEALINGS</div>`;
+    h+=deals.map(d=>`<div class="colrow">${dotHtml(d.world)}<span class="coltext">${esc(d.text)}</span></div>`).join("");
+    h+=`</div>`;
+  }
+  h+=`</div>`;
+  return h;
+}
+function toggleRaw(i){rawOpen[i]=!rawOpen[i];renderWs();}
+function marginDoor(i){
+  const e=ENTRIES[i];
+  thread.push({kind:"quote",world:e.world,kindLabel:e.note.kind,text:e.note.text});
+  thread.push({kind:"deb",time:"NOW",text:e.note.reply});
+  renderThread(true);
+}
+
+/* ================= REVIEW ================= */
+function renderReview(){
+  if(lens) return renderDossier(lens);
+  let h=`<div class="wsin"><div class="mono eyebrow" style="margin-top:8px">THE WORLDS</div><div class="grid">`;
+  h+=ORDER.map(id=>{
+    const w=W(id);
+    return `<button class="tile" onclick="setLensRoom('${id}')">
+      <div class="tiletop"><span class="dot" style="background:${w.color}"></span>
+        <span class="tilename">${esc(w.name)}</span><span class="mono tiletag">${w.tag}</span>
+        <span class="mono tilestatus ${w.quiet?"quiet":""}">${w.status}</span></div>
+      <div class="tilemission">${esc(w.mission)}</div>
+      <div class="tilerows">
+        <div class="trow"><span class="mono tkey">NEXT</span><span class="tval">${esc(w.next)}</span></div>
+        <div class="trow"><span class="mono tkey">OWED</span><span class="tval">${w.owed?esc(w.owed):"—"}</span></div>
+        <div class="trow"><span class="mono tkey">WEEK</span><span class="tval">${esc(w.week)}</span></div>
+      </div></button>`;
+  }).join("");
+  return h+`</div></div>`;
+}
+function setLensRoom(id){setLens(id);}
+function renderDossier(id){
+  const w=W(id);
+  return `<div class="wsin dossier">
+    <div class="dhead" style="margin-top:8px"><span class="dot" style="background:${w.color}"></span>
+      <span class="dname">${esc(w.name)}</span><span class="mono tiletag">${w.tag}</span>
+      <span class="mono tilestatus ${w.quiet?"quiet":""}" style="margin-left:auto">${w.status}</span></div>
+    <p class="serif dmission" style="margin-top:26px">${esc(w.mission)}</p>
+    <div class="dsect"><div class="mono eyebrow">NEXT</div><div class="dval">${esc(w.next)}</div></div>
+    <div class="dsect"><div class="mono eyebrow">WAITING ON</div>
+      ${w.owed?`<div class="dval">${esc(w.owed)}</div>`:`<div class="emptyline">No one owes this world anything right now.</div>`}</div>
+    <div class="dsect"><div class="mono eyebrow">THIS WEEK</div><div class="dval">${esc(w.week)}</div></div>
+    <div class="dsect"><div class="mono eyebrow">RECENTLY</div>
+      ${RECENT[id].map(r=>`<div class="ledrow"><span class="mono leddate">${r[0]}</span><span class="ledtext">${esc(r[1])}</span></div>`).join("")}
+    </div></div>`;
+}
+
+/* ================= REACT ================= */
+function visQueue(){return lens?queue.filter(q=>q.world===lens):queue;}
+function renderReact(){
+  const vq=visQueue();
+  if(!vq.length){
+    return `<div class="wsin clearwrap">
+      <div class="mono" style="color:var(--dim)">TRIAGE CLEAR · WED JUL 29</div>
+      <p class="clearline">Clear. Every loop has a verdict. Go live it.</p></div>`;
+  }
+  const c=vq[0], w=W(c.world), left=vq.length-1;
+  let h=`<div id="reactwrap">
+    <button class="vbtn mono" onclick="openChooser('delay')">↑ DELAY</button>
+    <div class="tcard">
+      <div class="mono tsrc">${esc(c.src)}</div>
+      <h2 class="disp ttitle">${esc(c.title)}</h2>
+      <div class="texcerpt">“${esc(c.excerpt)}”</div>
+      <div class="tfoot"><span class="dot" style="background:${w.color}"></span>
+        <span class="mono">${w.tag}</span><span class="sep">·</span><span class="mono">MINTED TODAY</span></div>
+    </div>
+    <div class="vrow">
+      <button class="vbtn mono" onclick="openChooser('delegate')">← DELEGATE</button>
+      <button class="vbtn mono" onclick="verdict('delete')">↓ DELETE</button>
+      <button class="vbtn do mono" onclick="verdict('do')">DO →</button>
+    </div>`;
+  if(chooser==="delay"){
+    h+=`<div class="chooser">
+      <div class="mono chtitle">DELAY UNTIL</div>
+      <div class="chops">
+        <button class="chop" onclick="applyDelay('tomorrow')">Tomorrow</button>
+        <button class="chop" onclick="applyDelay('next week')">Next week</button>
+      </div>
+      <div class="chsl">
+        <input type="range" min="1" max="5" value="${chVal}" oninput="chVal=+this.value;document.getElementById('chlive').textContent='IN '+chVal+(chVal>1?' DAYS':' DAY')">
+        <span class="mono chlive" id="chlive">IN ${chVal}${chVal>1?" DAYS":" DAY"}</span>
+      </div>
+      <div class="chfoot"><button class="mono chcancel" onclick="chooser=null;renderWs()">CANCEL</button>
+        <button class="mono chgo" onclick="applyDelay(chVal+(chVal>1?' days':' day'))">DELAY</button></div>
+    </div>`;
+  }
+  if(chooser==="delegate"){
+    h+=`<div class="chooser">
+      <div class="mono chtitle">HAND TO</div>
+      <input class="chname" value="${esc(chName)}" oninput="chName=this.value">
+      <div class="mono chtitle">CHASE</div>
+      <div class="chops">
+        <button class="chop" onclick="applyDelegate('in 3 days')">In 3 days</button>
+        <button class="chop" onclick="applyDelegate('next week')">Next week</button>
+      </div>
+      <div class="chsl">
+        <input type="range" min="1" max="5" value="${chVal}" oninput="chVal=+this.value;document.getElementById('chlive').textContent='IN '+chVal+(chVal>1?' DAYS':' DAY')">
+        <span class="mono chlive" id="chlive">IN ${chVal}${chVal>1?" DAYS":" DAY"}</span>
+      </div>
+      <div class="chfoot"><button class="mono chcancel" onclick="chooser=null;renderWs()">CANCEL</button>
+        <button class="mono chgo" onclick="applyDelegate('in '+chVal+(chVal>1?' days':' day'))">HAND OFF</button></div>
+    </div>`;
+  }
+  if(!chooser&&left>0)h+=`<div class="mono qleft">${left} MORE WAITING</div>`;
+  return h+`</div>`;
+}
+function openChooser(t){chooser=t;chVal=3;if(t==="delegate")chName="Karthik & Manish";renderWs();}
+function snapshot(){return JSON.stringify({todos,queue,finished});}
+function restore(s){const o=JSON.parse(s);todos=o.todos;queue=o.queue;finished=o.finished;chooser=null;renderAll();}
+function popCard(){const c=visQueue()[0];queue=queue.filter(q=>q.id!==c.id);return c;}
+function verdict(kind){
+  const snap=snapshot(); const c=popCard(); chooser=null;
+  if(kind==="do")todos.push({id:Date.now(),title:c.title,world:c.world,age:"TODAY"});
+  showPill(kind==="do"?`“${c.title}” joined the list`:`“${c.title}” deleted`,snap);
+  renderAll();
+}
+function applyDelay(label){
+  const snap=snapshot(); const c=popCard(); chooser=null;
+  showPill(`“${c.title}” delayed — ${label}`,snap); renderAll();
+}
+function applyDelegate(label){
+  const snap=snapshot(); const c=popCard(); chooser=null;
+  showPill(`“${c.title}” handed to ${chName||"someone"} · chase ${label}`,snap); renderAll();
+}
+function showPill(text,snap){
+  undoSnap=snap;
+  document.getElementById("pilltext").textContent=text;
+  const p=document.getElementById("pill");
+  p.classList.add("show");
+  clearTimeout(pillTimer);
+  pillTimer=setTimeout(()=>{p.classList.remove("show");undoSnap=null;},4200);
+}
+function doUndo(){
+  if(undoSnap)restore(undoSnap);
+  undoSnap=null;clearTimeout(pillTimer);
+  document.getElementById("pill").classList.remove("show");
+}
+
+/* ================= TO DO strip ================= */
+function toggleTodo(){
+  todoOpen=!todoOpen;
+  document.getElementById("todostrip").classList.toggle("open",todoOpen);
+  document.getElementById("todoarr").textContent=todoOpen?"▴":"▾";
+}
+function visTodos(){return lens?todos.filter(t=>t.world===lens):todos;}
+function renderTodos(){
+  const vt=visTodos();
+  document.getElementById("todocount").textContent="TO DO · "+vt.length;
+  const el=document.getElementById("todolist");
+  if(!vt.length){el.innerHTML=`<div class="todoempty">Nothing decided here.</div>`;return;}
+  el.innerHTML=vt.map((t,i)=>`<div class="todorow">
+    <button class="donec" onclick="completeTodo(${t.id})" title="Finish"></button>
+    <div class="todomain">
+      <div class="todotitle">${dotHtml(t.world)}<span>${esc(t.title)}</span></div>
+      ${i===0&&t.why?`<div class="todowhy">${esc(t.why)}</div>`:""}
+    </div>
+    <span class="mono todoage">${t.age}</span></div>`).join("");
+}
+function completeTodo(id){
+  const snap=snapshot();
+  const t=todos.find(x=>x.id===id); if(!t)return;
+  todos=todos.filter(x=>x.id!==id);
+  finished.push({world:t.world,title:t.title});
+  showPill(`“${t.title}” finished`,snap);
+  renderAll();
+}
+
+/* ================= Deb thread ================= */
+function renderThread(scroll){
+  const el=document.getElementById("thread");
+  el.innerHTML=thread.map(m=>{
+    if(m.kind==="deb")return `<div class="msg deb">
+      <div class="att"><span class="accdot"></span><span class="mono">DEB</span><span class="mono">${m.time}</span></div>
+      <div class="body">${esc(m.text)}</div></div>`;
+    if(m.kind==="chris")return `<div class="msg chris">
+      <div class="att"><span class="mono">CHRIS</span><span class="mono">${m.time}</span></div>
+      <div class="body">${esc(m.text)}</div></div>`;
+    if(m.kind==="filed")return `<div class="msg">
+      <button class="filedchip" onclick="setRoom('read')" title="Open in Read">
+        <span class="dot" style="background:${W("pop").color}"></span>
+        <span class="mono" style="color:var(--muted)">FILED · 150 POPLAR · 2:14 PM — 5. JULY, CONVERTED PAGE · 2 CARDS DEALT TO REACT</span>
+      </button></div>`;
+    if(m.kind==="quote"){
+      const kc=m.world?W(m.world).color:"var(--dim)";
+      return `<div class="msg"><div class="qobj">
+        <div class="mono kind" style="color:${kc}">${dotHtml(m.world)}${esc(m.kindLabel)} · FROM TODAY'S PAGE</div>
+        <div class="qtext">“${esc(m.text)}”</div></div></div>`;
+    }
+    return "";
+  }).join("");
+  if(scroll)el.scrollTop=el.scrollHeight;
+}
+function sendMsg(){
+  const inp=document.getElementById("msg");
+  const v=inp.value.trim(); if(!v)return;
+  inp.value="";
+  thread.push({kind:"chris",time:"NOW",text:v});
+  renderThread(true);
+  setTimeout(()=>{
+    thread.push({kind:"deb",time:"NOW",text:"On the desk. I will file it where it belongs and bring it back the moment it matters."});
+    renderThread(true);
+  },650);
+}
+
+/* ================= Arrivals overlay ================= */
+function openArrivals(){arrView=null;renderOverlay();document.getElementById("overlay").hidden=false;}
+function closeArrivals(){document.getElementById("overlay").hidden=true;}
+function renderOverlay(){
+  const ov=document.getElementById("overlay");
+  if(arrView!==null){
+    const a=ARRIVALS[arrView];
+    ov.innerHTML=`<div class="ovin">
+      <button class="mono ovback" onclick="arrView=null;renderOverlay()">← ARRIVALS</button>
+      <h1 class="disp ovtitle">${esc(a.what)}</h1>
+      <div class="mono" style="color:var(--dim);margin-top:10px">${esc(a.when)} · ${esc(a.from.toUpperCase())}</div>
+      <div class="arrraw">
+        <div class="ehead">${dotHtml(a.dotWorld)}<span class="mono">${esc(a.out.toUpperCase())}</span></div>
+        <div class="rawbody" style="margin-top:16px">${esc(a.raw)}</div>
+      </div></div>`;
+    return;
+  }
+  let h=`<div class="ovin">
+    <button class="mono ovback" onclick="closeArrivals()">← BACK</button>
+    <h1 class="disp ovtitle">Arrivals</h1>
+    <div class="mono" style="color:var(--dim);margin-top:10px">EVERYTHING THAT REACHED THE DESK TODAY</div>
+    <div class="arrtable">
+      <div class="arrhead"><span class="mono">WHEN</span><span class="mono">FROM</span><span class="mono">WHAT</span><span class="mono">OUTCOME</span></div>`;
+  h+=ARRIVALS.map((a,i)=>{
+    if(a.muted)return `<div class="arrrow muted">
+      <span class="mono arrwhen">${a.when}</span><span class="arrfrom">${esc(a.from)}</span>
+      <span class="arrwhat">—</span><span class="arrout">${esc(a.out)}</span></div>`;
+    return `<button class="arrrow live" onclick="arrView=${i};renderOverlay()">
+      <span class="mono arrwhen">${a.when}</span><span class="arrfrom">${esc(a.from)}</span>
+      <span class="arrwhat">${esc(a.what)}</span>
+      <span class="arrout">${dotHtml(a.dotWorld)}${esc(a.out)}</span></button>`;
+  }).join("");
+  ov.innerHTML=h+`</div></div>`;
+}
+
+/* ================= render root ================= */
+function renderWs(){
+  const b=document.getElementById("wsbody");
+  b.innerHTML=room==="read"?renderRead():room==="review"?renderReview():renderReact();
+  b.scrollTop=0;
+}
+function renderAll(){renderCtx();renderTabs();renderWs();renderTodos();renderThread();}
+setLens(null);
+renderThread(false);
+</script>
+</body>
+</html>

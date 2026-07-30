@@ -25,12 +25,9 @@ export function MobileHeader({
         className="flex min-h-11 items-center gap-2.5 rounded-full bg-fill px-4.5 py-2.5 transition-colors duration-150 active:bg-fill2"
       >
         <span
-          className="h-2.5 w-2.5 rounded-full"
+          className={`h-2.5 w-2.5 rounded-full ${world ? '' : 'home-dot'}`}
           style={world ? { backgroundColor: world.color } : undefined}
-          data-home={!world || undefined}
-        >
-          {!world && <span className="block h-full w-full rounded-full bg-silver" />}
-        </span>
+        />
         <span className="eyebrow text-ink">{world ? world.name : 'Deb'}</span>
         <span className="text-[10px] text-dim">▾</span>
       </button>

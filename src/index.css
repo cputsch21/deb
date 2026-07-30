@@ -20,6 +20,7 @@
   --t-accent: var(--t-silver);
   --t-ok: #5f7f5c;
   --t-bad: #a84b3a;
+  --t-purple: #8a6ea8; /* the delegate direction — minted July 24, per the prototype */
   --t-card: #ffffff; /* the deck card — lifted above the paper */
 }
 
@@ -37,6 +38,7 @@
     --t-silver: #b9bec7;
     --t-ok: #8fae8b;
     --t-bad: #d98a77;
+    --t-purple: #a98fc9;
     --t-card: #221f1a;
   }
 }
@@ -53,6 +55,7 @@
   --color-accent: var(--t-accent);
   --color-ok: var(--t-ok);
   --color-bad: var(--t-bad);
+  --color-purple: var(--t-purple);
 
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
   --font-serif: 'Fraunces', Georgia, serif;
@@ -142,18 +145,6 @@ body::after {
   }
 }
 
-/* The verdict scrim — under the one centered confirm. A hush, not a shadow. */
-.verdict-scrim {
-  background: color-mix(in oklab, var(--t-ink) 10%, transparent);
-  animation: scrim-in 150ms ease-out;
-}
-
-@keyframes scrim-in {
-  from {
-    opacity: 0;
-  }
-}
-
 /* The transient pill — 150ms micro motion, centered above the composer. */
 .pill {
   transform: translateX(-50%);
@@ -205,6 +196,7 @@ body::after {
   --t-silver: #b9bec7;
   --t-ok: #8fae8b;
   --t-bad: #d98a77;
+  --t-purple: #a98fc9;
   --t-card: #221f1a;
 }
 
@@ -267,5 +259,57 @@ body {
     box-shadow:
       0 2px 6px rgba(0, 0, 0, 0.3),
       0 26px 54px -22px rgba(0, 0, 0, 0.6);
+  }
+}
+
+/* Warm Glass amendment (July 24, ruling 4): keyboard focus renders as the
+   same tonal deepening hover shows — depth via fill, per the system. No
+   rings, no outlines, anywhere, ever. :focus-visible only — pointer and
+   touch users never see focus styling; inputs stay caret-only. */
+:focus-visible {
+  outline: none;
+}
+:where(button, [role='button'], a):focus-visible {
+  background-color: var(--t-fill2);
+  border-radius: 10px;
+}
+:where(.bg-accent):focus-visible {
+  background-color: var(--t-accent); /* accent moments keep their accent */
+}
+
+/* The composer floats (ruling 6, per the prototype's polish pass). */
+.composer-glass {
+  box-shadow: 0 10px 34px -18px rgba(40, 32, 25, 0.28);
+}
+:root.dark .composer-glass {
+  box-shadow: 0 10px 34px -18px rgba(0, 0, 0, 0.5);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) .composer-glass {
+    box-shadow: 0 10px 34px -18px rgba(0, 0, 0, 0.5);
+  }
+}
+
+/* Silver's one moment (ruling 10): the home dot wears the gradient. */
+.home-dot {
+  background: linear-gradient(135deg, #c8ccd4, #8a8f98);
+}
+:root.dark .home-dot {
+  background: linear-gradient(135deg, #d8dce2, #9ba1ac);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) .home-dot {
+    background: linear-gradient(135deg, #d8dce2, #9ba1ac);
+  }
+}
+
+/* Desktop room switches rise (ruling 14, per the prototype: 260ms). */
+.room-rise {
+  animation: room-rise 260ms ease both;
+}
+@keyframes room-rise {
+  from {
+    opacity: 0;
+    transform: translateY(7px);
   }
 }

@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Deb — The Paper</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAF8F4; --ink:#191713; --muted:#5f5c54; --dim:#8a867e;
+    --well:#f0ede6; --well2:#e9e5dc; --hair:#e2ded5; --silver:#a5a198; --gold:#c9a15a;
+    --acc:#a5a198;
+    --serif:"Fraunces",Georgia,serif; --sans:"Inter",system-ui,sans-serif; --mono:"JetBrains Mono",monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.45;
+       overscroll-behavior:none}
+  button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;text-align:left}
+  input{font-family:var(--sans);font-size:16px;color:var(--ink);border:none;background:transparent;outline:none}
+  ::placeholder{color:var(--dim)}
+
+  /* ---------- shared grammar ---------- */
+  .eyebrow{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;
+           color:var(--dim);font-weight:500;margin-bottom:10px}
+  .mono{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;font-weight:500}
+  .serif{font-family:var(--serif)}
+  .well-card{background:var(--well);border-radius:12px;padding:13px 14px}
+  .well-card:active{background:var(--well2)}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none;display:inline-block}
+  .dot-silver{background:radial-gradient(circle at 35% 30%, #dedbd4, #807c74)}
+  section{margin-bottom:28px}
+  .rowgap > * + *{margin-top:9px}
+  .hairline{border:none;border-top:1px solid var(--hair)}
+  .payoff{font-family:var(--serif);font-size:15.5px;color:var(--muted);font-style:italic;font-weight:340}
+
+  /* ---------- page shell ---------- */
+  #page{min-height:100dvh;display:flex;flex-direction:column;
+        padding:calc(10px + env(safe-area-inset-top)) 0 0 0}
+  #main{flex:1;padding:0 18px calc(120px + env(safe-area-inset-bottom)) 18px}
+
+  /* ---------- masthead ---------- */
+  #masthead{padding:2px 18px 0 18px}
+  #masthead .toprow{display:flex;align-items:baseline;justify-content:space-between}
+  #date{font-family:var(--serif);font-size:21px;font-weight:520;letter-spacing:-.01em}
+  #arrivals-chip{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;color:var(--muted);
+                 background:var(--well);border-radius:12px;padding:8px 12px;min-height:32px}
+  #arrivals-chip:active{background:var(--well2)}
+  #dots-strip{display:flex;align-items:center;gap:2px;overflow-x:auto;scrollbar-width:none;
+              margin:6px -6px 0 -10px;padding:0 6px}
+  #dots-strip::-webkit-scrollbar{display:none}
+  .wdot-btn{width:44px;height:44px;flex:none;display:flex;align-items:center;justify-content:center;
+            border-radius:50%;position:relative}
+  .wdot-btn .wdot{width:14px;height:14px;border-radius:50%;transition:transform .18s ease}
+  .wdot-btn.active .wdot{transform:scale(1.35)}
+  .wdot-btn.active::after{content:"";position:absolute;inset:6px;border-radius:50%;background:var(--well);z-index:-1}
+  #lens-label{font-family:var(--serif);font-size:14.5px;font-style:italic;font-weight:400;color:var(--muted);
+              white-space:nowrap;padding:0 8px 0 4px}
+  #masthead hr{margin-top:6px}
+
+  /* ---------- deb column ---------- */
+  #sec-deb{padding-top:22px}
+  #deb-brief{font-family:var(--serif);font-size:19px;line-height:1.42;font-weight:420;letter-spacing:-.005em}
+  #deb-remark{margin-top:16px}
+  #deb-remark .ts{display:block;margin-bottom:6px;color:var(--dim)}
+  #deb-remark .txt{font-family:var(--serif);font-size:15.5px;line-height:1.5;color:var(--muted);font-weight:380}
+
+  /* ---------- verdicts seam ---------- */
+  #verdict-band{display:block;width:100%;border-radius:12px}
+  #verdict-band .count{color:var(--muted);display:block}
+  #verdict-band .preview{font-family:var(--serif);font-size:15.5px;font-weight:450;margin-top:5px;
+                         white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+
+  /* ---------- to do ---------- */
+  .todo-row{display:flex;align-items:center;gap:11px;width:100%}
+  .todo-body{flex:1;min-width:0}
+  .todo-title{font-size:14.5px;font-weight:500;line-height:1.35}
+  .todo-why{font-family:var(--serif);font-style:italic;font-size:13px;color:var(--muted);margin-top:2px;font-weight:380}
+  .todo-age{color:var(--dim);flex:none}
+  .done-hit{width:44px;height:44px;margin:-10px -12px -10px -6px;flex:none;display:flex;align-items:center;justify-content:center}
+  .done-circle{width:24px;height:24px;border-radius:50%;background:var(--well2);flex:none;
+               display:flex;align-items:center;justify-content:center;color:transparent;font-size:12px}
+  .done-hit:active .done-circle{background:var(--hair)}
+
+  /* ---------- the record ---------- */
+  .sub-eyebrow{margin-top:22px}
+  .sub-eyebrow:first-child{margin-top:0}
+  .event-row{display:flex;align-items:center;gap:11px}
+  .event-time{color:var(--muted);flex:none;min-width:58px}
+  .event-title{font-size:14.5px;font-weight:500;flex:1}
+  .entry-card{background:var(--well);border-radius:14px;padding:14px}
+  .entry-src{display:flex;align-items:center;gap:8px;color:var(--dim)}
+  .entry-dist{font-family:var(--serif);font-size:16px;line-height:1.48;font-weight:400;margin-top:10px}
+  .margin-note{display:block;width:100%;margin-top:12px;padding:10px 12px;background:var(--paper);border-radius:12px}
+  .margin-note:active{background:var(--well2)}
+  .margin-note .kind{color:var(--dim);display:block;margin-bottom:4px}
+  .margin-note .hand{font-family:var(--serif);font-style:italic;font-size:14px;line-height:1.45;color:var(--muted);font-weight:400}
+  .raw-toggle{display:block;margin-top:12px;padding:8px 2px;min-height:32px;color:var(--dim)}
+  .raw-body{display:none;margin-top:6px;background:var(--well2);border-radius:12px;padding:12px;
+            font-family:var(--mono);font-size:11px;letter-spacing:0;text-transform:none;line-height:1.6;color:var(--muted);
+            white-space:pre-wrap}
+  .raw-open .raw-body{display:block}
+  .fin-row{display:flex;align-items:center;gap:11px}
+  .fin-check{width:24px;height:24px;border-radius:50%;background:var(--well2);flex:none;
+             display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--muted)}
+  .fin-title{flex:1;font-size:14.5px;color:var(--muted)}
+  .fin-time{color:var(--dim);flex:none}
+  .deal-row{display:flex;align-items:baseline;gap:9px}
+  .deal-txt{font-family:var(--serif);font-size:14px;color:var(--muted);font-weight:380;line-height:1.45}
+
+  /* ---------- worlds ---------- */
+  #dossier{background:var(--well);border-radius:14px;padding:16px 15px;margin-bottom:12px}
+  #dossier .head{display:flex;align-items:center;gap:8px}
+  #dossier .mission{font-family:var(--serif);font-size:19px;line-height:1.38;font-weight:450;margin-top:10px}
+  #dossier .drow{margin-top:14px}
+  #dossier .drow .lbl{color:var(--dim);display:block;margin-bottom:4px}
+  #dossier .drow .val{font-size:14px;font-weight:500}
+  #dossier .drow .val.serifval{font-family:var(--serif);font-weight:400;font-size:14.5px;color:var(--muted);line-height:1.5}
+  #world-tiles{display:flex;gap:9px;overflow-x:auto;scrollbar-width:none;margin:0 -18px;padding:0 18px 4px 18px}
+  #world-tiles::-webkit-scrollbar{display:none}
+  .wtile{flex:none;width:210px;background:var(--well);border-radius:14px;padding:14px;text-align:left}
+  .wtile:active{background:var(--well2)}
+  .wtile .trow{display:flex;align-items:center;gap:8px}
+  .wtile .tname{font-size:13.5px;font-weight:600;flex:1}
+  .wtile .tstatus{color:var(--dim)}
+  .wtile .tstatus.warn{color:#b0673f}
+  .wtile .tmission{font-family:var(--serif);font-style:italic;font-size:13.5px;color:var(--muted);
+                   margin-top:9px;line-height:1.42;font-weight:380;min-height:38px}
+  .wtile .tnext{margin-top:10px;display:flex;gap:7px;align-items:baseline}
+  .wtile .tnext .lbl{color:var(--dim)}
+  .wtile .tnext .val{font-size:12.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  /* ---------- bottom bar ---------- */
+  #bottombar{position:fixed;left:0;right:0;bottom:0;z-index:40;
+             background:linear-gradient(to top, var(--paper) 78%, rgba(250,248,244,0));
+             padding:18px 18px calc(12px + env(safe-area-inset-bottom)) 18px;
+             display:flex;gap:10px;align-items:center}
+  #composer-fake{flex:1;background:var(--well);border-radius:16px;min-height:48px;display:flex;align-items:center;
+                 padding:0 16px;color:var(--dim);font-size:16px}
+  #composer-fake:active{background:var(--well2)}
+  .send-btn{width:48px;height:48px;border-radius:50%;background:var(--gold);flex:none;
+            display:flex;align-items:center;justify-content:center;color:#fff;font-size:17px}
+  .send-btn:active{background:#b8914d}
+
+  /* ---------- undo pill ---------- */
+  #undo-pill{position:fixed;left:50%;transform:translateX(-50%) translateY(20px);opacity:0;pointer-events:none;
+             bottom:calc(88px + env(safe-area-inset-bottom));z-index:80;
+             background:var(--ink);color:#f6f4ef;border-radius:16px;padding:12px 8px 12px 16px;
+             display:flex;align-items:center;gap:6px;max-width:calc(100vw - 40px);
+             box-shadow:0 8px 28px rgba(25,23,19,.28);transition:opacity .2s ease, transform .2s ease}
+  #undo-pill.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
+  #undo-pill .msg{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;
+                  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #undo-pill button{color:var(--gold);font-family:var(--mono);font-size:10px;letter-spacing:.14em;
+                    padding:6px 10px;min-height:32px;flex:none}
+
+  /* ---------- focus overlays ---------- */
+  .focus{position:fixed;inset:0;z-index:60;background:var(--paper);display:none;flex-direction:column;
+         padding-top:env(safe-area-inset-top)}
+  .focus.open{display:flex;animation:focusIn .2s ease}
+  @keyframes focusIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  .focus-top{padding:10px 12px 6px 12px;flex:none}
+  .back-btn{display:inline-flex;align-items:center;min-height:44px;padding:0 10px;color:var(--muted);
+            font-family:var(--mono);font-size:10px;letter-spacing:.14em}
+  .focus-scroll{flex:1;overflow-y:auto;padding:6px 18px 24px 18px}
+
+  /* conversation */
+  #convo-scroll{padding-bottom:16px}
+  .msg-deb{font-family:var(--serif);font-size:17px;line-height:1.48;font-weight:410;margin-top:18px;max-width:34em}
+  .msg-ts{color:var(--dim);display:block;margin-bottom:6px}
+  .msg-me{margin-top:18px;margin-left:14%;background:var(--well);border-radius:14px;padding:12px 14px;
+          font-size:15px;line-height:1.45}
+  .chip-filed{margin-top:18px;background:var(--well);border-radius:12px;padding:11px 13px;
+              display:flex;align-items:baseline;gap:8px}
+  .chip-filed .dot{position:relative;top:0}
+  .chip-filed .txt{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
+                   color:var(--muted);line-height:1.7}
+  .quote-obj{margin-top:18px;background:var(--well);border-radius:12px;padding:12px 14px}
+  .quote-obj .kind{color:var(--dim);display:block;margin-bottom:5px}
+  .quote-obj .q{font-family:var(--serif);font-style:italic;font-size:14.5px;color:var(--muted);line-height:1.48}
+  #convo-composer{flex:none;padding:10px 18px calc(12px + env(safe-area-inset-bottom)) 18px;
+                  display:flex;gap:10px;align-items:center;background:var(--paper)}
+  #convo-input{flex:1;background:var(--well);border-radius:16px;min-height:48px;padding:12px 16px}
+
+  /* triage */
+  #triage-stage{flex:1;display:flex;flex-direction:column;padding:0 14px calc(14px + env(safe-area-inset-bottom)) 14px}
+  .tzone{flex:none;display:flex;align-items:center;justify-content:center;min-height:64px;border-radius:14px;
+         color:var(--muted)}
+  .tzone:active{background:var(--well)}
+  #triage-mid{flex:1;display:flex;align-items:stretch;gap:4px;min-height:0;margin:4px 0}
+  .tzone-side{flex:none;width:52px;min-height:100%;writing-mode:vertical-rl}
+  #tzone-left{transform:rotate(180deg)}
+  #triage-card-wrap{flex:1;display:flex;align-items:center;min-width:0}
+  #triage-card{background:#fff;border-radius:16px;padding:22px 20px;width:100%;
+               box-shadow:0 14px 40px rgba(25,23,19,.13), 0 2px 8px rgba(25,23,19,.06)}
+  #triage-card .src{color:var(--dim)}
+  #triage-card .title{font-family:var(--serif);font-size:21px;line-height:1.32;font-weight:480;margin-top:10px}
+  #triage-card .excerpt{font-family:var(--serif);font-style:italic;font-size:14.5px;color:var(--muted);
+                        line-height:1.5;margin-top:12px;font-weight:380}
+  #triage-card .marker{display:flex;align-items:center;gap:8px;margin-top:16px;color:var(--muted)}
+  #triage-empty{flex:1;display:none;flex-direction:column;align-items:flex-start;justify-content:center;
+                padding:0 26px calc(40px + env(safe-area-inset-bottom)) 26px}
+  #triage-empty .payoff{font-size:19px;line-height:1.5;margin-top:12px}
+  #triage-empty .back-btn{margin:26px 0 0 -10px}
+
+  /* chooser sheets */
+  .sheet{position:fixed;left:0;right:0;bottom:0;z-index:90;background:#fff;border-radius:16px 16px 0 0;
+         box-shadow:0 -10px 36px rgba(25,23,19,.16);padding:20px 20px calc(20px + env(safe-area-inset-bottom)) 20px;
+         display:none;animation:focusIn .2s ease}
+  .sheet.open{display:block}
+  .sheet .eyebrow{margin-bottom:14px}
+  .sheet-opt{display:block;width:100%;background:var(--well);border-radius:12px;padding:13px 14px;
+             font-size:15px;font-weight:500;margin-bottom:9px;min-height:48px}
+  .sheet-opt:active{background:var(--well2)}
+  .slider-row{background:var(--well);border-radius:12px;padding:14px;margin-bottom:9px}
+  .slider-row .live{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+  .slider-row .live .lbl{color:var(--dim)}
+  .slider-row .live .val{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink)}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:44px;background:transparent}
+  input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:3px;background:var(--well2)}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;
+      background:var(--ink);margin-top:-10px}
+  input[type=range]::-moz-range-track{height:6px;border-radius:3px;background:var(--well2)}
+  input[type=range]::-moz-range-thumb{width:26px;height:26px;border-radius:50%;background:var(--ink);border:none}
+  .sheet-set{display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;
+             background:var(--ink);color:#f6f4ef;border-radius:12px;font-family:var(--mono);
+             font-size:10.5px;letter-spacing:.14em}
+  .sheet-set:active{background:#2e2b25}
+  .name-well{background:var(--well);border-radius:12px;padding:6px 14px;margin-bottom:9px}
+  .name-well .lbl{color:var(--dim);display:block;padding-top:8px}
+  .name-well input{width:100%;min-height:38px;font-weight:500}
+
+  /* arrivals */
+  .arr-head{display:grid;grid-template-columns:74px 1fr 108px;gap:10px;color:var(--dim);
+            padding:6px 14px 10px 14px}
+  .arr-row{display:grid;grid-template-columns:74px 1fr 108px;gap:10px;align-items:center;width:100%;
+           background:var(--well);border-radius:12px;padding:13px 14px;margin-bottom:9px}
+  .arr-row:active{background:var(--well2)}
+  .arr-row.dropped{opacity:.45;pointer-events:none}
+  .arr-when{color:var(--muted);line-height:1.7}
+  .arr-what{font-size:13.5px;font-weight:500;line-height:1.35;min-width:0}
+  .arr-what .from{display:block;font-weight:400;color:var(--dim);font-size:11.5px;margin-top:2px;
+                  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .arr-out{color:var(--muted);line-height:1.7;text-align:right}
+  #raw-view .raw-body{display:block;background:var(--well);margin-top:14px}
+  #raw-title{font-family:var(--serif);font-size:19px;font-weight:480;margin-top:10px}
+</style>
+</head>
+<body>
+
+<div id="page">
+  <header id="masthead">
+    <div class="toprow">
+      <h1 id="date">Wednesday, July&nbsp;29</h1>
+      <button id="arrivals-chip" class="mono">ARRIVALS ↗</button>
+    </div>
+    <div id="dots-strip"></div>
+    <hr class="hairline">
+  </header>
+
+  <main id="main">
+
+    <section id="sec-deb">
+      <div class="eyebrow">DEB</div>
+      <button id="deb-tap" style="display:block;width:100%">
+        <p id="deb-brief">Your own words this morning: HXD, the invoice, the binder. The invoice is done, HXD moved — the binder is the one Friday keeps threatening. Defend the afternoon.</p>
+        <div id="deb-remark">
+          <span class="mono ts">2:20 PM · IN REPLY</span>
+          <p class="txt">Not quite — but Friday now carries the panel-copy freeze <em>and</em> the binder. One of them moves or Friday breaks. My vote: the freeze holds; the binder has slipped twice.</p>
+        </div>
+      </button>
+    </section>
+
+    <section id="sec-verdicts">
+      <div class="eyebrow">VERDICTS</div>
+      <div id="verdict-slot"></div>
+    </section>
+
+    <section id="sec-todo">
+      <div class="eyebrow">TO DO</div>
+      <div id="todo-list" class="rowgap"></div>
+    </section>
+
+    <section id="sec-record">
+      <div class="eyebrow sub-eyebrow">THE DAY</div>
+      <div id="day-list" class="rowgap"></div>
+      <div class="eyebrow sub-eyebrow">TAKEN DOWN</div>
+      <div id="entries-list" class="rowgap"></div>
+      <div class="eyebrow sub-eyebrow">FINISHED</div>
+      <div id="finished-list" class="rowgap"></div>
+      <div class="eyebrow sub-eyebrow">THE DAY'S DEALINGS</div>
+      <div id="dealings-list" class="rowgap"></div>
+    </section>
+
+    <section id="sec-worlds">
+      <div class="eyebrow">THE WORLDS</div>
+      <div id="dossier-slot"></div>
+      <div id="world-tiles"></div>
+    </section>
+
+  </main>
+</div>
+
+<div id="bottombar">
+  <button id="composer-fake">Tell Deb anything…</button>
+  <button id="send-fake" class="send-btn" aria-label="Send">↑</button>
+</div>
+
+<div id="undo-pill"><span class="msg"></span><button id="undo-btn">UNDO</button></div>
+
+<!-- ============ CONVERSATION FOCUS ============ -->
+<div id="focus-convo" class="focus">
+  <div class="focus-top"><button class="back-btn" data-close="focus-convo">← THE PAGE</button></div>
+  <div class="focus-scroll" id="convo-scroll"><div id="convo-thread"></div></div>
+  <div id="convo-composer">
+    <input id="convo-input" type="text" placeholder="Tell Deb anything…" autocomplete="off">
+    <button id="convo-send" class="send-btn" aria-label="Send">↑</button>
+  </div>
+</div>
+
+<!-- ============ TRIAGE FOCUS ============ -->
+<div id="focus-triage" class="focus">
+  <div class="focus-top"><button class="back-btn" data-close="focus-triage">← THE PAGE</button></div>
+  <div id="triage-stage">
+    <button class="tzone mono" id="tzone-top">↑ &nbsp;DELAY</button>
+    <div id="triage-mid">
+      <button class="tzone tzone-side mono" id="tzone-left">← &nbsp;DELEGATE</button>
+      <div id="triage-card-wrap"><div id="triage-card"></div></div>
+      <button class="tzone tzone-side mono" id="tzone-right">DO &nbsp;→</button>
+    </div>
+    <button class="tzone mono" id="tzone-bottom">↓ &nbsp;DELETE</button>
+  </div>
+  <div id="triage-empty">
+    <div class="eyebrow">TRIAGE CLEAR · WED JUL 29</div>
+    <p class="payoff">Clear. Every loop has a verdict. Go live it.</p>
+    <button class="back-btn" data-close="focus-triage">← THE PAGE</button>
+  </div>
+</div>
+
+<!-- delay chooser -->
+<div id="sheet-delay" class="sheet">
+  <div class="eyebrow">DELAY UNTIL</div>
+  <button class="sheet-opt" data-delay="tomorrow">Tomorrow</button>
+  <button class="sheet-opt" data-delay="next week">Next week</button>
+  <div class="slider-row">
+    <div class="live"><span class="mono lbl">OR PICK</span><span class="val" id="delay-live">IN 3 DAYS</span></div>
+    <input type="range" id="delay-slider" min="1" max="5" step="1" value="3">
+  </div>
+  <button class="sheet-set" id="delay-set">SET</button>
+</div>
+
+<!-- delegate chooser -->
+<div id="sheet-delegate" class="sheet">
+  <div class="eyebrow">HAND TO</div>
+  <div class="name-well">
+    <span class="mono lbl">NAME</span>
+    <input type="text" id="delegate-name" value="Karthik &amp; Manish" autocomplete="off">
+  </div>
+  <button class="sheet-opt" data-chase="in 3 days">Chase in 3 days</button>
+  <button class="sheet-opt" data-chase="next week">Chase next week</button>
+  <div class="slider-row">
+    <div class="live"><span class="mono lbl">OR PICK</span><span class="val" id="delegate-live">CHASE IN 3 DAYS</span></div>
+    <input type="range" id="delegate-slider" min="1" max="5" step="1" value="3">
+  </div>
+  <button class="sheet-set" id="delegate-set">SET</button>
+</div>
+
+<!-- ============ ARRIVALS ============ -->
+<div id="focus-arrivals" class="focus">
+  <div class="focus-top"><button class="back-btn" data-close="focus-arrivals">← BACK</button></div>
+  <div class="focus-scroll">
+    <div class="eyebrow" style="padding-left:2px">ARRIVALS · WED JUL 29</div>
+    <div class="arr-head"><span class="mono">WHEN</span><span class="mono">WHAT</span><span class="mono" style="text-align:right">OUTCOME</span></div>
+    <div id="arrivals-list"></div>
+  </div>
+</div>
+
+<!-- raw arrival view -->
+<div id="raw-view" class="focus">
+  <div class="focus-top"><button class="back-btn" data-close="raw-view">← ARRIVALS</button></div>
+  <div class="focus-scroll">
+    <div class="eyebrow" id="raw-eyebrow"></div>
+    <h2 id="raw-title"></h2>
+    <div class="raw-body" id="raw-content"></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ================= DATA ================= */
+const WORLDS = {
+  ctdi:{name:"CTDI", tag:"HXD", color:"#5f8a76", mission:"Make HXD the team's proudest ship of the year.", status:"MOVING", warn:false, next:"Chase Karthik — HXD scope", week:"Spec to Karthik · reporting-dependency answer from Manish · panel copy freezes Friday."},
+  sub:{name:"Subseven", tag:"S7", color:"#54718f", mission:"A second income that runs on rails, not adrenaline.", status:"MOVING", warn:false, next:"App plan review", week:"Structured app plan sent · review notes due back this week."},
+  iso:{name:"ISO Experiences", tag:"ISO", color:"#b0673f", mission:"The audit passes in October without a single scramble.", status:"QUIET 6 DAYS", warn:true, next:"Evidence binder · Fri", week:"Evidence binder — Friday afternoon is blocked. Don't let it slide a third time."},
+  pop:{name:"150 Poplar", tag:"HOME", color:"#7a5f9e", mission:"A house that runs itself by Christmas.", status:"SETTLED", warn:false, next:"Geyser propane · Thu", week:"Plumber paid and closed · second propane quote before Thursday."},
+  fam:{name:"Fam Finances", tag:"FAM", color:"#4f8a8b", mission:"Every dollar knows its job.", status:"SETTLED", warn:false, next:"August budget pass", week:"August budget pass · nothing burning."},
+  cribl:{name:"Cribl", tag:"CRB", color:"#a05252", mission:"Earn the promotion without losing the evenings.", status:"MOVING", warn:false, next:"Q3 goals draft", week:"Q3 goals draft · keep the evenings clear."}
+};
+const WORLD_ORDER = ["ctdi","sub","iso","pop","fam","cribl"];
+
+let todos = [
+  {id:"t1", title:"Chase Karthik & Manish — HXD scope", world:"ctdi", why:"The whole sprint stands behind this one.", age:"TODAY"},
+  {id:"t2", title:"Review HXD panel copy", world:"ctdi", why:null, age:"1 DAY"},
+  {id:"t3", title:"Evidence binder", world:"iso", why:null, age:"FRI"},
+  {id:"t4", title:"Geyser propane", world:"pop", why:null, age:"THU"}
+];
+
+let queue = [
+  {id:"q1", title:"Send Karthik the HXD spec", world:"ctdi", source:"FROM TODAY'S PLAUD CALL", excerpt:"Karthik said he can't start until he sees the spec — I told him this week."},
+  {id:"q2", title:"Ask Manish about the reporting dependency", world:"ctdi", source:"FROM TODAY'S PLAUD CALL", excerpt:"Manish flagged the reporting dependency again — second call in a row."},
+  {id:"q3", title:"Get propane quote from second supplier", world:"pop", source:"FROM 5. JULY · REMARKABLE", excerpt:"geyser guy says winter rates start Sept — get a second number before committing"}
+];
+
+const ENTRIES = [
+  {id:"e1", world:null, src:"MORNING PAGES · REMARKABLE · 8:02 AM",
+   dist:"Slept badly but the head is clear. Three things matter today: the HXD sync, the plumber's invoice, and not letting the ISO binder slide again.",
+   notes:[{kind:"THE KEEP", hand:"Holding you to the binder — Friday's afternoon is still yours.",
+           reply:"I wrote that at 8:03, right after you did. The binder has slipped twice — June and mid-July — so I blocked Friday afternoon and I'll hold it against anything short of a fire."}],
+   raw:"slept bad. head clear tho.\n3 things:\n- hxd sync\n- plumber invoice (FINAL one)\n- ISO binder — do NOT let it slide again\ncoffee first."},
+  {id:"e2", world:"ctdi", src:"HXD SYNC · PLAUD · 1:47 PM",
+   dist:"Karthik can't start until the spec lands. Manish flagged the reporting dependency. Decision: panel copy freezes Friday.",
+   notes:[{kind:"THE ANSWER", hand:"You asked when the last HXD milestone slipped — June 12, by four days, same dependency.",
+           reply:"June 12, four days, same reporting dependency. That's twice now from the same corner — if Manish flags it a third time it isn't a flag anymore, it's a pattern. Worth naming out loud on Friday."}],
+   raw:"[13:12] Karthik: I can't start until the spec lands, honestly.\n[13:19] Manish: The reporting dependency is still open — same as last call.\n[13:34] Chris: If we freeze panel copy Friday, does that unblock you?\n[13:41] Chris: Okay. Panel copy freezes Friday. Decision made."}
+];
+
+const EVENTS = [
+  {time:"9:00", title:"CTDI standup", world:"ctdi"},
+  {time:"1:00", title:"Karthik & Manish — HXD sync", world:"ctdi"}
+];
+const FINISHED = [
+  {title:"Pay the plumber's final invoice", world:"pop", time:"11:14 AM"},
+  {title:"Send structured app plan", world:"sub", time:"3:05 PM"}
+];
+const DEALINGS = [
+  {world:"ctdi", text:"3 cards minted from the HXD call · 1 handed to Karthik, chase Aug 1"},
+  {world:"pop", text:"Poplar's last open loop closed"}
+];
+
+const ARRIVALS = [
+  {id:"a1", when:"JUL 29\n2:14 PM", from:"my@remarkable.com", what:"5. July — converted page", out:"filed → 150 Poplar\n2 cards", dropped:false,
+   raw:"— 5. July, converted from reMarkable —\n\ngeyser guy came by. says winter rates start Sept —\nget a second number before committing.\npropane tank placement: back wall ok per code.\nplumber final invoice arriving this week, PAY IT.\n\n(2 cards minted: propane second quote · plumber invoice)"},
+  {id:"a2", when:"JUL 29\n1:47 PM", from:"no-reply@plaud.ai", what:"HXD sync — transcript", out:"filed → CTDI\n3 cards", dropped:false,
+   raw:"HXD SYNC — FULL TRANSCRIPT (EXCERPT)\n\n[13:12] Karthik: I can't start until the spec lands, honestly.\n[13:19] Manish: The reporting dependency is still open — same as last call.\n[13:34] Chris: If we freeze panel copy Friday, does that unblock you?\n[13:38] Karthik: Mostly, yes.\n[13:41] Chris: Okay. Panel copy freezes Friday. Decision made.\n\n(3 cards minted: send spec · reporting dependency · panel copy freeze)"},
+  {id:"a3", when:"JUL 29\n8:02 AM", from:"composer", what:"Morning pages", out:"grew today's page", dropped:false,
+   raw:"slept bad. head clear tho.\n3 things:\n- hxd sync\n- plumber invoice (FINAL one)\n- ISO binder — do NOT let it slide again\ncoffee first."},
+  {id:"a4", when:"JUL 29\n7:41 AM", from:"unknown@spam.io", what:"—", out:"dropped — sender not allowed", dropped:true, raw:""}
+];
+
+/* conversation thread */
+let thread = [
+  {type:"deb", ts:"8:04 AM", text:"Your own words this morning: HXD, the invoice, the binder. The invoice is done, HXD moved — the binder is the one Friday keeps threatening. Defend the afternoon."},
+  {type:"chip", world:"pop", text:"FILED · 150 POPLAR · 2:14 PM — 5. JULY, CONVERTED PAGE · 2 CARDS DEALT TO REACT"},
+  {type:"me", ts:"2:18 PM", text:"notes from the HXD sync — did I just overcommit?"},
+  {type:"deb", ts:"2:20 PM", text:"Not quite — but Friday now carries the panel-copy freeze and the binder. One of them moves or Friday breaks. My vote: the freeze holds; the binder has slipped twice."}
+];
+const CANNED = [
+  "Noted. It's on the page — I'll keep it where you can see it.",
+  "Taken down. If it grows teeth, I'll say so in the morning.",
+  "Got it. Filed where it belongs; nothing else moves."
+];
+let cannedIdx = 0;
+
+/* ================= STATE ================= */
+let lens = null;            // world id or null
+let undoTimer = null, undoFn = null;
+let pendingVerdict = null;  // card being delayed/delegated
+
+/* ================= HELPERS ================= */
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+function dotHTML(world, size){
+  const px = size || 9;
+  if (!world) return '<span class="dot dot-silver" style="width:'+px+'px;height:'+px+'px"></span>';
+  return '<span class="dot" style="width:'+px+'px;height:'+px+'px;background:'+WORLDS[world].color+'"></span>';
+}
+function markerHTML(world){
+  return '<span style="display:inline-flex;align-items:center;gap:7px">'+dotHTML(world)+
+    '<span class="mono" style="color:var(--muted)">'+(world?esc(WORLDS[world].tag):"LIFE")+'</span></span>';
+}
+function inLens(world){ return lens === null || world === lens; }
+
+/* ================= MASTHEAD ================= */
+function renderDots(){
+  const strip = $("dots-strip");
+  let h = '<button class="wdot-btn'+(lens===null?' active':'')+'" data-world=""><span class="wdot dot-silver" style="background:radial-gradient(circle at 35% 30%, #dedbd4, #807c74)"></span></button>';
+  WORLD_ORDER.forEach(function(id){
+    h += '<button class="wdot-btn'+(lens===id?' active':'')+'" data-world="'+id+'"><span class="wdot" style="background:'+WORLDS[id].color+'"></span></button>';
+  });
+  if (lens) h += '<span id="lens-label">'+esc(WORLDS[lens].name)+'</span>';
+  strip.innerHTML = h;
+  strip.querySelectorAll(".wdot-btn").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      const w = btn.getAttribute("data-world") || null;
+      setLens(w === lens ? null : w);
+    });
+  });
+}
+function setLens(w){
+  lens = w;
+  document.documentElement.style.setProperty("--acc", w ? WORLDS[w].color : "var(--silver)");
+  renderAll();
+}
+
+/* ================= VERDICTS BAND ================= */
+function lensQueue(){ return queue.filter(function(c){ return inLens(c.world); }); }
+function renderVerdicts(){
+  const q = lensQueue();
+  const slot = $("verdict-slot");
+  if (q.length === 0){
+    slot.innerHTML = '<p class="payoff">Clear. Every loop has a verdict. Go live it.</p>';
+    return;
+  }
+  slot.innerHTML =
+    '<button id="verdict-band" class="well-card">'+
+      '<span class="mono count">'+q.length+' LOOP'+(q.length===1?'':'S')+' NEED'+(q.length===1?'S':'')+' VERDICTS</span>'+
+      '<span class="serif preview">'+esc(q[0].title)+'</span>'+
+    '</button>';
+  $("verdict-band").addEventListener("click", openTriage);
+}
+
+/* ================= TO DO ================= */
+function renderTodos(){
+  const list = $("todo-list");
+  const vis = todos.filter(function(t){ return inLens(t.world); });
+  if (vis.length === 0){
+    list.innerHTML = '<p class="payoff">Nothing standing here. The list is quiet.</p>';
+    return;
+  }
+  list.innerHTML = vis.map(function(t){
+    return '<div class="well-card todo-row" data-id="'+t.id+'">'+dotHTML(t.world)+
+      '<div class="todo-body"><div class="todo-title">'+esc(t.title)+'</div>'+
+      (t.why ? '<div class="todo-why">'+esc(t.why)+'</div>' : '')+
+      '</div><span class="mono todo-age">'+esc(t.age)+'</span>'+
+      '<button class="done-hit" aria-label="Done"><span class="done-circle">✓</span></button></div>';
+  }).join("");
+  list.querySelectorAll(".todo-row").forEach(function(row){
+    row.querySelector(".done-hit").addEventListener("click", function(){
+      completeTodo(row.getAttribute("data-id"));
+    });
+  });
+}
+function completeTodo(id){
+  const idx = todos.findIndex(function(t){ return t.id === id; });
+  if (idx < 0) return;
+  const item = todos[idx];
+  todos.splice(idx, 1);
+  renderTodos();
+  showUndo("DONE · "+item.title.toUpperCase().slice(0,26), function(){
+    todos.splice(Math.min(idx, todos.length), 0, item);
+    renderTodos();
+  });
+}
+
+/* ================= THE RECORD ================= */
+function renderRecord(){
+  const day = EVENTS.filter(function(e){ return inLens(e.world); });
+  $("day-list").innerHTML = day.length ? day.map(function(e){
+    return '<div class="well-card event-row"><span class="mono event-time">'+esc(e.time)+'</span>'+
+      '<span class="event-title">'+esc(e.title)+'</span>'+dotHTML(e.world)+'</div>';
+  }).join("") : '<p class="payoff">No hours claimed here today.</p>';
+
+  const ents = ENTRIES.filter(function(e){ return inLens(e.world); });
+  $("entries-list").innerHTML = ents.length ? ents.map(function(e){
+    let h = '<div class="entry-card" id="entry-'+e.id+'">'+
+      '<div class="entry-src">'+dotHTML(e.world)+'<span class="mono">'+esc(e.src)+'</span></div>'+
+      '<p class="entry-dist serif">'+esc(e.dist)+'</p>';
+    e.notes.forEach(function(n, i){
+      h += '<button class="margin-note" data-entry="'+e.id+'" data-note="'+i+'">'+
+           '<span class="mono kind">'+esc(n.kind)+'</span>'+
+           '<span class="hand">'+esc(n.hand)+'</span></button>';
+    });
+    h += '<button class="raw-toggle mono" data-raw="'+e.id+'">RAW ▾</button>'+
+         '<div class="raw-body">'+esc(e.raw)+'</div></div>';
+    return h;
+  }).join("") : '<p class="payoff">Nothing taken down here yet.</p>';
+  document.querySelectorAll(".raw-toggle").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      const card = $("entry-"+btn.getAttribute("data-raw"));
+      card.classList.toggle("raw-open");
+      btn.textContent = card.classList.contains("raw-open") ? "RAW ▴" : "RAW ▾";
+    });
+  });
+  document.querySelectorAll(".margin-note").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      const e = ENTRIES.find(function(x){ return x.id === btn.getAttribute("data-entry"); });
+      const n = e.notes[+btn.getAttribute("data-note")];
+      openConvoWithNote(n);
+    });
+  });
+
+  const fins = FINISHED.filter(function(f){ return inLens(f.world); });
+  $("finished-list").innerHTML = fins.length ? fins.map(function(f){
+    return '<div class="well-card fin-row"><span class="fin-check">✓</span>'+
+      '<span class="fin-title">'+esc(f.title)+'</span>'+dotHTML(f.world)+
+      '<span class="mono fin-time">'+esc(f.time)+'</span></div>';
+  }).join("") : '<p class="payoff">Nothing crossed off here yet.</p>';
+
+  const deals = DEALINGS.filter(function(d){ return inLens(d.world); });
+  $("dealings-list").innerHTML = deals.length ? deals.map(function(d){
+    return '<div class="well-card deal-row">'+markerHTML(d.world)+
+      '<span class="deal-txt">'+esc(d.text)+'</span></div>';
+  }).join("") : '<p class="payoff">No dealings here today.</p>';
+}
+
+/* ================= WORLDS ================= */
+function renderWorlds(){
+  const slot = $("dossier-slot");
+  if (lens){
+    const w = WORLDS[lens];
+    slot.innerHTML = '<div id="dossier">'+
+      '<div class="head">'+dotHTML(lens)+'<span class="mono" style="color:var(--muted)">'+esc(w.tag)+
+      '</span><span class="mono" style="margin-left:auto;color:'+(w.warn?'#b0673f':'var(--dim)')+'">'+esc(w.status)+'</span></div>'+
+      '<p class="mission serif">'+esc(w.mission)+'</p>'+
+      '<div class="drow"><span class="mono lbl">NEXT</span><span class="val">'+esc(w.next)+'</span></div>'+
+      '<div class="drow"><span class="mono lbl">THIS WEEK</span><span class="val serifval serif">'+esc(w.week)+'</span></div>'+
+      '</div>';
+  } else {
+    slot.innerHTML = "";
+  }
+  $("world-tiles").innerHTML = WORLD_ORDER.map(function(id){
+    const w = WORLDS[id];
+    return '<button class="wtile" data-world="'+id+'">'+
+      '<div class="trow">'+dotHTML(id)+'<span class="tname">'+esc(w.name)+'</span>'+
+      '<span class="mono tstatus'+(w.warn?' warn':'')+'">'+esc(w.status)+'</span></div>'+
+      '<p class="tmission serif">'+esc(w.mission)+'</p>'+
+      '<div class="tnext"><span class="mono lbl">NEXT</span><span class="val">'+esc(w.next)+'</span></div></button>';
+  }).join("");
+  document.querySelectorAll(".wtile").forEach(function(t){
+    t.addEventListener("click", function(){
+      const id = t.getAttribute("data-world");
+      setLens(id === lens ? null : id);
+      if (lens) $("sec-worlds").scrollIntoView({behavior:"smooth", block:"start"});
+    });
+  });
+}
+
+/* ================= UNDO ================= */
+function showUndo(msg, fn){
+  clearTimeout(undoTimer);
+  undoFn = fn;
+  const pill = $("undo-pill");
+  pill.querySelector(".msg").textContent = msg;
+  pill.classList.add("show");
+  undoTimer = setTimeout(hideUndo, 4000);
+}
+function hideUndo(){ $("undo-pill").classList.remove("show"); undoFn = null; }
+$("undo-btn").addEventListener("click", function(){
+  if (undoFn) undoFn();
+  clearTimeout(undoTimer);
+  hideUndo();
+});
+
+/* ================= FOCUS PLUMBING ================= */
+function openFocus(id){ $(id).classList.add("open"); }
+function closeFocus(id){ $(id).classList.remove("open"); }
+document.querySelectorAll("[data-close]").forEach(function(b){
+  b.addEventListener("click", function(){ closeFocus(b.getAttribute("data-close")); });
+});
+
+/* ================= CONVERSATION ================= */
+function renderThread(){
+  $("convo-thread").innerHTML = thread.map(function(m){
+    if (m.type === "deb")
+      return '<div class="msg-deb"><span class="mono msg-ts">DEB · '+esc(m.ts)+'</span>'+esc(m.text)+'</div>';
+    if (m.type === "me")
+      return '<div class="msg-me"><span class="mono msg-ts">YOU · '+esc(m.ts)+'</span>'+esc(m.text)+'</div>';
+    if (m.type === "chip")
+      return '<div class="chip-filed">'+dotHTML(m.world)+'<span class="txt">'+esc(m.text)+'</span></div>';
+    if (m.type === "quote")
+      return '<div class="quote-obj"><span class="mono kind">'+esc(m.kind)+'</span><span class="q">“'+esc(m.text)+'”</span></div>';
+    return "";
+  }).join("");
+}
+function scrollConvoBottom(){
+  const sc = $("convo-scroll");
+  requestAnimationFrame(function(){ sc.scrollTop = sc.scrollHeight; });
+}
+function openConvo(){
+  renderThread();
+  openFocus("focus-convo");
+  scrollConvoBottom();
+}
+function openConvoWithNote(note){
+  thread.push({type:"quote", kind:note.kind, text:note.hand});
+  thread.push({type:"deb", ts:nowLabel(), text:note.reply});
+  openConvo();
+}
+function nowLabel(){
+  const d = new Date();
+  let h = d.getHours(), m = d.getMinutes();
+  const ap = h >= 12 ? "PM" : "AM";
+  h = h % 12 || 12;
+  return h+":"+(m<10?"0":"")+m+" "+ap;
+}
+function sendMessage(){
+  const inp = $("convo-input");
+  const val = inp.value.trim();
+  if (!val) return;
+  thread.push({type:"me", ts:nowLabel(), text:val});
+  renderThread(); scrollConvoBottom();
+  inp.value = "";
+  setTimeout(function(){
+    thread.push({type:"deb", ts:nowLabel(), text:CANNED[cannedIdx++ % CANNED.length]});
+    renderThread(); scrollConvoBottom();
+  }, 650);
+}
+$("convo-send").addEventListener("click", sendMessage);
+$("convo-input").addEventListener("keydown", function(e){ if (e.key === "Enter") sendMessage(); });
+$("deb-tap").addEventListener("click", openConvo);
+$("composer-fake").addEventListener("click", openConvo);
+$("send-fake").addEventListener("click", openConvo);
+
+/* ================= TRIAGE ================= */
+let triageIdx = 0;
+function currentCard(){
+  const q = lensQueue();
+  return q.length ? q[0] : null;
+}
+function openTriage(){
+  triageIdx = 0;
+  renderTriage();
+  openFocus("focus-triage");
+}
+function renderTriage(){
+  const card = currentCard();
+  const stage = $("triage-stage"), empty = $("triage-empty");
+  if (!card){
+    stage.style.display = "none";
+    empty.style.display = "flex";
+    return;
+  }
+  stage.style.display = "flex";
+  empty.style.display = "none";
+  $("triage-card").innerHTML =
+    '<span class="mono src">'+esc(card.source)+'</span>'+
+    '<div class="title">'+esc(card.title)+'</div>'+
+    '<p class="excerpt">“'+esc(card.excerpt)+'”</p>'+
+    '<div class="marker">'+dotHTML(card.world)+'<span class="mono">'+esc(WORLDS[card.world].tag)+'</span></div>';
+}
+function removeFromQueue(card){
+  const i = queue.indexOf(card);
+  if (i >= 0) queue.splice(i, 1);
+  return i;
+}
+function verdict(kind, detail){
+  const card = currentCard();
+  if (!card) return;
+  const qi = removeFromQueue(card);
+  let extraUndo = null;
+
+  if (kind === "do"){
+    const t = {id:"t-"+card.id, title:card.title, world:card.world, why:null, age:"NEW"};
+    todos.unshift(t);
+    extraUndo = function(){ const j = todos.indexOf(t); if (j >= 0) todos.splice(j, 1); };
+  }
+  renderAll();
+  renderTriage();
+  const labels = {
+    do:"DO — ADDED TO TO DO",
+    del:"DELETED",
+    delay:"DELAYED · "+(detail||"").toUpperCase(),
+    delegate:(detail||"HANDED OFF").toUpperCase()
+  };
+  showUndo(labels[kind], function(){
+    if (extraUndo) extraUndo();
+    queue.splice(Math.min(qi < 0 ? 0 : qi, queue.length), 0, card);
+    renderAll();
+    renderTriage();
+  });
+}
+$("tzone-right").addEventListener("click", function(){ verdict("do"); });
+$("tzone-bottom").addEventListener("click", function(){ verdict("del"); });
+$("tzone-top").addEventListener("click", function(){
+  if (!currentCard()) return;
+  pendingVerdict = currentCard();
+  $("sheet-delay").classList.add("open");
+});
+$("tzone-left").addEventListener("click", function(){
+  if (!currentCard()) return;
+  pendingVerdict = currentCard();
+  $("sheet-delegate").classList.add("open");
+});
+
+/* delay sheet */
+function closeSheets(){
+  $("sheet-delay").classList.remove("open");
+  $("sheet-delegate").classList.remove("open");
+}
+document.querySelectorAll("#sheet-delay .sheet-opt").forEach(function(b){
+  b.addEventListener("click", function(){
+    closeSheets(); verdict("delay", b.getAttribute("data-delay"));
+  });
+});
+$("delay-slider").addEventListener("input", function(){
+  const v = +$("delay-slider").value;
+  $("delay-live").textContent = "IN "+v+" DAY"+(v===1?"":"S");
+});
+$("delay-set").addEventListener("click", function(){
+  const v = +$("delay-slider").value;
+  closeSheets(); verdict("delay", "in "+v+" day"+(v===1?"":"s"));
+});
+
+/* delegate sheet */
+document.querySelectorAll("#sheet-delegate .sheet-opt").forEach(function(b){
+  b.addEventListener("click", function(){
+    const name = $("delegate-name").value.trim() || "Karthik & Manish";
+    closeSheets(); verdict("delegate", "handed to "+name+" · chase "+b.getAttribute("data-chase"));
+  });
+});
+$("delegate-slider").addEventListener("input", function(){
+  const v = +$("delegate-slider").value;
+  $("delegate-live").textContent = "CHASE IN "+v+" DAY"+(v===1?"":"S");
+});
+$("delegate-set").addEventListener("click", function(){
+  const v = +$("delegate-slider").value;
+  const name = $("delegate-name").value.trim() || "Karthik & Manish";
+  closeSheets(); verdict("delegate", "handed to "+name+" · chase in "+v+" day"+(v===1?"":"s"));
+});
+
+/* ================= ARRIVALS ================= */
+function renderArrivals(){
+  $("arrivals-list").innerHTML = ARRIVALS.map(function(a){
+    return '<button class="arr-row'+(a.dropped?' dropped':'')+'" data-arr="'+a.id+'"'+(a.dropped?' tabindex="-1"':'')+'>'+
+      '<span class="mono arr-when">'+esc(a.when).replace(/\n/g,"<br>")+'</span>'+
+      '<span class="arr-what">'+esc(a.what)+'<span class="from">'+esc(a.from)+'</span></span>'+
+      '<span class="mono arr-out">'+esc(a.out).replace(/\n/g,"<br>")+'</span></button>';
+  }).join("");
+  document.querySelectorAll(".arr-row:not(.dropped)").forEach(function(r){
+    r.addEventListener("click", function(){
+      const a = ARRIVALS.find(function(x){ return x.id === r.getAttribute("data-arr"); });
+      $("raw-eyebrow").textContent = "RAW · " + a.when.replace("\n"," · ") + " · " + a.from.toUpperCase();
+      $("raw-title").textContent = a.what;
+      $("raw-content").textContent = a.raw;
+      openFocus("raw-view");
+    });
+  });
+}
+$("arrivals-chip").addEventListener("click", function(){ openFocus("focus-arrivals"); });
+
+/* ================= BOOT ================= */
+function renderAll(){
+  renderDots();
+  renderVerdicts();
+  renderTodos();
+  renderRecord();
+  renderWorlds();
+}
+renderAll();
+renderArrivals();
+</script>
+</body>
+</html>

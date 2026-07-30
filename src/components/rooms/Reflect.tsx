@@ -335,7 +335,7 @@ export function Reflect({ lens }: { lens: string | null }) {
           scrolls inside. Focus stays caret-only. Mobile: 16px input (no iOS
           zoom-jump), the round accent send button, safe-area clearance. */}
       <div className="mx-auto w-full max-w-[640px] px-5 pt-2 pb-[max(1.25rem,env(safe-area-inset-bottom))] md:px-8 md:pt-3 md:pb-7">
-        <div className="flex items-end gap-3 rounded-2xl bg-fill2 px-4 py-2.5 backdrop-blur md:items-start md:px-5 md:py-4">
+        <div className="composer-glass flex items-end gap-3 rounded-2xl bg-fill2 px-4 py-2.5 backdrop-blur md:items-start md:px-5 md:py-4">
           <span className="hidden text-lg leading-none font-light text-dim opacity-60 md:block">
             +
           </span>
