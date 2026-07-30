@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FAF8F4">
+<title>Deb — The Spreads</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#FAF8F4; --ink:#191713; --muted:#5f5c54; --dim:#8a867e;
+  --well:#f0ede6; --well2:#e9e5dc; --hairline:#e2ded5;
+  --silver:#a5a198; --gold:#c9a15a; --acc:#a5a198;
+  --ctdi:#5f8a76; --sub:#54718f; --iso:#b0673f; --pop:#7a5f9e; --fam:#4f8a8b; --cribl:#a05252;
+  --shadow:0 18px 44px rgba(25,23,19,.14), 0 4px 12px rgba(25,23,19,.07);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{background:var(--well);font-family:Inter,system-ui,sans-serif;color:var(--ink);
+  -webkit-font-smoothing:antialiased;overscroll-behavior:none}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;text-align:left}
+.mono{font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.14em;font-size:9.5px;font-weight:500}
+.serif{font-family:Fraunces,serif}
+#app{max-width:430px;min-width:320px;margin:0 auto;height:100dvh;background:var(--paper);
+  display:flex;flex-direction:column;position:relative;overflow:hidden}
+
+/* ---------- masthead ---------- */
+#masthead{padding:calc(10px + env(safe-area-inset-top)) 18px 6px;flex:none}
+.mh-row1{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.mh-date{font-family:Fraunces,serif;font-weight:600;font-size:21px;letter-spacing:-.01em;
+  font-variation-settings:'opsz' 100}
+#arrivalsChip{flex:none;min-height:32px;padding:7px 12px;border-radius:12px;background:var(--well);
+  color:var(--muted);display:flex;align-items:center;gap:6px}
+#arrivalsChip:active{background:var(--well2)}
+#arrivalsChip .adot{width:5px;height:5px;border-radius:50%;background:var(--dim)}
+.mh-epi{margin-top:3px;line-height:1.45}
+.mh-epi .lbl{color:var(--dim);margin-right:8px}
+.mh-epi .epigraph{font-family:Fraunces,serif;font-style:italic;font-size:13.5px;color:var(--muted)}
+.mh-row3{display:flex;align-items:center;margin-top:1px}
+#dots{display:flex;flex:none}
+.dotbtn{width:40px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:12px}
+.dotbtn:active{background:var(--well2)}
+.dotbtn .d{width:12px;height:12px;border-radius:50%;transition:transform .22s ease, opacity .22s ease}
+.dotbtn.home .d{background:radial-gradient(circle at 35% 30%, #dedbd4, #807c74)}
+#dots.scoped .dotbtn:not(.on) .d{opacity:.32;transform:scale(.82)}
+.dotbtn.on .d{transform:scale(1.3)}
+#lensName{margin-left:auto;color:var(--dim);white-space:nowrap;padding:4px 0 4px 8px}
+
+/* ---------- fold nav + strap ---------- */
+#foldNav{display:flex;flex:none;padding:0 8px}
+#foldNav button{flex:1;min-height:44px;display:flex;align-items:center;justify-content:center;
+  color:var(--dim);border-radius:12px;transition:color .2s}
+#foldNav button:active{background:var(--well2)}
+#foldNav button.on{color:var(--ink)}
+#strap{flex:none;padding:5px 18px 8px;display:flex;align-items:baseline;gap:8px;line-height:1.4}
+#strap[hidden]{display:none}
+#strap .sdot{width:7px;height:7px;border-radius:50%;background:var(--acc);flex:none;align-self:center}
+#strap .sname{color:var(--muted);flex:none}
+#strap .smission{font-family:Fraunces,serif;font-style:italic;font-size:12.5px;color:var(--dim);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mh-rule{height:1px;background:var(--hairline);margin:0 18px;flex:none}
+
+/* ---------- pager ---------- */
+#pager{flex:1;min-height:0;overflow:hidden;position:relative;touch-action:pan-y}
+#track{display:flex;height:100%;will-change:transform}
+.fold{flex:none;height:100%;overflow-y:auto;overflow-x:hidden;padding:14px 18px 26px;position:relative;
+  -webkit-overflow-scrolling:touch}
+.fold + .fold::before{content:'';position:absolute;left:0;top:18px;bottom:18px;width:1px;background:var(--hairline)}
+.colhead{color:var(--dim);padding-bottom:9px;border-bottom:1px solid var(--hairline);margin-bottom:16px;
+  display:flex;justify-content:space-between;align-items:baseline}
+.colhead .n{color:var(--dim)}
+.secthead{color:var(--dim);margin:24px 0 10px;padding-top:14px;border-top:1px solid var(--hairline);
+  display:flex;justify-content:space-between;align-items:baseline}
+.emptyline{font-family:Fraunces,serif;font-style:italic;font-size:13.5px;color:var(--dim);padding:6px 0}
+
+/* ---------- record ---------- */
+.entry{margin-bottom:22px}
+.entry.materialize{animation:mat .9s ease both}
+@keyframes mat{from{background:var(--well2);transform:translateY(6px);opacity:0}
+  40%{opacity:1}to{background:transparent;transform:none;opacity:1}}
+.marker{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.marker .mdot{width:9px;height:9px;border-radius:50%;flex:none}
+.marker .tag{color:var(--dim)}
+.distillate{font-family:Fraunces,serif;font-size:15.5px;line-height:1.55;font-weight:340;
+  font-variation-settings:'opsz' 30}
+.door{display:block;width:100%;margin-top:10px;padding:11px 13px;border-radius:12px;background:var(--well);min-height:44px}
+.door:active{background:var(--well2)}
+.door .kind{display:block;color:var(--dim);margin-bottom:4px}
+.door .dq{font-family:Fraunces,serif;font-style:italic;font-size:13.5px;line-height:1.5;color:var(--muted)}
+.rawtoggle{display:inline-flex;align-items:center;min-height:44px;padding:0 6px;margin-left:-6px;color:var(--dim)}
+.rawwell{margin-top:2px;padding:13px 14px;border-radius:12px;background:var(--well);
+  font-family:Fraunces,serif;font-size:13px;line-height:1.6;color:var(--muted);white-space:pre-line}
+.dealing{display:flex;align-items:baseline;gap:9px;padding:7px 0}
+.dealing .ddot{width:7px;height:7px;border-radius:50%;flex:none;position:relative;top:-1px}
+.dealing .dtxt{font-family:Fraunces,serif;font-size:13.5px;line-height:1.5;color:var(--muted)}
+#pageslot{margin-top:20px;border-radius:12px;background:var(--well);transition:background .2s;padding:2px 6px}
+#pageslot.expanded{background:var(--well2)}
+#pageslot textarea{display:block;width:100%;background:transparent;border:none;outline:none;resize:none;
+  font-family:Fraunces,serif;font-size:16px;line-height:1.5;color:var(--ink);padding:11px 8px;height:44px;transition:height .25s ease}
+#pageslot.expanded textarea{height:96px}
+#pageslot textarea::placeholder{color:var(--dim);font-style:italic}
+#pageslot .slotrow{display:none;justify-content:flex-end}
+#pageslot.expanded .slotrow{display:flex}
+#fileBtn{min-height:44px;padding:0 14px;color:var(--muted)}
+.earlier{color:var(--dim);opacity:.75;margin-top:26px;padding-top:14px;border-top:1px solid var(--hairline);line-height:1.8}
+
+/* ---------- verdicts fold ---------- */
+#seam{display:block;width:100%;background:var(--well);border-radius:14px;padding:15px 16px;min-height:44px}
+#seam:active{background:var(--well2)}
+#seam .scount{color:var(--muted);display:flex;align-items:center;gap:8px}
+#seam .scount .qdot{width:9px;height:9px;border-radius:50%;background:var(--acc)}
+#seam .stitle{font-family:Fraunces,serif;font-size:17px;font-weight:500;margin-top:7px;line-height:1.35}
+#seam .ssrc{color:var(--dim);margin-top:6px}
+#seam .sclear{font-family:Fraunces,serif;font-style:italic;font-size:14px;color:var(--muted);margin-top:7px}
+.todo-row{display:flex;align-items:flex-start;gap:4px;padding:7px 0}
+.donebtn{width:44px;height:44px;flex:none;display:flex;align-items:center;justify-content:center;
+  margin-left:-10px;border-radius:12px}
+.donebtn:active .circ{background:var(--well2)}
+.circ{width:21px;height:21px;border-radius:50%;background:var(--well);box-shadow:inset 0 0 0 1px var(--hairline)}
+.todo-row.settling{opacity:0;transform:translateY(10px);transition:opacity .3s,transform .3s}
+.todo-row .tmain{flex:1;min-width:0;padding-top:2px}
+.ttitle{font-family:Fraunces,serif;font-size:15px;line-height:1.4;font-weight:400}
+.twhy{font-family:Fraunces,serif;font-style:italic;font-size:12.5px;color:var(--dim);margin-top:3px;line-height:1.45}
+.tmeta{display:flex;align-items:center;gap:6px;margin-top:5px;color:var(--dim)}
+.tmeta .wdot{width:9px;height:9px;border-radius:50%}
+.due{flex:none;color:var(--dim);padding-top:8px}
+.fin-row{display:flex;align-items:baseline;gap:9px;padding:7px 0}
+.fin-row.arrive{animation:mat .8s ease both}
+.fin-row .fdot{width:9px;height:9px;border-radius:50%;flex:none;position:relative;top:0px}
+.fin-row .ftitle{font-family:Fraunces,serif;font-size:14px;color:var(--muted);flex:1;line-height:1.4}
+.fin-row .ftime{color:var(--dim);flex:none}
+
+/* ---------- deb fold ---------- */
+.deb-time{color:var(--dim);margin-bottom:8px}
+.deb-brief{font-family:Fraunces,serif;font-size:16px;line-height:1.62;font-weight:340;
+  font-variation-settings:'opsz' 30}
+.you-line{font-family:Fraunces,serif;font-style:italic;font-size:14px;color:var(--muted);line-height:1.5}
+#openThread{display:flex;align-items:center;min-height:44px;margin-top:18px;color:var(--muted);
+  padding:0 14px;border-radius:12px;background:var(--well)}
+#openThread:active{background:var(--well2)}
+
+/* ---------- worlds fold ---------- */
+.wtile{display:block;width:100%;background:var(--well);border-radius:14px;padding:15px 16px;margin-bottom:12px}
+.wtile:active,.wtile.on{background:var(--well2)}
+.wtile .wtop{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.wtile .wname{font-family:Fraunces,serif;font-size:17px;font-weight:500;display:flex;align-items:center;gap:9px}
+.wtile .wname .wdot{width:9px;height:9px;border-radius:50%}
+.wtile .wstatus{color:var(--dim);flex:none}
+.wtile .wmission{font-family:Fraunces,serif;font-style:italic;font-size:13.5px;color:var(--muted);
+  margin-top:7px;line-height:1.5}
+.wtile .wnext{margin-top:9px;color:var(--dim);display:flex;gap:8px;align-items:baseline}
+.wtile .wnext .nv{font-family:Fraunces,serif;font-size:13px;color:var(--muted);text-transform:none;letter-spacing:0}
+
+/* ---------- bottom bar ---------- */
+#bottomBar{flex:none;display:flex;align-items:center;gap:10px;
+  padding:10px 18px calc(10px + env(safe-area-inset-bottom));border-top:1px solid var(--hairline);background:var(--paper)}
+#composerLauncher{flex:1;min-height:46px;border-radius:14px;background:var(--well);display:flex;align-items:center;
+  padding:0 15px;font-family:Fraunces,serif;font-style:italic;font-size:16px;color:var(--dim)}
+#composerLauncher:active{background:var(--well2)}
+.sendbtn{flex:none;width:46px;height:46px;border-radius:14px;background:var(--gold);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:19px}
+.sendbtn:active{filter:brightness(.94)}
+
+/* ---------- overlays ---------- */
+.overlay{position:absolute;inset:0;background:var(--paper);z-index:60;display:flex;flex-direction:column;
+  opacity:0;transform:translateY(10px);pointer-events:none;transition:opacity .26s ease,transform .26s ease}
+.overlay.open{opacity:1;transform:none;pointer-events:auto}
+.ov-head{flex:none;display:flex;align-items:center;justify-content:space-between;
+  padding:calc(8px + env(safe-area-inset-top)) 12px 4px}
+.backbtn{min-height:44px;display:flex;align-items:center;padding:0 10px;color:var(--muted);border-radius:12px}
+.backbtn:active{background:var(--well2)}
+.ov-title{color:var(--dim);padding-right:14px}
+
+/* conversation */
+#thread{flex:1;overflow-y:auto;padding:10px 18px 18px;-webkit-overflow-scrolling:touch}
+.msg{margin-bottom:20px}
+.msg .mt{color:var(--dim);margin-bottom:6px}
+.msg.deb .mtext{font-family:Fraunces,serif;font-size:15.5px;line-height:1.6;font-weight:340;
+  font-variation-settings:'opsz' 30}
+.msg.me{display:flex;flex-direction:column;align-items:flex-end}
+.msg.me .mtext{background:var(--well);border-radius:14px;padding:11px 14px;max-width:85%;
+  font-family:Fraunces,serif;font-style:italic;font-size:14.5px;line-height:1.5;color:var(--muted)}
+.filedchip{display:inline-flex;align-items:center;gap:8px;background:var(--well);border-radius:12px;
+  padding:9px 13px;margin-bottom:20px;color:var(--muted);line-height:1.7}
+.filedchip .fcdot{width:9px;height:9px;border-radius:50%;flex:none}
+.quoted{background:var(--well);border-radius:12px;padding:12px 14px;margin-bottom:20px}
+.quoted .qk{color:var(--dim);margin-bottom:5px}
+.quoted .qq{font-family:Fraunces,serif;font-style:italic;font-size:13.5px;line-height:1.55;color:var(--muted)}
+#convComposer{flex:none;display:flex;align-items:center;gap:10px;
+  padding:10px 18px calc(10px + env(safe-area-inset-bottom));border-top:1px solid var(--hairline)}
+#convInput{flex:1;min-height:46px;border-radius:14px;background:var(--well);border:none;outline:none;
+  padding:0 15px;font-family:Fraunces,serif;font-size:16px;color:var(--ink)}
+#convInput::placeholder{color:var(--dim);font-style:italic}
+
+/* triage */
+#triageBody{flex:1;min-height:0;display:grid;grid-template-columns:54px 1fr 54px;grid-template-rows:60px 1fr 60px;
+  padding:4px 10px calc(12px + env(safe-area-inset-bottom))}
+.vzone{display:flex;align-items:center;justify-content:center;color:var(--dim);border-radius:14px}
+.vzone:active{background:var(--well2);color:var(--muted)}
+#vDelay{grid-area:1/1/2/4}
+#vDelete{grid-area:3/1/4/4}
+#vDelegate{grid-area:2/1/3/2}
+#vDo{grid-area:2/3/3/4}
+#vDelegate span{writing-mode:vertical-rl;transform:rotate(180deg)}
+#vDo span{writing-mode:vertical-rl}
+#cardWrap{grid-area:2/2/3/3;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:0;padding:6px 2px}
+#tCard{width:100%;background:var(--paper);border-radius:16px;box-shadow:var(--shadow);padding:22px 20px;
+  transition:transform .28s ease,opacity .28s ease}
+#tCard.deal{animation:deal .34s ease both}
+@keyframes deal{from{transform:translateY(20px) scale(.97);opacity:0}to{transform:none;opacity:1}}
+#tCard.out-up{transform:translateY(-130%) rotate(-2deg);opacity:0}
+#tCard.out-down{transform:translateY(130%) rotate(2deg);opacity:0}
+#tCard.out-left{transform:translateX(-120%) rotate(-3deg);opacity:0}
+#tCard.out-right{transform:translateX(120%) rotate(3deg);opacity:0}
+#tCard .csrc{color:var(--dim);margin-bottom:10px}
+#tCard .ctitle{font-family:Fraunces,serif;font-size:24px;font-weight:560;line-height:1.22;letter-spacing:-.01em;
+  font-variation-settings:'opsz' 80}
+#tCard .cex{font-family:Fraunces,serif;font-style:italic;font-size:14px;line-height:1.55;color:var(--muted);margin-top:12px}
+#tCard .cmark{display:flex;align-items:center;gap:8px;margin-top:16px}
+#cardCount{margin-top:14px;color:var(--dim)}
+#triageEmpty{grid-area:1/1/4/4;display:none;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:0 34px;gap:14px}
+#triageBody.empty #triageEmpty{display:flex}
+#triageBody.empty .vzone,#triageBody.empty #cardWrap{display:none}
+#triageEmpty .ce{font-family:Fraunces,serif;font-size:18px;line-height:1.6;font-weight:340}
+
+/* sheets */
+.scrim{position:absolute;inset:0;background:rgba(25,23,19,.18);z-index:70;opacity:0;pointer-events:none;transition:opacity .24s}
+.scrim.open{opacity:1;pointer-events:auto}
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:75;background:var(--paper);
+  border-radius:16px 16px 0 0;box-shadow:var(--shadow);padding:18px 20px calc(20px + env(safe-area-inset-bottom));
+  transform:translateY(105%);transition:transform .3s cubic-bezier(.22,.9,.32,1)}
+.sheet.open{transform:none}
+.sheet .sh{color:var(--dim);margin-bottom:14px}
+.sheet .opt{display:flex;align-items:center;width:100%;min-height:48px;border-radius:12px;background:var(--well);
+  padding:0 15px;margin-bottom:9px;font-family:Fraunces,serif;font-size:15px}
+.sheet .opt:active{background:var(--well2)}
+.sliderblock{border-radius:12px;background:var(--well);padding:13px 15px 9px;margin-bottom:9px}
+.sliderblock .slabel{font-family:Fraunces,serif;font-size:15px;margin-bottom:6px}
+.sliderblock input[type=range]{width:100%;accent-color:var(--acc);height:28px}
+.sheet .setbtn{display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;
+  border-radius:12px;background:var(--well2);color:var(--ink);margin-top:2px}
+.sheet .setbtn:active{background:var(--hairline)}
+.sheet input[type=text]{width:100%;min-height:46px;border-radius:12px;background:var(--well);border:none;outline:none;
+  padding:0 15px;font-family:Fraunces,serif;font-size:16px;color:var(--ink);margin-bottom:9px}
+
+/* arrivals */
+#arrBody{flex:1;overflow-y:auto;padding:8px 18px 24px;-webkit-overflow-scrolling:touch}
+.arr-headrow{display:grid;grid-template-columns:76px 1fr 108px;gap:10px;color:var(--dim);
+  padding-bottom:8px;border-bottom:1px solid var(--hairline)}
+.arr-row{display:grid;grid-template-columns:76px 1fr 108px;gap:10px;width:100%;
+  padding:13px 0;border-bottom:1px solid var(--hairline);align-items:baseline;border-radius:0}
+.arr-row:active{background:var(--well)}
+.arr-row.dimmed{opacity:.45}
+.arr-when{color:var(--dim);line-height:1.7}
+.arr-what .w1{font-family:Fraunces,serif;font-size:14px;line-height:1.4}
+.arr-what .w2{color:var(--dim);margin-top:3px;text-transform:none;letter-spacing:.06em}
+.arr-out{color:var(--dim);line-height:1.8;display:flex;flex-direction:column;gap:2px}
+.arr-out .odot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;position:relative;top:0px}
+#arrRawMeta{color:var(--dim);margin:6px 0 12px}
+
+/* undo pill */
+#undoPill{position:absolute;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(8px);
+  z-index:90;background:var(--ink);color:var(--paper);border-radius:16px;box-shadow:var(--shadow);
+  display:flex;align-items:center;gap:6px;padding:6px 8px 6px 16px;opacity:0;pointer-events:none;
+  transition:opacity .25s,transform .25s;max-width:88%}
+#undoPill.show{opacity:1;transform:translateX(-50%);pointer-events:auto}
+#undoText{font-family:Fraunces,serif;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#undoBtn{color:var(--gold);min-height:44px;padding:0 12px;flex:none}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header id="masthead">
+    <div class="mh-row1">
+      <div class="mh-date">Wednesday, July 29</div>
+      <button id="arrivalsChip"><span class="adot"></span><span class="mono">Arrivals · 4</span></button>
+    </div>
+    <div class="mh-epi"><span class="mono lbl">Today, in your words</span><span class="epigraph">Test HXD in internal testing&ensp;·&ensp;home by 5:30 to play with the kids</span></div>
+    <div class="mh-row3">
+      <div id="dots"></div>
+      <div id="lensName" class="mono"></div>
+    </div>
+  </header>
+
+  <nav id="foldNav">
+    <button class="mono on" data-fold="0">The Record</button>
+    <button class="mono" data-fold="1">Verdicts</button>
+    <button class="mono" data-fold="2">Deb</button>
+    <button class="mono" data-fold="3">Worlds</button>
+  </nav>
+  <div id="strap" hidden><span class="sdot"></span><span class="sname mono"></span><span class="smission"></span></div>
+  <div class="mh-rule"></div>
+
+  <div id="pager">
+    <div id="track">
+      <section class="fold" id="fold-record"></section>
+      <section class="fold" id="fold-verdicts"></section>
+      <section class="fold" id="fold-deb"></section>
+      <section class="fold" id="fold-worlds"></section>
+    </div>
+  </div>
+
+  <footer id="bottomBar">
+    <button id="composerLauncher">Write to Deb…</button>
+    <button class="sendbtn" id="homeSend" aria-label="Send">↑</button>
+  </footer>
+
+  <!-- CONVERSATION -->
+  <div class="overlay" id="convOverlay">
+    <div class="ov-head">
+      <button class="backbtn" id="convBack"><span class="mono">← The Page</span></button>
+      <span class="ov-title mono">Conversation</span>
+    </div>
+    <div id="thread"></div>
+    <div id="convComposer">
+      <input id="convInput" type="text" placeholder="Write to Deb…" autocomplete="off">
+      <button class="sendbtn" id="convSend" aria-label="Send">↑</button>
+    </div>
+  </div>
+
+  <!-- TRIAGE -->
+  <div class="overlay" id="triageOverlay">
+    <div class="ov-head">
+      <button class="backbtn" id="triageBack"><span class="mono">← The Page</span></button>
+      <span class="ov-title mono">The Verdicts</span>
+    </div>
+    <div id="triageBody">
+      <button class="vzone" id="vDelay"><span class="mono">↑ Delay</span></button>
+      <button class="vzone" id="vDelegate"><span class="mono">← Delegate</span></button>
+      <div id="cardWrap">
+        <div id="tCard"></div>
+        <div id="cardCount" class="mono"></div>
+      </div>
+      <button class="vzone" id="vDo"><span class="mono">Do →</span></button>
+      <button class="vzone" id="vDelete"><span class="mono">↓ Delete</span></button>
+      <div id="triageEmpty">
+        <div class="mono" style="color:var(--dim)">Triage clear · Wed Jul 29</div>
+        <div class="ce serif">Clear. Every loop has a verdict. Go live it.</div>
+      </div>
+    </div>
+    <div class="scrim" id="sheetScrim"></div>
+    <div class="sheet" id="delaySheet">
+      <div class="sh mono">Delay — until when?</div>
+      <button class="opt" data-delay="tomorrow">Tomorrow</button>
+      <button class="opt" data-delay="next week">Next week</button>
+      <div class="sliderblock">
+        <div class="slabel serif" id="delayLabel">In 3 days</div>
+        <input type="range" id="delaySlider" min="1" max="5" value="3">
+      </div>
+      <button class="setbtn" id="delaySet"><span class="mono">Set</span></button>
+    </div>
+    <div class="sheet" id="delegateSheet">
+      <div class="sh mono">Delegate — into whose hands?</div>
+      <input type="text" id="delegateName" value="Karthik &amp; Manish">
+      <button class="opt" data-chase="in 3 days">Chase in 3 days</button>
+      <button class="opt" data-chase="next week">Chase next week</button>
+      <div class="sliderblock">
+        <div class="slabel serif" id="chaseLabel">Chase in 3 days</div>
+        <input type="range" id="chaseSlider" min="1" max="5" value="3">
+      </div>
+      <button class="setbtn" id="delegateSet"><span class="mono">Hand it over</span></button>
+    </div>
+  </div>
+
+  <!-- ARRIVALS -->
+  <div class="overlay" id="arrOverlay">
+    <div class="ov-head">
+      <button class="backbtn" id="arrBack"><span class="mono" id="arrBackLbl">← Back</span></button>
+      <span class="ov-title mono">Arrivals</span>
+    </div>
+    <div id="arrBody"></div>
+  </div>
+
+  <div id="undoPill"><span id="undoText" class="serif"></span><button id="undoBtn" class="mono">Undo</button></div>
+</div>
+
+<script>
+'use strict';
+/* ================= DATA ================= */
+const WORLDS = {
+  home:{ name:'Whole life', color:'#a5a198' },
+  ctdi:{ name:'CTDI', color:'#5f8a76', mission:"Make HXD the team's proudest ship of the year.", status:'MOVING', next:'Chase Karthik — HXD scope' },
+  sub:{ name:'Subseven', color:'#54718f', mission:'A second income that runs on rails, not adrenaline.', status:'MOVING' },
+  iso:{ name:'ISO Experiences', color:'#b0673f', mission:'The audit passes in October without a single scramble.', status:'QUIET 6 DAYS', quiet:true, next:'Evidence binder · Fri' },
+  pop:{ name:'150 Poplar', color:'#7a5f9e', mission:'A house that runs itself by Christmas.', status:'SETTLED', next:'Geyser propane · Thu' },
+  fam:{ name:'Fam Finances', color:'#4f8a8b', mission:'Every dollar knows its job.', status:'SETTLED' },
+  cribl:{ name:'Cribl', color:'#a05252', mission:'Earn the promotion without losing the evenings.', status:'MOVING' }
+};
+const WORLD_KEYS = ['ctdi','sub','iso','pop','fam','cribl'];
+
+const E1RAW = "Journal\nLord Jesus Christ, have mercy on me\n\nGratitude\nI am grateful for my family\n\nGoals\nTest HXD in internal testing environment\nGet home by 5:30pm to play with the kids";
+const E2RAW = "[00:03] You: Quick one — where does HXD stand for internal testing?\n[04:12] Karthik: I can't start until the spec lands. Send it over and I'm moving the same day.\n[11:40] Manish: The reporting dependency is back on the table. That's the second call in a row.\n[19:22] You: Then panel copy freezes Friday. Locking it.\n[21:05] Karthik: Works for me — spec first, though.";
+
+let entries = [
+  { id:'e1', world:'home', tag:'MORNING PAGES · REMARKABLE · 8:02 AM',
+    distillate:'Lord Jesus Christ, have mercy on me. Grateful for my family. Today: HXD into internal testing — and home by 5:30 to play with the kids.',
+    margin:{ kind:'THE KEEP', quote:'Holding 5:30 for you. Nothing new lands on your plate after 4:45.',
+      reply:"That's the door, and it holds. At 4:45 I stop routing anything new into today — whatever's still open waits for tomorrow's page. You walk out at 5:30." },
+    raw:E1RAW },
+  { id:'e2', world:'ctdi', tag:'HXD SYNC · PLAUD · 1:47 PM',
+    distillate:'Karthik can’t start until the spec lands. Manish flagged the reporting dependency. Decision: panel copy freezes Friday.',
+    margin:{ kind:'THE ANSWER', quote:'You asked when the last HXD milestone slipped — June 12, by four days, same dependency.',
+      reply:'Same shape as June 12 — Karthik waiting on paper. The spec goes out today and this milestone doesn’t repeat history.' },
+    raw:E2RAW }
+];
+const DEALINGS = [
+  { world:'ctdi', text:'3 cards minted from the HXD call · 1 handed to Karthik, chase Aug 1' },
+  { world:'pop', text:'Poplar’s last open loop closed' }
+];
+let queue = [
+  { id:'q1', title:'Send Karthik the HXD spec', world:'ctdi', source:'FROM TODAY’S PLAUD CALL',
+    excerpt:'Karthik said he can’t start until he sees the spec — I told him this week.' },
+  { id:'q2', title:'Ask Manish about the reporting dependency', world:'ctdi', source:'FROM TODAY’S PLAUD CALL',
+    excerpt:'Manish flagged the reporting dependency again — second call in a row.' },
+  { id:'q3', title:'Get propane quote from second supplier', world:'pop', source:'FROM 5. JULY · REMARKABLE',
+    excerpt:'geyser guy says winter rates start Sept — get a second number before committing' }
+];
+let todos = [
+  { id:'t1', title:'Chase Karthik & Manish — HXD scope', world:'ctdi', why:'The whole sprint stands behind this one.', due:'TODAY' },
+  { id:'t2', title:'Review HXD panel copy', world:'ctdi', due:'1 DAY' },
+  { id:'t3', title:'Evidence binder', world:'iso', due:'FRI' },
+  { id:'t4', title:'Geyser propane', world:'pop', due:'THU' }
+];
+let finished = [
+  { id:'f1', title:'Pay the plumber’s final invoice', world:'pop', time:'11:14 AM' },
+  { id:'f2', title:'Send structured app plan', world:'sub', time:'3:05 PM' }
+];
+const ARRIVALS = [
+  { when:'JUL 29 2:14 PM', from:'my@remarkable.com', what:'5. July — converted page', outWorld:'pop', outcome:'Filed → 150 Poplar · 2 cards',
+    raw:"5. July\n\nGeyser guy came by — winter propane rates start Sept. Get a second number before committing.\nPlumber’s final invoice is on the hall table — pay it.\nKids want the pool up before school starts." },
+  { when:'JUL 29 1:47 PM', from:'no-reply@plaud.ai', what:'HXD sync — transcript', outWorld:'ctdi', outcome:'Filed → CTDI · 3 cards', raw:E2RAW },
+  { when:'JUL 29 8:02 AM', from:'composer', what:'Morning pages', outcome:'Grew today’s page', raw:E1RAW },
+  { when:'JUL 29 7:41 AM', from:'unknown@spam.io', what:'—', outcome:'Dropped — sender not allowed', dimmed:true }
+];
+let thread = [
+  { type:'deb', time:'8:04 AM', text:'Two goals in your hand this morning: HXD into internal testing, and home by 5:30 for the kids. The test run is unblocked the moment Karthik has the spec — that’s the one thing between you and goal one. Goal two just needs you to leave; I’ll hold the door at 4:45.' },
+  { type:'chip', world:'pop', text:'FILED · 150 POPLAR · 2:14 PM — 5. July · 2 cards dealt' },
+  { type:'me', time:'2:18 PM', text:'notes from the HXD sync — did I just overcommit?' },
+  { type:'deb', time:'2:20 PM', text:'Not quite — but Friday now carries the panel-copy freeze AND the binder. One of them moves or Friday breaks. My vote: the freeze holds; the binder has slipped twice.' }
+];
+const ACKS = [
+  'Noted. It’s on the page — I’ll fold it into the evening brief.',
+  'Held. Nothing else moves because of it — the 4:45 door still stands.'
+];
+let ackIdx = 0, uid = 100;
+
+/* ================= STATE ================= */
+let lens = null;            // null = whole life, else world key
+let foldIdx = 0;
+const $ = id => document.getElementById(id);
+const nowStr = () => new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+const w = k => WORLDS[k];
+const dot = (k,s) => '<span style="width:'+s+'px;height:'+s+'px;border-radius:50%;display:inline-block;flex:none;'+
+  (k==='home' ? 'background:radial-gradient(circle at 35% 30%,#dedbd4,#807c74)' : 'background:'+w(k).color)+'"></span>';
+const inLens = k => !lens || k===lens || (lens && k==='home' && false);
+const fQueue = () => queue.filter(q=>!lens||q.world===lens);
+const fTodos = () => todos.filter(t=>!lens||t.world===lens);
+const fFin = () => finished.filter(f=>!lens||f.world===lens);
+const fEntries = () => entries.filter(e=>!lens||e.world===lens);
+const fDealings = () => DEALINGS.filter(d=>!lens||d.world===lens);
+
+/* ================= UNDO ================= */
+let undoFn = null, undoTimer = null;
+function showUndo(text, fn){
+  undoFn = fn;
+  $('undoText').textContent = text;
+  $('undoPill').classList.add('show');
+  clearTimeout(undoTimer);
+  undoTimer = setTimeout(hideUndo, 4200);
+}
+function hideUndo(){ $('undoPill').classList.remove('show'); undoFn = null; }
+$('undoBtn').addEventListener('click', ()=>{ if(undoFn) undoFn(); hideUndo(); });
+
+/* ================= MASTHEAD / LENS ================= */
+function buildDots(){
+  const box = $('dots');
+  let h = '<button class="dotbtn home" data-w="home"><span class="d"></span></button>';
+  WORLD_KEYS.forEach(k=>{
+    h += '<button class="dotbtn" data-w="'+k+'"><span class="d" style="background:'+w(k).color+'"></span></button>';
+  });
+  box.innerHTML = h;
+  box.addEventListener('click', e=>{
+    const b = e.target.closest('.dotbtn'); if(!b) return;
+    const k = b.dataset.w;
+    setLens(k==='home' ? null : (lens===k ? null : k));
+  });
+}
+function setLens(k){
+  lens = k;
+  document.documentElement.style.setProperty('--acc', k ? w(k).color : '#a5a198');
+  const box = $('dots');
+  box.classList.toggle('scoped', !!k);
+  box.querySelectorAll('.dotbtn').forEach(b=>{
+    b.classList.toggle('on', k ? b.dataset.w===k : b.dataset.w==='home');
+  });
+  $('lensName').textContent = k ? w(k).name : '';
+  const strap = $('strap');
+  if(k){
+    strap.hidden = false;
+    strap.querySelector('.sname').textContent = w(k).name;
+    strap.querySelector('.smission').textContent = w(k).mission;
+  } else strap.hidden = true;
+  renderRecord(); renderVerdicts(); renderWorlds();
+  if($('triageOverlay').classList.contains('open')) renderTriage(true);
+}
+
+/* ================= PAGER ================= */
+const pager = $('pager'), track = $('track');
+const slides = Array.from(track.children);
+let lefts = [], maxX = 0;
+function layout(){
+  const pw = pager.clientWidth;
+  const widths = [pw-12, pw-24, pw-24, pw-12];
+  let x = 0; lefts = [];
+  slides.forEach((s,i)=>{ s.style.width = widths[i]+'px'; lefts.push(x); x += widths[i]; });
+  maxX = x - pw;
+  setTrack(xFor(foldIdx), false);
+}
+function xFor(i){ return Math.max(0, Math.min(maxX, i===0 ? 0 : lefts[i]-12)); }
+function setTrack(x, animate){
+  track.style.transition = animate ? 'transform .32s cubic-bezier(.22,.9,.32,1)' : 'none';
+  track.style.transform = 'translateX(' + (-x) + 'px)';
+}
+function goTo(i, animate){
+  foldIdx = Math.max(0, Math.min(3, i));
+  setTrack(xFor(foldIdx), animate!==false);
+  document.querySelectorAll('#foldNav button').forEach(b=>
+    b.classList.toggle('on', +b.dataset.fold===foldIdx));
+}
+$('foldNav').addEventListener('click', e=>{
+  const b = e.target.closest('button'); if(b) goTo(+b.dataset.fold);
+});
+let pStartX=0, pStartY=0, pDragging=false, pDX=0, pBase=0, justDragged=false;
+pager.addEventListener('pointerdown', e=>{
+  pStartX = e.clientX; pStartY = e.clientY; pDragging = false; pDX = 0; pBase = xFor(foldIdx);
+});
+pager.addEventListener('pointermove', e=>{
+  if(e.pointerType==='mouse' && e.buttons===0) return;
+  const dx = e.clientX - pStartX, dy = e.clientY - pStartY;
+  if(!pDragging){
+    if(Math.abs(dx) > 9 && Math.abs(dx) > Math.abs(dy)*1.2){
+      pDragging = true;
+      try{ pager.setPointerCapture(e.pointerId); }catch(_){}
+    } else return;
+  }
+  pDX = dx;
+  let nx = pBase - dx;
+  if(nx < 0) nx = nx*0.35;
+  if(nx > maxX) nx = maxX + (nx-maxX)*0.35;
+  setTrack(nx, false);
+}, {passive:true});
+function endDrag(){
+  if(!pDragging) return;
+  pDragging = false; justDragged = true;
+  setTimeout(()=>{ justDragged = false; }, 60);
+  if(pDX < -52) goTo(foldIdx+1);
+  else if(pDX > 52) goTo(foldIdx-1);
+  else goTo(foldIdx);
+}
+pager.addEventListener('pointerup', endDrag);
+pager.addEventListener('pointercancel', endDrag);
+pager.addEventListener('click', e=>{
+  if(justDragged){ e.stopPropagation(); e.preventDefault(); }
+}, true);
+window.addEventListener('resize', layout);
+
+/* ================= FOLD 1 · THE RECORD ================= */
+function renderRecord(){
+  const list = fEntries(), deals = fDealings();
+  let h = '<div class="colhead mono"><span>The Record</span><span class="n">Wed Jul 29</span></div>';
+  if(!list.length) h += '<div class="emptyline">Nothing on the record here yet today.</div>';
+  list.forEach(e=>{
+    h += '<article class="entry'+(e.fresh?' materialize':'')+'" data-id="'+e.id+'">'
+      + '<div class="marker">'+dot(e.world,9)+'<span class="mono tag">'+e.tag+'</span></div>'
+      + '<p class="distillate">'+e.distillate+'</p>';
+    if(e.margin){
+      h += '<button class="door" data-door="'+e.id+'"><span class="kind mono">'+e.margin.kind+'</span>'
+        + '<span class="dq">“'+e.margin.quote+'”</span></button>';
+    }
+    if(e.raw){
+      h += '<button class="rawtoggle mono" data-rawt="'+e.id+'">Raw '+(e.rawOpen?'▴':'▾')+'</button>'
+        + '<pre class="rawwell" '+(e.rawOpen?'':'hidden')+'>'+e.raw+'</pre>';
+    }
+    h += '</article>';
+    e.fresh = false;
+  });
+  h += '<div class="secthead mono"><span>Day’s dealings</span></div>';
+  if(!deals.length) h += '<div class="emptyline">No dealings here today.</div>';
+  deals.forEach(d=>{
+    h += '<div class="dealing">'+dot(d.world,7).replace('display:inline-block','display:inline-block;position:relative;top:-1px')
+      + '<span class="dtxt">'+d.text+'</span></div>';
+  });
+  h += '<div id="pageslot"><textarea id="slotInput" rows="1" placeholder="Drop a note onto the page…"></textarea>'
+    + '<div class="slotrow"><button id="fileBtn" class="mono">File</button></div></div>';
+  h += '<div class="earlier mono">Earlier · Tue Jul 28 · Mon Jul 27 — the record continues</div>';
+  $('fold-record').innerHTML = h;
+
+  const slot = $('pageslot'), inp = $('slotInput');
+  inp.addEventListener('focus', ()=>slot.classList.add('expanded'));
+  inp.addEventListener('blur', ()=>{ if(!inp.value.trim()) setTimeout(()=>slot.classList.remove('expanded'),150); });
+  $('fileBtn').addEventListener('click', ()=>{
+    const text = inp.value.trim(); if(!text) return;
+    const entry = { id:'n'+(uid++), world:lens||'home', tag:'NOTE · THE PAGE · '+nowStr().toUpperCase(),
+      distillate:text, fresh:true };
+    entries.push(entry);
+    renderRecord();
+    showUndo('Filed to the page.', ()=>{
+      entries = entries.filter(x=>x.id!==entry.id); renderRecord();
+    });
+  });
+}
+$('fold-record').addEventListener('click', e=>{
+  const rt = e.target.closest('[data-rawt]');
+  if(rt){
+    const en = entries.find(x=>x.id===rt.dataset.rawt);
+    en.rawOpen = !en.rawOpen; renderRecord(); return;
+  }
+  const dr = e.target.closest('[data-door]');
+  if(dr){
+    const en = entries.find(x=>x.id===dr.dataset.door);
+    openConversation();
+    thread.push({ type:'quoted', kind:en.margin.kind, text:en.margin.quote });
+    thread.push({ type:'deb', time:nowStr(), text:en.margin.reply });
+    renderThread(true);
+  }
+});
+
+/* ================= FOLD 2 · THE VERDICTS ================= */
+function renderVerdicts(){
+  const q = fQueue(), t = fTodos(), f = fFin();
+  let h = '<div class="colhead mono"><span>The Verdicts</span><span class="n">The seam</span></div>';
+  h += '<button id="seam">';
+  if(q.length){
+    h += '<div class="scount mono"><span class="qdot"></span>'+q.length+' await'+(q.length===1?'s':'')+' verdict</div>'
+      + '<div class="stitle serif">'+q[0].title+'</div>'
+      + '<div class="ssrc mono">'+q[0].source+'</div>';
+  } else {
+    h += '<div class="scount mono"><span class="qdot"></span>Triage clear · Wed Jul 29</div>'
+      + '<div class="sclear serif">Clear. Every loop has a verdict. Go live it.</div>';
+  }
+  h += '</button>';
+  h += '<div class="secthead mono"><span>To do</span></div>';
+  if(!t.length) h += '<div class="emptyline">Nothing owed here today.</div>';
+  t.forEach(td=>{
+    h += '<div class="todo-row" data-id="'+td.id+'">'
+      + '<button class="donebtn" data-done="'+td.id+'" aria-label="Done"><span class="circ"></span></button>'
+      + '<div class="tmain"><div class="ttitle serif">'+td.title+'</div>'
+      + (td.why ? '<div class="twhy serif">'+td.why+'</div>' : '')
+      + '<div class="tmeta mono">'+dot(td.world,9)+'<span>'+w(td.world).name+'</span></div></div>'
+      + '<span class="due mono">'+td.due+'</span></div>';
+  });
+  h += '<div class="secthead mono"><span>Finished</span><span class="n">Today</span></div>';
+  if(!f.length) h += '<div class="emptyline">Nothing finished here yet.</div>';
+  f.forEach(fn=>{
+    h += '<div class="fin-row'+(fn.fresh?' arrive':'')+'">'+dot(fn.world,9)
+      + '<span class="ftitle serif">'+fn.title+'</span><span class="ftime mono">'+fn.time+'</span></div>';
+    fn.fresh = false;
+  });
+  $('fold-verdicts').innerHTML = h;
+  $('seam').addEventListener('click', openTriage);
+}
+$('fold-verdicts').addEventListener('click', e=>{
+  const b = e.target.closest('[data-done]'); if(!b) return;
+  const id = b.dataset.done;
+  const idx = todos.findIndex(x=>x.id===id); if(idx<0) return;
+  const td = todos[idx];
+  const row = b.closest('.todo-row');
+  b.querySelector('.circ').style.background = w(td.world).color;
+  b.querySelector('.circ').style.boxShadow = 'none';
+  row.classList.add('settling');
+  setTimeout(()=>{
+    todos.splice(idx,1);
+    const fin = { id:'f'+(uid++), title:td.title, world:td.world, time:nowStr(), fresh:true };
+    finished.push(fin);
+    renderVerdicts();
+    showUndo('Finished — on the record.', ()=>{
+      finished = finished.filter(x=>x.id!==fin.id);
+      todos.splice(idx,0,td); renderVerdicts();
+    });
+  }, 300);
+});
+
+/* ================= FOLD 3 · DEB ================= */
+function renderDeb(){
+  let h = '<div class="colhead mono"><span>Deb</span><span class="n">Your columnist</span></div>';
+  h += '<div class="deb-time mono">The brief · 8:04 AM</div>'
+    + '<p class="deb-brief">'+thread[0].text+'</p>';
+  h += '<div class="secthead mono"><span>Her latest remark</span></div>';
+  h += '<div class="deb-time mono">You · 2:18 PM</div>'
+    + '<p class="you-line">“notes from the HXD sync — did I just overcommit?”</p>'
+    + '<div class="deb-time mono" style="margin-top:16px">Deb · 2:20 PM</div>'
+    + '<p class="deb-brief" style="font-size:15px">'+thread[3].text+'</p>';
+  h += '<button id="openThread"><span class="mono">Open the thread →</span></button>';
+  $('fold-deb').innerHTML = h;
+  $('openThread').addEventListener('click', ()=>openConversation());
+}
+
+/* ================= FOLD 4 · WORLDS ================= */
+function renderWorlds(){
+  let h = '<div class="colhead mono"><span>Worlds</span><span class="n">Six &amp; the whole</span></div>';
+  WORLD_KEYS.forEach(k=>{
+    const W = w(k);
+    h += '<button class="wtile'+(lens===k?' on':'')+'" data-wt="'+k+'">'
+      + '<div class="wtop"><span class="wname serif">'+dot(k,9)+W.name+'</span>'
+      + '<span class="wstatus mono"'+(W.quiet?' style="opacity:.75"':'')+'>'+W.status+'</span></div>'
+      + '<div class="wmission serif">'+W.mission+'</div>'
+      + (W.next ? '<div class="wnext"><span class="mono">Next</span><span class="nv serif">'+W.next+'</span></div>' : '')
+      + '</button>';
+  });
+  $('fold-worlds').innerHTML = h;
+}
+$('fold-worlds').addEventListener('click', e=>{
+  const t = e.target.closest('[data-wt]'); if(!t) return;
+  setLens(lens===t.dataset.wt ? null : t.dataset.wt);
+});
+
+/* ================= CONVERSATION ================= */
+function renderThread(scroll){
+  let h = '';
+  thread.forEach(m=>{
+    if(m.type==='deb'){
+      h += '<div class="msg deb"><div class="mt mono">Deb · '+m.time+'</div><div class="mtext">'+m.text+'</div></div>';
+    } else if(m.type==='me'){
+      h += '<div class="msg me"><div class="mt mono">You · '+m.time+'</div><div class="mtext">'+m.text+'</div></div>';
+    } else if(m.type==='chip'){
+      h += '<div class="filedchip"><span class="fcdot" style="background:'+w(m.world).color+'"></span><span class="mono">'+m.text+'</span></div>';
+    } else if(m.type==='quoted'){
+      h += '<div class="quoted"><div class="qk mono">'+m.kind+'</div><div class="qq">“'+m.text+'”</div></div>';
+    }
+  });
+  $('thread').innerHTML = h;
+  if(scroll) $('thread').scrollTop = $('thread').scrollHeight;
+}
+function openConversation(){
+  renderThread(false);
+  $('convOverlay').classList.add('open');
+  requestAnimationFrame(()=>{ $('thread').scrollTop = $('thread').scrollHeight; });
+}
+$('convBack').addEventListener('click', ()=>$('convOverlay').classList.remove('open'));
+function sendMsg(){
+  const v = $('convInput').value.trim(); if(!v) return;
+  $('convInput').value = '';
+  thread.push({ type:'me', time:nowStr(), text:v });
+  renderThread(true);
+  setTimeout(()=>{
+    thread.push({ type:'deb', time:nowStr(), text:ACKS[ackIdx++ % ACKS.length] });
+    renderThread(true);
+  }, 650);
+}
+$('convSend').addEventListener('click', sendMsg);
+$('convInput').addEventListener('keydown', e=>{ if(e.key==='Enter') sendMsg(); });
+$('composerLauncher').addEventListener('click', ()=>{ openConversation(); setTimeout(()=>$('convInput').focus(),320); });
+$('homeSend').addEventListener('click', ()=>{ openConversation(); setTimeout(()=>$('convInput').focus(),320); });
+
+/* ================= TRIAGE ================= */
+function renderTriage(deal){
+  const q = fQueue();
+  const body = $('triageBody');
+  body.classList.toggle('empty', !q.length);
+  if(!q.length) return;
+  const c = q[0];
+  const card = $('tCard');
+  card.className = '';
+  card.innerHTML = '<div class="csrc mono">'+c.source+'</div>'
+    + '<div class="ctitle">'+c.title+'</div>'
+    + '<div class="cex">“'+c.excerpt+'”</div>'
+    + '<div class="cmark">'+dot(c.world,9)+'<span class="mono" style="color:var(--dim)">'+w(c.world).name+'</span></div>';
+  if(deal){ void card.offsetWidth; card.classList.add('deal'); }
+  $('cardCount').textContent = 'CARD 1 OF '+q.length;
+}
+function openTriage(){
+  $('triageOverlay').classList.add('open');
+  renderTriage(true);
+}
+$('triageBack').addEventListener('click', ()=>{ closeSheets(); $('triageOverlay').classList.remove('open'); });
+
+function verdict(dir, label, extraUndo){
+  const q = fQueue(); if(!q.length) return;
+  const item = q[0];
+  const realIdx = queue.findIndex(x=>x.id===item.id);
+  const card = $('tCard');
+  card.classList.add('out-'+dir);
+  setTimeout(()=>{
+    queue.splice(realIdx,1);
+    let undoExtra = null;
+    if(dir==='right'){ // DO
+      const nt = { id:'qt'+(uid++), title:item.title, world:item.world, due:'TODAY' };
+      todos.unshift(nt);
+      undoExtra = ()=>{ todos = todos.filter(x=>x.id!==nt.id); };
+    }
+    renderTriage(true); renderVerdicts();
+    showUndo(label, ()=>{
+      if(undoExtra) undoExtra();
+      if(extraUndo) extraUndo();
+      queue.splice(realIdx,0,item);
+      renderTriage(true); renderVerdicts();
+    });
+  }, 270);
+}
+$('vDo').addEventListener('click', ()=>verdict('right','Moved to To Do.'));
+$('vDelete').addEventListener('click', ()=>verdict('down','Deleted.'));
+
+/* sheets */
+function openSheet(id){ $(id).classList.add('open'); $('sheetScrim').classList.add('open'); }
+function closeSheets(){
+  $('delaySheet').classList.remove('open');
+  $('delegateSheet').classList.remove('open');
+  $('sheetScrim').classList.remove('open');
+}
+$('sheetScrim').addEventListener('click', closeSheets);
+$('vDelay').addEventListener('click', ()=>{ if(fQueue().length) openSheet('delaySheet'); });
+$('vDelegate').addEventListener('click', ()=>{ if(fQueue().length) openSheet('delegateSheet'); });
+
+$('delaySlider').addEventListener('input', ()=>{
+  const v = +$('delaySlider').value;
+  $('delayLabel').textContent = 'In '+v+' day'+(v>1?'s':'');
+});
+$('delaySheet').addEventListener('click', e=>{
+  const o = e.target.closest('[data-delay]');
+  if(o){ closeSheets(); verdict('up','Delayed — '+o.dataset.delay+'.'); }
+});
+$('delaySet').addEventListener('click', ()=>{
+  const v = +$('delaySlider').value;
+  closeSheets(); verdict('up','Delayed — '+v+' day'+(v>1?'s':'')+'.');
+});
+$('chaseSlider').addEventListener('input', ()=>{
+  const v = +$('chaseSlider').value;
+  $('chaseLabel').textContent = 'Chase in '+v+' day'+(v>1?'s':'');
+});
+$('delegateSheet').addEventListener('click', e=>{
+  const o = e.target.closest('[data-chase]');
+  if(o){
+    const name = $('delegateName').value.trim() || 'Karthik & Manish';
+    closeSheets(); verdict('left','Handed to '+name+' — chase '+o.dataset.chase+'.');
+  }
+});
+$('delegateSet').addEventListener('click', ()=>{
+  const name = $('delegateName').value.trim() || 'Karthik & Manish';
+  const v = +$('chaseSlider').value;
+  closeSheets(); verdict('left','Handed to '+name+' — chase in '+v+' day'+(v>1?'s':'')+'.');
+});
+
+/* ================= ARRIVALS ================= */
+let arrRaw = null;
+function renderArrivals(){
+  const body = $('arrBody');
+  if(arrRaw !== null){
+    const a = ARRIVALS[arrRaw];
+    $('arrBackLbl').textContent = '← Arrivals';
+    body.innerHTML = '<div id="arrRawMeta" class="mono">'+a.when+' · '+a.from+'</div>'
+      + '<div class="marker" style="margin-bottom:10px">'
+      + (a.outWorld ? dot(a.outWorld,9) : dot('home',9))
+      + '<span class="mono tag">'+a.what+'</span></div>'
+      + '<pre class="rawwell">'+a.raw+'</pre>';
+    return;
+  }
+  $('arrBackLbl').textContent = '← Back';
+  let h = '<div class="arr-headrow mono"><span>When</span><span>What</span><span>Outcome</span></div>';
+  ARRIVALS.forEach((a,i)=>{
+    const tag = a.raw ? 'button' : 'div';
+    h += '<'+tag+' class="arr-row'+(a.dimmed?' dimmed':'')+'"'+(a.raw?' data-arr="'+i+'"':'')+'>'
+      + '<span class="arr-when mono">'+a.when+'</span>'
+      + '<span class="arr-what"><span class="w1 serif">'+a.what+'</span><span class="w2 mono" style="display:block">'+a.from+'</span></span>'
+      + '<span class="arr-out mono"><span>'+(a.outWorld?'<span class="odot" style="background:'+w(a.outWorld).color+'"></span>':'')+a.outcome+'</span></span>'
+      + '</'+tag+'>';
+  });
+  body.innerHTML = h;
+}
+$('arrBody').addEventListener('click', e=>{
+  const r = e.target.closest('[data-arr]'); if(!r) return;
+  arrRaw = +r.dataset.arr; renderArrivals();
+});
+$('arrivalsChip').addEventListener('click', ()=>{
+  arrRaw = null; renderArrivals(); $('arrOverlay').classList.add('open');
+});
+$('arrBack').addEventListener('click', ()=>{
+  if(arrRaw !== null){ arrRaw = null; renderArrivals(); }
+  else $('arrOverlay').classList.remove('open');
+});
+
+/* ================= INIT ================= */
+buildDots();
+setLens(null);
+renderDeb();
+layout();
+goTo(0, false);
+</script>
+</body>
+</html>

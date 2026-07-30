@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Deb</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#FAF8F4; --ink:#191713; --muted:#5f5c54; --dim:#8a867e;
+  --well:#f0ede6; --well2:#e9e5dc; --hair:#e2ded5;
+  --silver:#a5a198; --gold:#c9a15a; --acc:#a5a198;
+  --ctdi:#5f8a76; --sub:#54718f; --iso:#b0673f; --pop:#7a5f9e; --fam:#4f8a8b; --cribl:#a05252;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{background:#efece5;font-family:'Inter',sans-serif;color:var(--ink);
+  -webkit-font-smoothing:antialiased;overscroll-behavior:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;text-align:left}
+input,textarea{font-family:'Inter',sans-serif;color:var(--ink);border:0;background:none;outline:none}
+.mono{font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.14em;font-size:10px;font-weight:500}
+.serif{font-family:'Fraunces',serif}
+#app{position:relative;max-width:430px;min-width:320px;margin:0 auto;height:100dvh;
+  background:var(--paper);display:flex;flex-direction:column;overflow:hidden}
+
+/* ---------- masthead ---------- */
+#masthead{flex:0 0 auto;padding:calc(10px + env(safe-area-inset-top)) 18px 8px;background:var(--paper)}
+.mastRow1{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.mastDate{font-family:'Fraunces',serif;font-size:21px;font-weight:600;letter-spacing:-.01em}
+#arrChip{font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.14em;
+  font-size:9px;color:var(--muted);background:var(--well);border-radius:999px;
+  padding:8px 12px;min-height:30px;flex:0 0 auto}
+#arrChip:active{background:var(--well2)}
+.mastEp{margin-top:5px}
+.mastEp .lbl{font-size:9px;color:var(--dim);display:block;margin-bottom:2px}
+.mastEp .ep{font-family:'Fraunces',serif;font-style:italic;font-size:13.5px;color:var(--muted);line-height:1.35}
+#dotsRow{display:flex;align-items:center;margin-top:4px;margin-left:-10px}
+.dotBtn{width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:12px}
+.dotBtn:active{background:var(--well2)}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+.dot.home{background:radial-gradient(circle at 35% 30%, #dedbd4, #807c74)}
+.dotBtn .dot{transition:transform .18s ease,opacity .18s ease}
+.dotBtn.on .dot{transform:scale(1.5)}
+#dotsRow.lensed .dotBtn:not(.on) .dot{opacity:.38}
+#lensStrap{margin-top:2px;padding:8px 0 2px;border-top:1px solid var(--hair);display:none}
+#lensStrap.show{display:block}
+#lensStrap .wname{color:var(--acc);font-size:9.5px}
+#lensStrap .wstat{color:var(--dim);font-size:9.5px;margin-left:8px}
+#lensStrap .mission{font-family:'Fraunces',serif;font-style:italic;font-size:13.5px;color:var(--muted);margin-top:3px}
+
+/* ---------- split panes ---------- */
+#recordPane{flex:0 0 auto;overflow-y:auto;overscroll-behavior:contain;padding:2px 18px 14px;
+  -webkit-overflow-scrolling:touch}
+#divider{flex:0 0 auto;height:24px;display:flex;align-items:center;justify-content:center;
+  touch-action:none;cursor:grab;position:relative;z-index:5}
+#divider::before{content:"";position:absolute;left:0;right:0;top:-10px;bottom:-10px}
+#divider .pillH{width:44px;height:6px;border-radius:999px;background:var(--paper);
+  box-shadow:0 1px 4px rgba(25,23,19,.16),0 4px 12px rgba(25,23,19,.10)}
+#divider.drag .pillH{background:var(--well2)}
+#deckPane{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;background:var(--paper)}
+
+/* eyebrow section heads */
+.secHead{display:flex;align-items:center;gap:10px;color:var(--dim);margin:10px 0 4px}
+.secHead::before,.secHead::after{content:"";height:1px;background:var(--hair);flex:1}
+
+/* ---------- record entries ---------- */
+.entry{padding:12px 0 4px}
+.entry + .entry{border-top:1px solid var(--hair)}
+.marker{display:flex;align-items:center;gap:8px;color:var(--dim)}
+.dist{font-family:'Fraunces',serif;font-size:16.5px;line-height:1.5;margin-top:7px;letter-spacing:.002em}
+.marginNote{display:block;width:100%;background:var(--well);border-radius:13px;padding:11px 13px;margin-top:10px;min-height:44px}
+.marginNote:active{background:var(--well2)}
+.marginNote .kind{color:var(--dim);display:flex;justify-content:space-between;align-items:center}
+.marginNote .kind .go{letter-spacing:.14em}
+.marginNote .q{font-family:'Fraunces',serif;font-style:italic;font-size:14px;color:var(--muted);line-height:1.45;margin-top:4px}
+.rawBtn{color:var(--dim);padding:12px 12px 12px 0;min-height:44px;display:inline-flex;align-items:center}
+.rawBtn:active{color:var(--muted)}
+.rawWell{background:var(--well);border-radius:13px;padding:12px 14px;margin:2px 0 10px;
+  font-family:'Fraunces',serif;font-size:14px;line-height:1.55;color:var(--muted);white-space:pre-line}
+.emptyLens{font-family:'Fraunces',serif;font-style:italic;font-size:14.5px;color:var(--dim);padding:14px 0}
+
+/* dealings colophon */
+#dealings{padding:4px 0 8px;text-align:center}
+.dealLine{font-size:12.5px;color:var(--muted);padding:5px 0;display:flex;align-items:center;justify-content:center;gap:8px}
+
+/* page slot */
+#slotWrap{margin:6px 0 12px;background:#f5f2eb;border-radius:14px;transition:background .2s ease}
+#slotWrap.open{background:var(--well)}
+#slot{width:100%;resize:none;font-size:16px;line-height:1.4;padding:12px 14px;height:44px;
+  transition:height .2s ease;display:block}
+#slot::placeholder{color:#b3afa5;font-style:italic;font-family:'Fraunces',serif;font-size:15px}
+#slotWrap.open #slot{height:88px}
+#slotBar{display:none;justify-content:flex-end;padding:0 8px 8px}
+#slotWrap.open #slotBar{display:flex}
+#fileBtn{font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.14em;font-size:10px;
+  padding:12px 16px;border-radius:12px;background:var(--well2);color:var(--ink);min-height:44px}
+#fileBtn:active{background:#e0dcd1}
+
+/* worlds strip */
+#worldStrip{display:flex;gap:9px;overflow-x:auto;padding:8px 2px 6px;margin:0 -4px;
+  -webkit-overflow-scrolling:touch;scrollbar-width:none}
+#worldStrip::-webkit-scrollbar{display:none}
+.wTile{flex:0 0 auto;width:158px;background:var(--well);border-radius:14px;padding:11px 12px;min-height:44px}
+.wTile:active{background:var(--well2)}
+.wTile.on{background:var(--well2)}
+.wTile .row{display:flex;align-items:center;gap:7px}
+.wTile .nm{font-size:9px;color:var(--muted)}
+.wTile .ms{font-family:'Fraunces',serif;font-style:italic;font-size:12px;color:var(--muted);line-height:1.35;
+  margin-top:6px;min-height:32px}
+.wTile .st{font-size:9px;color:var(--dim);margin-top:6px}
+.wTile .nx{font-size:11px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ---------- deck ---------- */
+#segRow{flex:0 0 auto;display:flex;gap:6px;padding:8px 14px 6px}
+.seg{flex:1;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.14em;
+  font-size:9.5px;color:var(--dim);text-align:center;padding:12px 4px;border-radius:12px;min-height:44px}
+.seg.on{background:var(--well);color:var(--ink)}
+.seg.on .cnt{color:var(--acc)}
+.seg:active{background:var(--well2)}
+#deckScroll{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:4px 18px 16px;
+  -webkit-overflow-scrolling:touch}
+
+/* deb segment */
+.debEyebrow{color:var(--dim);margin:10px 0 6px}
+.debText{font-family:'Fraunces',serif;font-size:16.5px;line-height:1.55}
+.youAsk{font-family:'Fraunces',serif;font-style:italic;font-size:13px;color:var(--dim);margin:0 0 5px}
+.debRule{height:1px;background:var(--hair);margin:14px 0 4px}
+.threadLink{color:var(--muted);padding:14px 0;min-height:44px;display:inline-flex;align-items:center}
+.threadLink:active{color:var(--ink)}
+
+/* verdicts segment */
+#seamBand{display:block;width:100%;background:var(--well);border-radius:16px;padding:14px 16px;margin-top:10px}
+#seamBand:active{background:var(--well2)}
+#seamBand .cnt{color:var(--acc);display:flex;justify-content:space-between}
+#seamBand .cnt .go{color:var(--muted)}
+#seamBand .pTitle{font-family:'Fraunces',serif;font-size:18px;font-weight:600;margin-top:8px;line-height:1.3}
+#seamBand .pEx{font-family:'Fraunces',serif;font-style:italic;font-size:13.5px;color:var(--muted);margin-top:5px;line-height:1.4}
+#seamBand .pMark{display:flex;align-items:center;gap:7px;color:var(--dim);margin-top:10px}
+.clearBlock{padding:18px 2px}
+.clearBlock .m{color:var(--dim)}
+.clearBlock .s{font-family:'Fraunces',serif;font-size:17px;line-height:1.5;margin-top:8px}
+
+/* todo segment */
+.todoRow{display:flex;align-items:flex-start;gap:4px;padding:6px 0;border-bottom:1px solid var(--hair)}
+.todoRow:last-of-type{border-bottom:0}
+.doneBtn{width:44px;height:44px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;margin-left:-10px}
+.doneBtn .c{width:21px;height:21px;border-radius:50%;background:var(--well2);transition:background .15s ease,transform .15s ease}
+.doneBtn:active .c{background:#ddd8cc;transform:scale(.92)}
+.todoMain{flex:1;min-width:0;padding-top:11px}
+.todoTitle{font-size:14.5px;font-weight:500;line-height:1.35}
+.todoWhy{font-family:'Fraunces',serif;font-style:italic;font-size:13px;color:var(--muted);margin-top:3px;line-height:1.4}
+.todoMeta{flex:0 0 auto;display:flex;align-items:center;gap:7px;padding-top:15px;color:var(--dim)}
+.finRow{display:flex;align-items:center;gap:9px;padding:10px 0;border-bottom:1px solid var(--hair);color:var(--dim)}
+.finRow:last-of-type{border-bottom:0}
+.finTitle{flex:1;font-size:13.5px;color:var(--muted)}
+.finTime{color:var(--dim)}
+
+/* ---------- bottom bar ---------- */
+#bottomBar{flex:0 0 auto;display:flex;align-items:center;gap:10px;
+  padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:var(--paper)}
+#barField{flex:1;background:var(--well);border-radius:999px;height:46px;display:flex;align-items:center;padding:0 16px}
+#barField input{width:100%;font-size:16px;background:none}
+#barField input::placeholder{color:#b3afa5;font-style:italic;font-family:'Fraunces',serif;font-size:15px}
+.sendBtn{width:46px;height:46px;flex:0 0 auto;border-radius:50%;background:var(--gold);
+  display:flex;align-items:center;justify-content:center;color:#fff}
+.sendBtn:active{background:#b98f4c}
+.sendBtn svg{width:18px;height:18px}
+
+/* ---------- overlays ---------- */
+.overlay{position:absolute;inset:0;background:var(--paper);z-index:40;display:none;
+  flex-direction:column;transform:translateY(12px);opacity:0;
+  transition:transform .22s ease,opacity .22s ease}
+.overlay.show{display:flex}
+.overlay.in{transform:none;opacity:1}
+.ovHead{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;
+  padding:calc(8px + env(safe-area-inset-top)) 12px 4px}
+.backBtn{font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.14em;
+  font-size:10px;color:var(--muted);padding:14px 10px;min-height:44px;border-radius:12px}
+.backBtn:active{background:var(--well2)}
+.ovTitle{color:var(--dim);padding-right:14px}
+
+/* conversation */
+#thread{flex:1;min-height:0;overflow-y:auto;padding:6px 20px 14px;-webkit-overflow-scrolling:touch}
+.tDeb{margin:16px 0}
+.tDeb .eb{color:var(--dim);margin-bottom:6px}
+.tDeb .tx{font-family:'Fraunces',serif;font-size:17px;line-height:1.55}
+.tYou{display:flex;justify-content:flex-end;margin:14px 0}
+.tYou .b{max-width:82%;background:var(--well);border-radius:16px 16px 4px 16px;padding:11px 14px;
+  font-size:14.5px;line-height:1.45}
+.tFiled{margin:14px 0;background:var(--well);border-radius:13px;padding:11px 14px}
+.tFiled .m{color:var(--muted);display:flex;align-items:center;gap:7px}
+.tFiled .s{font-family:'Fraunces',serif;font-style:italic;font-size:13.5px;color:var(--muted);margin-top:4px}
+.tDoor{margin:14px 0;background:var(--well);border-radius:13px;padding:11px 14px}
+.tDoor .k{color:var(--dim)}
+.tDoor .q{font-family:'Fraunces',serif;font-style:italic;font-size:14.5px;color:var(--muted);line-height:1.45;margin-top:5px}
+#convBar{flex:0 0 auto;display:flex;align-items:center;gap:10px;
+  padding:10px 16px calc(10px + env(safe-area-inset-bottom))}
+#convField{flex:1;background:var(--well);border-radius:999px;height:46px;display:flex;align-items:center;padding:0 16px}
+#convField input{width:100%;font-size:16px}
+#convField input::placeholder{color:#b3afa5;font-style:italic;font-family:'Fraunces',serif;font-size:15px}
+
+/* triage */
+#triBody{flex:1;min-height:0;display:flex;flex-direction:column;padding:2px 12px calc(14px + env(safe-area-inset-bottom))}
+.tzone{background:var(--well);border-radius:14px;display:flex;align-items:center;justify-content:center;
+  color:var(--dim);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.14em;font-size:10px}
+.tzone:active{background:var(--well2);color:var(--muted)}
+#zUp,#zDown{flex:0 0 54px;margin:5px 0}
+#triMid{flex:1;min-height:0;display:flex;gap:5px}
+#zLeft,#zRight{flex:0 0 52px;writing-mode:vertical-rl}
+#zLeft{transform:rotate(180deg)}
+#triCard{flex:1;min-width:0;background:var(--paper);border-radius:16px;padding:26px 22px;
+  display:flex;flex-direction:column;justify-content:center;
+  box-shadow:0 2px 6px rgba(25,23,19,.08),0 14px 38px rgba(25,23,19,.14)}
+#triCard .src{color:var(--dim)}
+#triCard .ti{font-family:'Fraunces',serif;font-size:25px;font-weight:600;line-height:1.22;margin-top:12px;letter-spacing:-.005em}
+#triCard .ex{font-family:'Fraunces',serif;font-style:italic;font-size:15px;color:var(--muted);line-height:1.5;margin-top:12px}
+#triCard .mk{display:flex;align-items:center;gap:8px;color:var(--dim);margin-top:20px}
+#triClear{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 30px}
+#triClear .m{color:var(--dim)}
+#triClear .s{font-family:'Fraunces',serif;font-size:19px;line-height:1.5;margin-top:12px}
+
+/* choosers / sheets */
+#scrim{position:absolute;inset:0;background:rgba(25,23,19,.28);z-index:55;display:none;opacity:0;transition:opacity .2s ease}
+#scrim.show{display:block}
+#scrim.in{opacity:1}
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:60;background:var(--paper);
+  border-radius:18px 18px 0 0;padding:16px 20px calc(20px + env(safe-area-inset-bottom));
+  box-shadow:0 -4px 14px rgba(25,23,19,.10),0 -18px 48px rgba(25,23,19,.16);
+  display:none;transform:translateY(30px);opacity:0;transition:transform .22s ease,opacity .22s ease}
+.sheet.show{display:block}
+.sheet.in{transform:none;opacity:1}
+.sheet .sTitle{color:var(--dim);margin-bottom:12px}
+.sheetOpt{display:block;width:100%;background:var(--well);border-radius:13px;padding:14px 16px;margin:8px 0;
+  font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.14em;font-size:10.5px;color:var(--ink);min-height:48px}
+.sheetOpt:active{background:var(--well2)}
+.sliderRow{display:flex;align-items:center;gap:14px;margin:14px 2px 4px}
+.sliderRow input[type=range]{flex:1;accent-color:var(--acc);height:44px}
+.sliderRow .val{font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.14em;
+  font-size:10px;color:var(--muted);width:64px;text-align:right}
+.setBtn{font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.14em;font-size:10.5px;
+  background:var(--well2);border-radius:12px;padding:14px 18px;min-height:48px}
+.setBtn:active{background:#ddd8cc}
+.nameWell{background:var(--well);border-radius:13px;padding:4px 16px;margin:8px 0 2px}
+.nameWell input{width:100%;font-size:16px;height:44px}
+.rawSheetBody{max-height:52dvh;overflow-y:auto;background:var(--well);border-radius:13px;padding:12px 14px;
+  font-family:'Fraunces',serif;font-size:14px;line-height:1.55;color:var(--muted);white-space:pre-line}
+
+/* arrivals */
+#arrTable{flex:1;min-height:0;overflow-y:auto;padding:6px 20px 20px}
+.arrHead{display:grid;grid-template-columns:74px 1fr 108px;gap:10px;color:var(--dim);
+  padding:10px 0;border-bottom:1px solid var(--hair)}
+.arrRow{display:grid;grid-template-columns:74px 1fr 108px;gap:10px;width:100%;
+  padding:13px 0;border-bottom:1px solid var(--hair);align-items:start;min-height:44px}
+.arrRow:active{background:var(--well)}
+.arrRow.drop{opacity:.42}
+.arrWhen{font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.1em;font-size:9px;color:var(--dim);padding-top:2px;line-height:1.6}
+.arrWhat{font-size:13px;line-height:1.4;min-width:0}
+.arrWhat .frm{color:var(--dim);font-size:11.5px}
+.arrWhat .sub{color:var(--ink);font-weight:500;margin-top:1px}
+.arrOut{font-size:11.5px;color:var(--muted);line-height:1.45;display:flex;align-items:flex-start;gap:6px;padding-top:2px}
+.arrOut .dot{margin-top:3px}
+
+/* undo pill */
+#undoPill{position:absolute;left:50%;transform:translate(-50%,20px);opacity:0;
+  bottom:calc(84px + env(safe-area-inset-bottom));z-index:80;background:var(--paper);
+  border-radius:999px;display:flex;align-items:center;gap:4px;padding:5px 6px 5px 18px;
+  box-shadow:0 2px 6px rgba(25,23,19,.10),0 10px 30px rgba(25,23,19,.18);
+  transition:transform .22s ease,opacity .22s ease;pointer-events:none;white-space:nowrap;max-width:92%}
+#undoPill.show{transform:translate(-50%,0);opacity:1;pointer-events:auto}
+#undoPill .t{font-family:'Fraunces',serif;font-size:14px;color:var(--muted);overflow:hidden;text-overflow:ellipsis}
+#undoPill button{font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.14em;
+  font-size:10px;color:var(--ink);padding:12px 14px;border-radius:999px;min-height:44px}
+#undoPill button:active{background:var(--well2)}
+</style>
+</head>
+<body>
+<div id="app">
+  <header id="masthead">
+    <div class="mastRow1">
+      <div class="mastDate serif">Wednesday, July&nbsp;29</div>
+      <button id="arrChip">Arrivals · 4</button>
+    </div>
+    <div class="mastEp">
+      <span class="lbl mono">Today, in your words</span>
+      <span class="ep">Test HXD in internal testing · home by 5:30 to play with the kids</span>
+    </div>
+    <div id="dotsRow"></div>
+    <div id="lensStrap"></div>
+  </header>
+
+  <main id="recordPane"></main>
+
+  <div id="divider"><div class="pillH"></div></div>
+
+  <section id="deckPane">
+    <nav id="segRow">
+      <button class="seg" data-seg="deb">Deb</button>
+      <button class="seg" data-seg="verdicts">Verdicts · <span class="cnt" id="segCnt">3</span></button>
+      <button class="seg" data-seg="todo">To&nbsp;Do</button>
+    </nav>
+    <div id="deckScroll"></div>
+  </section>
+
+  <footer id="bottomBar">
+    <div id="barField"><input id="barInput" type="text" placeholder="Say it to Deb…" autocomplete="off"></div>
+    <button class="sendBtn" id="barSend" aria-label="Send">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13"/><path d="M12 5l7 7-7 7"/></svg>
+    </button>
+  </footer>
+
+  <!-- CONVERSATION -->
+  <div class="overlay" id="convOv">
+    <div class="ovHead">
+      <button class="backBtn" data-close="convOv">← The Page</button>
+      <span class="ovTitle mono">Deb</span>
+    </div>
+    <div id="thread"></div>
+    <div id="convBar">
+      <div id="convField"><input id="convInput" type="text" placeholder="Say it to Deb…" autocomplete="off"></div>
+      <button class="sendBtn" id="convSend" aria-label="Send">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13"/><path d="M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- TRIAGE -->
+  <div class="overlay" id="triOv">
+    <div class="ovHead">
+      <button class="backBtn" data-close="triOv">← The Page</button>
+      <span class="ovTitle mono" id="triCount"></span>
+    </div>
+    <div id="triBody"></div>
+  </div>
+
+  <!-- ARRIVALS -->
+  <div class="overlay" id="arrOv">
+    <div class="ovHead">
+      <button class="backBtn" data-close="arrOv">← Back</button>
+      <span class="ovTitle mono">Arrivals · Wed Jul 29</span>
+    </div>
+    <div id="arrTable"></div>
+  </div>
+
+  <!-- scrim + sheets -->
+  <div id="scrim"></div>
+
+  <div class="sheet" id="delaySheet">
+    <div class="sTitle mono">Delay</div>
+    <button class="sheetOpt" data-delay="tomorrow">Tomorrow</button>
+    <button class="sheetOpt" data-delay="next week">Next week</button>
+    <div class="sliderRow">
+      <input type="range" id="delayRange" min="1" max="5" value="3" step="1">
+      <span class="val" id="delayVal">3 days</span>
+      <button class="setBtn" id="delaySet">Set</button>
+    </div>
+  </div>
+
+  <div class="sheet" id="delegSheet">
+    <div class="sTitle mono">Delegate</div>
+    <div class="nameWell"><input type="text" id="delegName" value="Karthik &amp; Manish"></div>
+    <button class="sheetOpt" data-deleg="3 days">Chase in 3 days</button>
+    <button class="sheetOpt" data-deleg="next week">Chase next week</button>
+    <div class="sliderRow">
+      <input type="range" id="delegRange" min="1" max="5" value="3" step="1">
+      <span class="val" id="delegVal">3 days</span>
+      <button class="setBtn" id="delegSet">Set</button>
+    </div>
+  </div>
+
+  <div class="sheet" id="rawSheet">
+    <div class="sTitle mono" id="rawTitle"></div>
+    <div class="rawSheetBody" id="rawBody"></div>
+  </div>
+
+  <div id="undoPill"><span class="t" id="undoText"></span><button id="undoBtn">Undo</button></div>
+</div>
+
+<script>
+'use strict';
+(function(){
+var $ = function(s){ return document.querySelector(s); };
+var NOW = '3:24 PM';
+
+/* ---------- data ---------- */
+var W = {
+  ctdi:{name:'CTDI', color:'#5f8a76', mission:"Make HXD the team's proudest ship of the year.", status:'MOVING', next:'Chase Karthik — HXD scope'},
+  sub:{name:'Subseven', color:'#54718f', mission:'A second income that runs on rails, not adrenaline.', status:'MOVING', next:null},
+  iso:{name:'ISO Experiences', color:'#b0673f', mission:'The audit passes in October without a single scramble.', status:'QUIET 6 DAYS', quiet:true, next:'Evidence binder · Fri'},
+  pop:{name:'150 Poplar', color:'#7a5f9e', mission:'A house that runs itself by Christmas.', status:'SETTLED', next:'Geyser propane · Thu'},
+  fam:{name:'Fam Finances', color:'#4f8a8b', mission:'Every dollar knows its job.', status:'SETTLED', next:null},
+  cribl:{name:'Cribl', color:'#a05252', mission:'Earn the promotion without losing the evenings.', status:'MOVING', next:null}
+};
+var ORDER = ['ctdi','sub','iso','pop','fam','cribl'];
+
+var RAW1 = 'Journal\nLord Jesus Christ, have mercy on me\n\nGratitude\nI am grateful for my family\n\nGoals\nTest HXD in internal testing environment\nGet home by 5:30pm to play with the kids';
+var RAW2 = 'PLAUD · HXD SYNC · 47 MIN\n\n[00:03] Karthik — I can’t start the test run until the spec actually lands with me.\n[04:12] Manish — The reporting dependency is back. Same one as June.\n[11:40] You — Panel copy freezes Friday. Locked.\n[19:55] Karthik — Get me the spec this week and the environment’s ready.';
+var RAW3 = '5. July — converted page\n\nGeyser guy came by. Winter rates start Sept — get a second propane number before committing.\n\nPlumber wraps up; final invoice to follow.';
+
+var S = {
+  lens:null, seg:'deb',
+  entries:[
+    {id:'e1', world:null, tag:'MORNING PAGES · REMARKABLE · 8:02 AM',
+     dist:'Lord Jesus Christ, have mercy on me. Grateful for my family. Today: HXD into internal testing — and home by 5:30 to play with the kids.',
+     margin:{kind:'THE KEEP', text:'Holding 5:30 for you. Nothing new lands on your plate after 4:45.',
+       reply:'It holds. At 4:45 I stop dealing — whatever’s still open waits quietly for Thursday’s paper. You just walk.'},
+     raw:RAW1},
+    {id:'e2', world:'ctdi', tag:'HXD SYNC · PLAUD · 1:47 PM',
+     dist:'Karthik can’t start until the spec lands. Manish flagged the reporting dependency. Decision: panel copy freezes Friday.',
+     margin:{kind:'THE ANSWER', text:'You asked when the last HXD milestone slipped — June 12, by four days, same dependency.',
+       reply:'Same dependency, same shape as June. Get Karthik the spec by Thursday and you’re still inside that margin.'},
+     raw:RAW2}
+  ],
+  dealings:[
+    {world:'ctdi', text:'3 cards minted from the HXD call · 1 handed to Karthik, chase Aug 1'},
+    {world:'pop', text:'Poplar’s last open loop closed'}
+  ],
+  queue:[
+    {id:'q1', title:'Send Karthik the HXD spec', world:'ctdi', src:'FROM TODAY’S PLAUD CALL',
+     ex:'Karthik said he can’t start until he sees the spec — I told him this week.'},
+    {id:'q2', title:'Ask Manish about the reporting dependency', world:'ctdi', src:'FROM TODAY’S PLAUD CALL',
+     ex:'Manish flagged the reporting dependency again — second call in a row.'},
+    {id:'q3', title:'Get propane quote from second supplier', world:'pop', src:'FROM 5. JULY · REMARKABLE',
+     ex:'geyser guy says winter rates start Sept — get a second number before committing'}
+  ],
+  todos:[
+    {id:'t1', title:'Chase Karthik & Manish — HXD scope', world:'ctdi', why:'The whole sprint stands behind this one.', due:'TODAY'},
+    {id:'t2', title:'Review HXD panel copy', world:'ctdi', due:'1 DAY'},
+    {id:'t3', title:'Evidence binder', world:'iso', due:'FRI'},
+    {id:'t4', title:'Geyser propane', world:'pop', due:'THU'}
+  ],
+  finished:[
+    {title:'Pay the plumber’s final invoice', world:'pop', time:'11:14 AM'},
+    {title:'Send structured app plan', world:'sub', time:'3:05 PM'}
+  ],
+  thread:[
+    {who:'deb', eb:'DEB · THE BRIEF · 8:04 AM', text:'Two goals in your hand this morning: HXD into internal testing, and home by 5:30 for the kids. The test run is unblocked the moment Karthik has the spec — that’s the one thing between you and goal one. Goal two just needs you to leave; I’ll hold the door at 4:45.'},
+    {who:'filed', m:'FILED · 150 POPLAR · 2:14 PM', s:'5. July · 2 cards dealt', world:'pop'},
+    {who:'you', text:'notes from the HXD sync — did I just overcommit?'},
+    {who:'deb', eb:'DEB · 2:20 PM', text:'Not quite — but Friday now carries the panel-copy freeze AND the binder. One of them moves or Friday breaks. My vote: the freeze holds; the binder has slipped twice.'}
+  ],
+  arrivals:[
+    {when:'Jul 29\n2:14 PM', frm:'my@remarkable.com', sub:'“5. July — converted page”', out:'filed → 150 Poplar · 2 cards', world:'pop', raw:RAW3, rawTitle:'5. July — converted page'},
+    {when:'Jul 29\n1:47 PM', frm:'no-reply@plaud.ai', sub:'“HXD sync — transcript”', out:'filed → CTDI · 3 cards', world:'ctdi', raw:RAW2, rawTitle:'HXD sync — transcript'},
+    {when:'Jul 29\n8:02 AM', frm:'composer', sub:'“Morning pages”', out:'grew today’s page', world:null, raw:RAW1, rawTitle:'Morning pages'},
+    {when:'Jul 29\n7:41 AM', frm:'unknown@spam.io', sub:'—', out:'dropped — sender not allowed', dropped:true}
+  ],
+  rawOpen:{}, segScroll:{deb:0,verdicts:0,todo:0}, noteCount:0
+};
+
+function esc(t){ return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function dotHtml(world, extra){
+  var cls = 'dot' + (world ? '' : ' home');
+  var st = world ? ' style="background:' + W[world].color + '"' : '';
+  return '<span class="' + cls + (extra ? ' ' + extra : '') + '"' + st + '></span>';
+}
+function inLens(world){ return !S.lens || world === S.lens; }
+
+/* ---------- lens ---------- */
+function setLens(id){
+  S.lens = (S.lens === id) ? null : id;
+  document.documentElement.style.setProperty('--acc', S.lens ? W[S.lens].color : 'var(--silver)');
+  renderMast(); renderRecord(); renderDeck();
+}
+function renderMast(){
+  var row = $('#dotsRow');
+  var h = '<button class="dotBtn' + (!S.lens ? ' on' : '') + '" data-lens="" aria-label="Whole life"><span class="dot home"></span></button>';
+  ORDER.forEach(function(id){
+    h += '<button class="dotBtn' + (S.lens === id ? ' on' : '') + '" data-lens="' + id + '" aria-label="' + esc(W[id].name) + '">' +
+         '<span class="dot" style="background:' + W[id].color + '"></span></button>';
+  });
+  row.innerHTML = h;
+  row.className = S.lens ? 'lensed' : '';
+  row.querySelectorAll('.dotBtn').forEach(function(b){
+    b.addEventListener('click', function(){
+      var id = b.getAttribute('data-lens');
+      if(!id){ if(S.lens) setLens(S.lens); } else setLens(id);
+    });
+  });
+  var strap = $('#lensStrap');
+  if(S.lens){
+    var w = W[S.lens];
+    strap.innerHTML = '<span class="wname mono">' + esc(w.name) + '</span><span class="wstat mono">' + esc(w.status) + '</span>' +
+      '<div class="mission">' + esc(w.mission) + '</div>';
+    strap.classList.add('show');
+  } else { strap.classList.remove('show'); strap.innerHTML = ''; }
+}
+
+/* ---------- record ---------- */
+function renderRecord(){
+  var pane = $('#recordPane');
+  var h = '<div class="secHead mono">The Record</div>';
+  var shown = 0;
+  S.entries.forEach(function(e){
+    if(!inLens(e.world)) return;
+    shown++;
+    var open = !!S.rawOpen[e.id];
+    h += '<article class="entry">' +
+      '<div class="marker mono">' + dotHtml(e.world) + '<span>' + esc(e.tag) + '</span></div>' +
+      '<p class="dist">' + esc(e.dist) + '</p>';
+    if(e.margin){
+      h += '<button class="marginNote" data-door="' + e.id + '">' +
+        '<span class="kind mono"><span>' + esc(e.margin.kind) + '</span><span class="go">→ Deb</span></span>' +
+        '<span class="q">“' + esc(e.margin.text) + '”</span></button>';
+    }
+    if(e.raw){
+      h += '<button class="rawBtn mono" data-raw="' + e.id + '">Raw ' + (open ? '▴' : '▾') + '</button>';
+      if(open) h += '<div class="rawWell">' + esc(e.raw) + '</div>';
+    }
+    h += '</article>';
+  });
+  if(!shown && S.lens){
+    h += '<div class="emptyLens">Nothing on the record for ' + esc(W[S.lens].name) + ' today.</div>';
+  }
+  var deals = S.dealings.filter(function(d){ return inLens(d.world); });
+  if(deals.length){
+    h += '<div class="secHead mono">The Day’s Dealings</div><div id="dealings">';
+    deals.forEach(function(d){ h += '<div class="dealLine">' + dotHtml(d.world) + '<span>' + esc(d.text) + '</span></div>'; });
+    h += '</div>';
+  }
+  h += '<div id="slotWrap"><textarea id="slot" placeholder="Drop a note onto the page…" rows="1"></textarea>' +
+       '<div id="slotBar"><button id="fileBtn">File</button></div></div>';
+  h += '<div class="secHead mono">Worlds</div><div id="worldStrip">';
+  ORDER.forEach(function(id){
+    var w = W[id];
+    h += '<button class="wTile' + (S.lens === id ? ' on' : '') + '" data-wtile="' + id + '">' +
+      '<span class="row">' + dotHtml(id) + '<span class="nm mono">' + esc(w.name) + '</span></span>' +
+      '<span class="ms">' + esc(w.mission) + '</span>' +
+      '<span class="st mono"' + (w.quiet ? ' style="color:var(--dim)"' : '') + '>' + esc(w.status) + '</span>' +
+      (w.next ? '<span class="nx">' + esc(w.next) + '</span>' : '<span class="nx" style="color:#c2beb4">—</span>') +
+      '</button>';
+  });
+  h += '</div>';
+  pane.innerHTML = h;
+
+  pane.querySelectorAll('[data-door]').forEach(function(b){
+    b.addEventListener('click', function(){ openDoor(b.getAttribute('data-door')); });
+  });
+  pane.querySelectorAll('[data-raw]').forEach(function(b){
+    b.addEventListener('click', function(){
+      var id = b.getAttribute('data-raw');
+      S.rawOpen[id] = !S.rawOpen[id]; renderRecord();
+    });
+  });
+  pane.querySelectorAll('[data-wtile]').forEach(function(b){
+    b.addEventListener('click', function(){ setLens(b.getAttribute('data-wtile')); });
+  });
+
+  var slot = $('#slot'), wrap = $('#slotWrap');
+  slot.addEventListener('focus', function(){ wrap.classList.add('open'); });
+  slot.addEventListener('blur', function(){ setTimeout(function(){ if(!slot.value.trim()) wrap.classList.remove('open'); }, 150); });
+  $('#fileBtn').addEventListener('click', function(){
+    var t = slot.value.trim(); if(!t) return;
+    S.noteCount++;
+    var entry = {id:'n' + S.noteCount, world:S.lens || null, tag:'NOTE · THE PAGE · ' + NOW, dist:t, raw:null, margin:null};
+    S.entries.push(entry);
+    slot.value = ''; wrap.classList.remove('open');
+    renderRecord();
+    var pn = $('#recordPane'); pn.scrollTop = pn.scrollHeight;
+    showUndo('Filed to the page', function(){
+      S.entries = S.entries.filter(function(e){ return e.id !== entry.id; });
+      renderRecord();
+    });
+  });
+}
+
+/* ---------- deck ---------- */
+function setSeg(seg){
+  S.segScroll[S.seg] = $('#deckScroll').scrollTop;
+  S.seg = seg; renderDeck();
+}
+function renderDeck(){
+  document.querySelectorAll('.seg').forEach(function(b){
+    b.classList.toggle('on', b.getAttribute('data-seg') === S.seg);
+  });
+  var q = S.queue.filter(function(c){ return inLens(c.world); });
+  $('#segCnt').textContent = q.length;
+  var sc = $('#deckScroll');
+  var h = '';
+  if(S.seg === 'deb'){
+    h += '<div class="debEyebrow mono">Deb · The Brief · 8:04 AM</div>' +
+      '<p class="debText">' + esc(S.thread[0].text) + '</p>' +
+      '<div class="debRule"></div>' +
+      '<div class="debEyebrow mono">Her latest · 2:20 PM</div>' +
+      '<p class="youAsk">you: “notes from the HXD sync — did I just overcommit?”</p>' +
+      '<p class="debText">' + esc(S.thread[3].text) + '</p>' +
+      '<button class="threadLink mono" id="openThread">Open the thread →</button>';
+  } else if(S.seg === 'verdicts'){
+    if(q.length){
+      var c = q[0];
+      h += '<button id="seamBand">' +
+        '<span class="cnt mono"><span>' + q.length + ' awaiting verdict</span><span class="go">Triage →</span></span>' +
+        '<span class="pTitle serif" style="display:block">' + esc(c.title) + '</span>' +
+        '<span class="pEx" style="display:block">“' + esc(c.ex) + '”</span>' +
+        '<span class="pMark mono">' + dotHtml(c.world) + '<span>' + esc(c.src) + '</span></span>' +
+        '</button>';
+    } else {
+      h += '<div class="clearBlock"><div class="m mono">Triage clear · Wed Jul 29</div>' +
+           '<p class="s serif">Clear. Every loop has a verdict. Go live it.</p></div>';
+    }
+  } else {
+    var t = S.todos.filter(function(x){ return inLens(x.world); });
+    if(t.length){
+      t.forEach(function(x, i){
+        h += '<div class="todoRow">' +
+          '<button class="doneBtn" data-done="' + x.id + '" aria-label="Done"><span class="c"></span></button>' +
+          '<div class="todoMain"><div class="todoTitle">' + esc(x.title) + '</div>' +
+          (i === 0 && x.why ? '<div class="todoWhy">' + esc(x.why) + '</div>' : '') + '</div>' +
+          '<div class="todoMeta mono">' + dotHtml(x.world) + '<span>' + esc(x.due) + '</span></div></div>';
+      });
+    } else {
+      h += '<div class="emptyLens">Nothing to do here' + (S.lens ? ' for ' + esc(W[S.lens].name) : '') + '.</div>';
+    }
+    var f = S.finished.filter(function(x){ return inLens(x.world); });
+    h += '<div class="secHead mono" style="margin-top:16px">Finished</div>';
+    if(f.length){
+      f.forEach(function(x){
+        h += '<div class="finRow">' + dotHtml(x.world) +
+          '<span class="finTitle">' + esc(x.title) + '</span>' +
+          '<span class="finTime mono">' + esc(x.time) + '</span></div>';
+      });
+    } else {
+      h += '<div class="emptyLens">Nothing yet.</div>';
+    }
+  }
+  sc.innerHTML = h;
+  sc.scrollTop = S.segScroll[S.seg] || 0;
+  var ot = $('#openThread'); if(ot) ot.addEventListener('click', function(){ openOv('convOv'); scrollThread(); });
+  var sb = $('#seamBand'); if(sb) sb.addEventListener('click', function(){ openTriage(); });
+  sc.querySelectorAll('[data-done]').forEach(function(b){
+    b.addEventListener('click', function(){ finishTodo(b.getAttribute('data-done')); });
+  });
+}
+function finishTodo(id){
+  var i = S.todos.findIndex(function(x){ return x.id === id; });
+  if(i < 0) return;
+  var t = S.todos.splice(i, 1)[0];
+  var fin = {title:t.title, world:t.world, time:NOW};
+  S.finished.push(fin);
+  renderDeck();
+  showUndo('Settled into Finished', function(){
+    S.finished = S.finished.filter(function(f){ return f !== fin; });
+    S.todos.splice(Math.min(i, S.todos.length), 0, t);
+    renderDeck();
+  });
+}
+
+/* ---------- overlays ---------- */
+function openOv(id){
+  var ov = document.getElementById(id);
+  ov.classList.add('show');
+  requestAnimationFrame(function(){ requestAnimationFrame(function(){ ov.classList.add('in'); }); });
+}
+function closeOv(id){
+  var ov = document.getElementById(id);
+  ov.classList.remove('in');
+  setTimeout(function(){ ov.classList.remove('show'); }, 220);
+}
+document.querySelectorAll('[data-close]').forEach(function(b){
+  b.addEventListener('click', function(){ closeOv(b.getAttribute('data-close')); });
+});
+
+/* ---------- conversation ---------- */
+function renderThread(){
+  var h = '';
+  S.thread.forEach(function(m){
+    if(m.who === 'deb'){
+      h += '<div class="tDeb"><div class="eb mono">' + esc(m.eb) + '</div><p class="tx">' + esc(m.text) + '</p></div>';
+    } else if(m.who === 'you'){
+      h += '<div class="tYou"><div class="b">' + esc(m.text) + '</div></div>';
+    } else if(m.who === 'filed'){
+      h += '<div class="tFiled"><div class="m mono">' + dotHtml(m.world) + '<span>' + esc(m.m) + '</span></div>' +
+           '<div class="s">' + esc(m.s) + '</div></div>';
+    } else if(m.who === 'door'){
+      h += '<div class="tDoor"><div class="k mono">' + esc(m.kind) + ' · From today’s page</div>' +
+           '<div class="q">“' + esc(m.text) + '”</div></div>';
+    }
+  });
+  $('#thread').innerHTML = h;
+}
+function scrollThread(){
+  var t = $('#thread');
+  requestAnimationFrame(function(){ t.scrollTop = t.scrollHeight; });
+}
+function openDoor(entryId){
+  var e = S.entries.find(function(x){ return x.id === entryId; });
+  if(!e || !e.margin) return;
+  S.thread.push({who:'door', kind:e.margin.kind, text:e.margin.text});
+  S.thread.push({who:'deb', eb:'DEB · ' + NOW, text:e.margin.reply});
+  renderThread(); openOv('convOv'); scrollThread();
+}
+function sendMsg(text){
+  if(!text.trim()) return;
+  S.thread.push({who:'you', text:text.trim()});
+  renderThread(); scrollThread();
+  setTimeout(function(){
+    S.thread.push({who:'deb', eb:'DEB · ' + NOW, text:'Noted — it’s on the page. I’ll weave it into tomorrow’s brief.'});
+    renderThread(); scrollThread();
+  }, 700);
+}
+$('#convSend').addEventListener('click', function(){
+  var i = $('#convInput'); sendMsg(i.value); i.value = '';
+});
+$('#convInput').addEventListener('keydown', function(ev){
+  if(ev.key === 'Enter'){ sendMsg(ev.target.value); ev.target.value = ''; }
+});
+function openConvWith(text){
+  renderThread(); openOv('convOv'); scrollThread();
+  var i = $('#convInput');
+  if(text){ i.value = text; }
+  setTimeout(function(){ i.focus(); }, 260);
+}
+$('#barInput').addEventListener('focus', function(){
+  var v = this.value; this.value = ''; this.blur(); openConvWith(v);
+});
+$('#barSend').addEventListener('click', function(){
+  var i = $('#barInput'); var v = i.value; i.value = '';
+  renderThread(); openOv('convOv');
+  if(v.trim()){ sendMsg(v); } else { scrollThread(); setTimeout(function(){ $('#convInput').focus(); }, 260); }
+});
+
+/* ---------- triage ---------- */
+function triQueue(){ return S.queue.filter(function(c){ return inLens(c.world); }); }
+function openTriage(){ renderTriage(); openOv('triOv'); }
+function renderTriage(){
+  var q = triQueue();
+  var body = $('#triBody');
+  $('#segCnt').textContent = q.length;
+  if(!q.length){
+    $('#triCount').textContent = '';
+    body.innerHTML = '<div id="triClear"><div class="m mono">Triage clear · Wed Jul 29</div>' +
+      '<p class="s serif">Clear. Every loop has a verdict. Go live it.</p></div>';
+    return;
+  }
+  var c = q[0];
+  $('#triCount').textContent = '1 of ' + q.length;
+  body.innerHTML =
+    '<button class="tzone" id="zUp">↑ Delay</button>' +
+    '<div id="triMid">' +
+      '<button class="tzone" id="zLeft">← Delegate</button>' +
+      '<div id="triCard">' +
+        '<div class="src mono">' + esc(c.src) + '</div>' +
+        '<div class="ti">' + esc(c.title) + '</div>' +
+        '<div class="ex">“' + esc(c.ex) + '”</div>' +
+        '<div class="mk mono">' + dotHtml(c.world) + '<span>' + esc(W[c.world].name) + '</span></div>' +
+      '</div>' +
+      '<button class="tzone" id="zRight">Do →</button>' +
+    '</div>' +
+    '<button class="tzone" id="zDown">↓ Delete</button>';
+  $('#zUp').addEventListener('click', function(){ openSheet('delaySheet'); });
+  $('#zLeft').addEventListener('click', function(){ openSheet('delegSheet'); });
+  $('#zRight').addEventListener('click', function(){ verdict('do'); });
+  $('#zDown').addEventListener('click', function(){ verdict('delete'); });
+}
+function removeCard(c){
+  var i = S.queue.indexOf(c);
+  if(i >= 0) S.queue.splice(i, 1);
+  return i;
+}
+function verdict(kind, detail){
+  var q = triQueue(); if(!q.length) return;
+  var c = q[0];
+  var pos = removeCard(c);
+  var addedTodo = null;
+  var label = '';
+  if(kind === 'do'){
+    addedTodo = {id:'qt' + c.id, title:c.title, world:c.world, due:'TODAY'};
+    S.todos.push(addedTodo);
+    label = 'Dealt to To Do';
+  } else if(kind === 'delete'){
+    label = 'Deleted';
+  } else if(kind === 'delay'){
+    label = 'Delayed — ' + detail;
+  } else if(kind === 'delegate'){
+    label = 'Handed to ' + detail.name + ' — chase ' + detail.when;
+  }
+  renderTriage(); renderDeck();
+  showUndo(label, function(){
+    if(addedTodo) S.todos = S.todos.filter(function(t){ return t !== addedTodo; });
+    S.queue.splice(Math.min(pos < 0 ? 0 : pos, S.queue.length), 0, c);
+    renderTriage(); renderDeck();
+  });
+}
+
+/* ---------- sheets ---------- */
+var openSheetId = null;
+function openSheet(id){
+  openSheetId = id;
+  var sc = $('#scrim'), sh = document.getElementById(id);
+  sc.classList.add('show'); sh.classList.add('show');
+  requestAnimationFrame(function(){ requestAnimationFrame(function(){ sc.classList.add('in'); sh.classList.add('in'); }); });
+}
+function closeSheet(){
+  if(!openSheetId) return;
+  var sc = $('#scrim'), sh = document.getElementById(openSheetId);
+  sc.classList.remove('in'); sh.classList.remove('in');
+  setTimeout(function(){ sc.classList.remove('show'); sh.classList.remove('show'); }, 220);
+  openSheetId = null;
+}
+$('#scrim').addEventListener('click', closeSheet);
+
+document.querySelectorAll('[data-delay]').forEach(function(b){
+  b.addEventListener('click', function(){ closeSheet(); verdict('delay', b.getAttribute('data-delay')); });
+});
+$('#delayRange').addEventListener('input', function(){
+  $('#delayVal').textContent = this.value + (this.value === '1' ? ' day' : ' days');
+});
+$('#delaySet').addEventListener('click', function(){
+  var v = $('#delayRange').value;
+  closeSheet(); verdict('delay', v + (v === '1' ? ' day' : ' days'));
+});
+document.querySelectorAll('[data-deleg]').forEach(function(b){
+  b.addEventListener('click', function(){
+    var name = $('#delegName').value.trim() || 'Karthik & Manish';
+    closeSheet(); verdict('delegate', {name:name, when:'in ' + b.getAttribute('data-deleg')});
+  });
+});
+$('#delegRange').addEventListener('input', function(){
+  $('#delegVal').textContent = this.value + (this.value === '1' ? ' day' : ' days');
+});
+$('#delegSet').addEventListener('click', function(){
+  var v = $('#delegRange').value;
+  var name = $('#delegName').value.trim() || 'Karthik & Manish';
+  closeSheet(); verdict('delegate', {name:name, when:'in ' + v + (v === '1' ? ' day' : ' days')});
+});
+
+/* ---------- arrivals ---------- */
+function renderArrivals(){
+  var h = '<div class="arrHead mono"><span>When</span><span>What</span><span>Outcome</span></div>';
+  S.arrivals.forEach(function(a, i){
+    h += '<button class="arrRow' + (a.dropped ? ' drop' : '') + '" data-arr="' + i + '"' + (a.dropped ? ' disabled' : '') + '>' +
+      '<span class="arrWhen">' + esc(a.when).replace('\n','<br>') + '</span>' +
+      '<span class="arrWhat"><span class="frm">' + esc(a.frm) + '</span><br><span class="sub">' + esc(a.sub) + '</span></span>' +
+      '<span class="arrOut">' + (a.world ? dotHtml(a.world) : '') + '<span>' + esc(a.out) + '</span></span>' +
+      '</button>';
+  });
+  $('#arrTable').innerHTML = h;
+  document.querySelectorAll('[data-arr]').forEach(function(b){
+    b.addEventListener('click', function(){
+      var a = S.arrivals[+b.getAttribute('data-arr')];
+      if(!a || a.dropped || !a.raw) return;
+      $('#rawTitle').textContent = 'RAW · ' + a.rawTitle;
+      $('#rawBody').textContent = a.raw;
+      openSheet('rawSheet');
+    });
+  });
+}
+$('#arrChip').addEventListener('click', function(){ renderArrivals(); openOv('arrOv'); });
+
+/* ---------- undo pill ---------- */
+var undoTimer = null, undoFn = null;
+function showUndo(text, fn){
+  var p = $('#undoPill');
+  $('#undoText').textContent = text;
+  undoFn = fn;
+  p.classList.add('show');
+  clearTimeout(undoTimer);
+  undoTimer = setTimeout(hideUndo, 4200);
+}
+function hideUndo(){
+  $('#undoPill').classList.remove('show');
+  undoFn = null; clearTimeout(undoTimer);
+}
+$('#undoBtn').addEventListener('click', function(){
+  if(undoFn) undoFn();
+  hideUndo();
+});
+
+/* ---------- segments ---------- */
+document.querySelectorAll('.seg').forEach(function(b){
+  b.addEventListener('click', function(){ setSeg(b.getAttribute('data-seg')); });
+});
+
+/* ---------- divider drag ---------- */
+(function(){
+  var div = $('#divider'), rec = $('#recordPane'), app = $('#app');
+  function vh(){ return app.clientHeight; }
+  function setRecH(px){
+    var top = rec.getBoundingClientRect().top - app.getBoundingClientRect().top;
+    var min = vh() * 0.30 - top, max = vh() * 0.70 - top;
+    px = Math.max(min, Math.min(max, px));
+    rec.style.flexBasis = px + 'px';
+  }
+  function init(){
+    var mastH = $('#masthead').offsetHeight;
+    rec.style.flexBasis = Math.max(120, vh() * 0.55 - mastH) + 'px';
+  }
+  var dragging = false;
+  div.addEventListener('pointerdown', function(ev){
+    dragging = true; div.classList.add('drag');
+    div.setPointerCapture(ev.pointerId);
+  });
+  div.addEventListener('pointermove', function(ev){
+    if(!dragging) return;
+    var recTop = rec.getBoundingClientRect().top;
+    setRecH(ev.clientY - recTop - 12);
+  });
+  function up(){ dragging = false; div.classList.remove('drag'); }
+  div.addEventListener('pointerup', up);
+  div.addEventListener('pointercancel', up);
+  init();
+  window.addEventListener('resize', function(){
+    /* keep flexBasis; clamp back into range */
+    setRecH(parseFloat(rec.style.flexBasis) || vh() * 0.4);
+  });
+})();
+
+/* ---------- init ---------- */
+renderMast(); renderRecord(); renderDeck(); renderThread();
+})();
+</script>
+</body>
+</html>
