@@ -30,6 +30,51 @@ confirm. Next: **T5 — the V1 walk**, gated on Chris's two device passes.
 
 ## The log (newest first)
 
+### July 29, 2026 — THE PAPER: the V2 shell. One page, two focus states
+**The four-rooms shell is superseded.** The app becomes one page — The
+Paper. No rooms, no tabs, no navigation. Masthead (date · epigraph ·
+world dots · Arrivals chip) · left column THE RECORD · center THE
+VERDICTS + TO DO · right DEB the columnist · THE WORLDS below the fold.
+Two focus states: **CONVERSATION** (engaging the composer, her column,
+or any door → the page recedes, the thread takes the stage at full
+measure) and **TRIAGE** (engaging the seam → the card deals
+center-stage). The four verbs survive as zones and states of one
+surface; their functionality is untouched. Mobile is the same paper
+stacked into one scroll, same focus states.
+
+**The spec is the prototypes** — `docs/design-target-v2-desktop.html`
+and `docs/design-target-v2-mobile.html`, committed as law. Layout,
+spacing, type scale, motion, copy registers, and interaction
+choreography come from those files, not from prose. They are reference
+implementations, not source: mine them for exact values, reproduce in
+the real architecture, never transplant prototype code. Where a
+prototype detail contradicts a standing law, the law wins (flagged);
+everywhere else the prototype wins. Where dummy-data behavior and the
+real engine differ, the engine's law wins and the prototype's
+choreography wins — collisions get flagged. The V1 design-target is
+superseded (noted in its header, kept as record).
+
+**The fence:** this migration touches presentation only. Untouchable:
+everything under `api/`, the filing engine module, her tools and
+prompts, the migrations, `lib/line.ts`'s derivation, the thread-scoping
+law's storage, RLS, the caches. All existing tests stay green and
+UNCHANGED throughout — a test edit means the fence was crossed; stop
+and flag. New tests cover new derivations only.
+
+**The epigraph — words, not state:** the morning goals already
+extracted for the brief surface as one italic line under the date.
+NOTHING may ever check, score, or strike the epigraph. It is his words,
+reprinted — not a tracker. The columnist column is likewise a read of
+existing thread data (the brief + her latest remarks), never new state.
+
+**The working method (the safety rail):** built on branch
+`claude/the-paper`; Vercel's preview deployment for that branch is
+where Chris lives during the migration. Main stays the current app,
+untouched, until he has lived in the Paper on preview — mornings,
+verdicts, drops — and says "merge." **No partial merges to main, ever,
+during this work.** Ticket cut proposed and approved before shell code;
+each ticket leaves the preview walkable end-to-end.
+
 ### July 29, 2026 — The chooser's third row: a slider, not a calendar
 **Replace, don't repair:** the delay and delegate choosers' fixed-date
 field dies. In its place, a 1–5 day slider — quiet Warm Glass track, no

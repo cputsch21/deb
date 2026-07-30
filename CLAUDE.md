@@ -7,10 +7,17 @@ reflection. Owner: Chris Putsch. This repo is the only user that matters.
 ## Read first, in this order
 1. `DECISIONS.md` — the dated rulings log. **It always wins.** When it and any
    other doc disagree, trust it and fix the other doc.
-2. `docs/feature-list.md` — the product (39 stories, LOCKED).
-3. `docs/ux-foundation.md` — the shell, the Deck, the four D's (LOCKED).
-4. `docs/build-plan.md` — the milestones and standing laws.
-5. `docs/master-inventory.md` — background: the six-app archaeology this was
+2. `docs/design-target-v2-desktop.html` + `docs/design-target-v2-mobile.html`
+   — THE PAPER (July 29 ruling): the V2 shell's spec of record. Layout,
+   spacing, type, motion, copy registers, and choreography come from these
+   files, not from prose. Reference implementations, never source to paste.
+   Where a detail contradicts a standing law, the law wins — flag it.
+   (`docs/design-target.html` is the superseded V1 shell, kept as record.)
+3. `docs/feature-list.md` — the product (39 stories, LOCKED).
+4. `docs/ux-foundation.md` — the V1 shell, the Deck, the four D's (LOCKED;
+   the shell chapter superseded by the Paper — functionality still law).
+5. `docs/build-plan.md` — the milestones and standing laws.
+6. `docs/master-inventory.md` — background: the six-app archaeology this was
    distilled from (reference, not law).
 
 ## Current state
