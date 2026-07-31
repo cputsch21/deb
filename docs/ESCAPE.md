@@ -15,6 +15,17 @@ S1 working, not S1 broken. What it changed is that a failed read now says
 so instead of rendering an empty page. Revert the whole thing only if it
 is wrong about something being broken.
 
+TESTED July 31 2026 on a throwaway branch cut from main. All code reverts
+CLEAN — the build stays green and the suite drops back to its pre-S1
+count of 79, which is the proof it went all the way back. EXPECT ONE
+CONFLICT, in this file and only this file, because these very lines
+describe the merge being undone. Resolve and continue:
+
+    git checkout --ours docs/ESCAPE.md && git add docs/ESCAPE.md && git revert --continue
+
+Then delete the S1 block above by hand, since it now describes something
+that is no longer in main.
+
 undo everything:    git fetch origin && git checkout main && git pull && git revert --no-edit -m 1 bad1d86 85378a1 && git push
 world-ink only:     git revert --no-edit bad1d86 && git push
 R2 only:            git revert --no-edit 348d569 && git push
