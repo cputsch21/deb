@@ -1,6 +1,8 @@
 import { useGoals } from '../../db/queries/goals'
 import { useProjects } from '../../db/queries/projects'
 import { useTasks } from '../../db/queries/tasks'
+import { Proof } from '../Proof'
+import type { Task } from '../../db/types'
 import { useDoor } from '../../lib/door'
 import { useLens } from '../../lib/lens'
 import { useRoom } from '../../lib/rooms'
@@ -31,7 +33,20 @@ type Dealing = {
 }
 
 export function DaysDealings({ day, lens }: { day: string; lens: string | null }) {
-  const { data: tasks = [] } = useTasks()
+  const tasks = useTasks()
+  return (
+    <Proof of={[tasks]} line="The day's dealings aren't loading">
+      {([tasks]) => <Dealings day={day} lens={lens} tasks={tasks} />}
+    </Proof>
+  )
+}
+
+/**
+ * A colophon that vanishes on a failed read is the quietest lie on the
+ * page — the day looks like it held nothing. It renders absence only when
+ * absence is proven.
+ */
+function Dealings({ day, lens, tasks }: { day: string; lens: string | null; tasks: Task[] }) {
   const { data: goals = [] } = useGoals()
   const { data: projects = [] } = useProjects()
   const { knock } = useDoor()

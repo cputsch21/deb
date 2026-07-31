@@ -8,6 +8,7 @@ import { applyDebOrder, deriveLine, todayKey } from '../../lib/line'
 import { useIsMobile } from '../../lib/useIsMobile'
 import { useLineWhys } from '../../lib/lineWhys'
 import { transient } from '../../lib/undo'
+import { Proof } from '../Proof'
 import type { Task } from '../../db/types'
 
 /**
@@ -20,7 +21,15 @@ import type { Task } from '../../db/types'
  * the Line, per the one-queue law (T4 ruling 3 closed the gap).
  */
 export function NowStrip({ lens }: { lens: string | null }) {
-  const { data: tasks = [] } = useTasks()
+  const tasks = useTasks()
+  return (
+    <Proof of={[tasks]} line="The line isn't loading">
+      {([tasks]) => <NowChips lens={lens} tasks={tasks} />}
+    </Proof>
+  )
+}
+
+function NowChips({ lens, tasks }: { lens: string | null; tasks: Task[] }) {
   const { data: projects = [] } = useProjects()
   const { setDone } = useTaskMutations()
   const isMobile = useIsMobile()

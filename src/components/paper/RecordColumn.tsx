@@ -9,6 +9,7 @@ import { useRoom } from '../../lib/rooms'
 import { localDayString } from '../../lib/day'
 import { addDays, shortDay, todayKey } from '../../lib/line'
 import { DaysDealings } from '../rooms/DaysDealings'
+import { Proof } from '../Proof'
 import { PageSlot } from './PageSlot'
 import type { Entry, EntryNote, EntrySource, Project, Task } from '../../db/types'
 
@@ -28,10 +29,18 @@ import type { Entry, EntryNote, EntrySource, Project, Task } from '../../db/type
  * does not exist until the calendar pillar is real.
  */
 export function RecordColumn({ lens }: { lens: string | null }) {
+  const tasks = useTasks()
+  return (
+    <Proof of={[tasks]} line="The record isn't loading">
+      {([tasks]) => <Record lens={lens} tasks={tasks} />}
+    </Proof>
+  )
+}
+
+function Record({ lens, tasks }: { lens: string | null; tasks: Task[] }) {
   const entriesQ = useEntries()
   const notesQ = useEntryNotes()
   const { data: projects = [] } = useProjects()
-  const { data: tasks = [] } = useTasks()
   const today = todayKey()
   const [cursor, setCursor] = useState<string>(today)
 

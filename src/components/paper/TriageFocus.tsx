@@ -50,7 +50,7 @@ type Exiting = { task: Task; kind: CardKind; dir: Dir }
  * Nothing deals until all three reads are proven.
  */
 export function TriageFocus({ lens }: { lens: string | null }) {
-  const tasks = proven(useTasks())
+  const tasks = useTasks()
   const projects = proven(useProjects())
   const entryMeta = proven(useEntryMeta())
 

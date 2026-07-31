@@ -16,6 +16,7 @@ import { shortDay } from '../../lib/line'
 import { RAW_MAX, type Entry, type Message, type Project } from '../../db/types'
 import { streamDeb, type DebInput } from '../../lib/deb'
 import { LoadFailed } from '../LoadFailed'
+import { derive } from '../../db/proof'
 import { NowStrip } from '../mobile/NowStrip'
 import { VerdictConfirm } from '../VerdictConfirm'
 import { useIsMobile } from '../../lib/useIsMobile'
@@ -34,7 +35,10 @@ export function Reflect({ lens }: { lens: string | null }) {
   const { data: messages = [], isError, refetch } = useMessages(lens)
   const { data: projects = [] } = useProjects()
   const { data: filedEntries = [] } = useEntries()
-  const { data: allTasks = [] } = useTasks()
+  // The thread does not depend on tasks — only the filed card's "N cards
+  // dealt" count does. So this stays a derived value rather than gating the
+  // whole room: no proof, no number (never a silent "0 cards").
+  const allTasks = useTasks()
   const { remove: removeTask, update: updateTask, setDone: setTaskDone } = useTaskMutations()
   const { forget: forgetFact } = useFactMutations()
   const { update: updateProject } = useProjectMutations()
@@ -306,7 +310,9 @@ export function Reflect({ lens }: { lens: string | null }) {
                 key={item.entry.id}
                 entry={item.entry}
                 world={projects.find((p) => p.id === item.entry.project_id) ?? null}
-                minted={allTasks.filter((t) => t.source_entry_id === item.entry.id).length}
+                minted={derive(allTasks, (ts) =>
+                  ts.filter((t) => t.source_entry_id === item.entry.id).length,
+                )}
                 lens={lens}
               />
             ) : item.msg.role === 'deb' ? (
@@ -469,7 +475,7 @@ function FiledCard({
 }: {
   entry: Entry
   world: Project | null
-  minted: number
+  minted: number | null
   lens: string | null
 }) {
   const { setRoom } = useRoom()
@@ -493,7 +499,7 @@ function FiledCard({
       <span className="mt-1.5 block truncate font-serif text-[14px] leading-snug text-ink">
         {firstLine ?? <em className="text-muted">Filed — the raw is kept; distilling.</em>}
       </span>
-      {minted > 0 && (
+      {minted !== null && minted > 0 && (
         <span className="mt-1 block text-[11px] text-muted">
           {minted} card{minted === 1 ? '' : 's'} dealt to React
         </span>

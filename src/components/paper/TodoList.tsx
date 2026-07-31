@@ -8,6 +8,7 @@ import { useLineWhys } from '../../lib/lineWhys'
 import { localDayString } from '../../lib/day'
 import { applyDebOrder, daysBetween, deriveLine, todayKey } from '../../lib/line'
 import { transient } from '../../lib/undo'
+import { Proof } from '../Proof'
 import type { Project, Task } from '../../db/types'
 
 /**
@@ -21,7 +22,21 @@ import type { Project, Task } from '../../db/types'
  * no editing in place — changes happen by telling Deb.
  */
 export function TodoList({ lens }: { lens: string | null }) {
-  const { data: tasks = [] } = useTasks()
+  const tasks = useTasks()
+  // Header and count both live inside, because the count is derived and a
+  // derived value with no proof prints no value. On failure the well's own
+  // sentence names the section ("The list isn't loading"), so nothing is
+  // left unlabelled.
+  return (
+    <div className="mt-8">
+      <Proof of={[tasks]} line="The list isn't loading">
+        {([tasks]) => <TodoLists lens={lens} tasks={tasks} />}
+      </Proof>
+    </div>
+  )
+}
+
+function TodoLists({ lens, tasks }: { lens: string | null; tasks: Task[] }) {
   const { data: projects = [] } = useProjects()
   const { setDone } = useTaskMutations()
   const whys = useLineWhys(true)
@@ -51,7 +66,7 @@ export function TodoList({ lens }: { lens: string | null }) {
 
   return (
     <>
-      <div className="mt-8">
+      <div>
         <div className="eyebrow mb-3">
           To Do{line.length > 0 && <span className="ml-2 text-accent-ink">{line.length}</span>}
         </div>

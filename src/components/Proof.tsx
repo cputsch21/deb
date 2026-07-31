@@ -55,28 +55,39 @@ export function Proof<Ps extends readonly Proven<unknown>[]>({
   const stalled = <Stalled line={line} onRetry={() => retries.forEach((r) => r())} />
   if (!center) return stalled
   return (
-    <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-8 text-center">
-      {stalled}
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-4">
+      <div className="w-full max-w-[460px]">{stalled}</div>
     </div>
   )
 }
 
 /**
  * The failure line (copy approved July 31). Deb's register: plain, true,
- * answers the fear rather than describing the fault. No box, no icon, no
- * colour, no badge — NO GUILT PIXELS. It disappears without ceremony
- * because the gate simply re-renders; there is no recovered state.
+ * answers the fear rather than describing the fault. No icon, no badge,
+ * no colour — NO GUILT PIXELS.
+ *
+ * It sits in a TONAL WELL (ruling, July 31): the failure line inherits
+ * the container the CONTENT would have had, not the container the empty
+ * state had. Verdicts are cards in a well, rows are wells, chips are
+ * wells — so the line is a well too. A line floating in open space reads
+ * as nothing; the point is that something is MISSING. Warm Glass
+ * vocabulary only: bg-fill, radius 14, no border, no ring, no shadow.
+ *
+ * It disappears without ceremony because the gate simply re-renders;
+ * there is no recovered state and no exit transition.
  */
 export function Stalled({ line, onRetry }: { line: string; onRetry: () => void }) {
   return (
-    <p className="py-1 font-serif text-[14.5px] leading-[1.5] text-muted italic">
-      {line} &mdash; nothing is lost.{' '}
-      <button
-        onClick={onRetry}
-        className="eyebrow -my-2 min-h-11 align-middle text-[0.58rem] text-dim not-italic transition-colors hover:text-ink"
-      >
-        try again
-      </button>
-    </p>
+    <div className="rounded-[14px] bg-fill px-4 py-3.5">
+      <p className="font-serif text-[14.5px] leading-[1.5] text-muted italic">
+        {line} &mdash; nothing is lost.{' '}
+        <button
+          onClick={onRetry}
+          className="eyebrow -my-2 min-h-11 align-middle text-[0.58rem] text-dim not-italic transition-colors hover:text-ink"
+        >
+          try again
+        </button>
+      </p>
+    </div>
   )
 }

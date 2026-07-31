@@ -14,6 +14,7 @@ import { applyDebOrder, dealStack, deriveLine, todayKey } from '../../lib/line'
 import { useLineWhys } from '../../lib/lineWhys'
 import { epigraphLine, issueNumber, worldGlance, type WorldGlance } from '../../lib/paper'
 import { LoadFailed } from '../LoadFailed'
+import { Proof } from '../Proof'
 import { ProjectSheet } from '../ProjectSheet'
 import { MemorySheet } from '../MemorySheet'
 import { ArrivalsOverlay } from './ArrivalsOverlay'
@@ -46,7 +47,7 @@ export function Paper() {
   const { room, setRoom } = useRoom()
   const isMobile = useIsMobile()
   const { data: projects = [], isFetched, isError, refetch } = useProjects()
-  const { data: tasks = [] } = useTasks()
+  const tasksP = useTasks()
   const firstDayQ = useFirstEntryDay()
   const briefQ = useBrief(true)
   const world = projects.find((p) => p.id === lens) ?? null
@@ -89,7 +90,9 @@ export function Paper() {
   }, [room, setRoom])
 
   const focus = room !== 'read'
-  const stack = useMemo(() => dealStack(tasks, lens, today), [tasks, lens, today])
+  // Unproven tasks derive NOTHING (the derived-value law): no stack, no
+  // line, no glances. Every consumer below renders absence, never a zero.
+  const tasks = tasksP.proven ? tasksP.value : null
   const epigraph = epigraphLine(briefQ.data?.items)
   const edition = issueNumber(firstDayQ.data ?? null, today)
 
@@ -97,10 +100,11 @@ export function Paper() {
   const { data: entryMeta = [] } = useEntryMeta()
   const whys = useLineWhys(true)
   const wholeLine = useMemo(
-    () => applyDebOrder(deriveLine(tasks, null, today), whys.order),
+    () => (tasks ? applyDebOrder(deriveLine(tasks, null, today), whys.order) : null),
     [tasks, today, whys.order],
   )
   const glances = useMemo(() => {
+    if (!tasks || !wholeLine) return null
     const m = new Map<string, WorldGlance>()
     for (const p of projects) m.set(p.id, worldGlance(p.id, tasks, entryMeta, wholeLine, today))
     return m
@@ -240,52 +244,15 @@ export function Paper() {
           {/* CENTER — THE VERDICTS seam (triage lives behind it) */}
           <section className="order-2 mt-8 min-w-0 border-hair md:order-none md:mt-0 md:border-l md:px-10">
             <div className="eyebrow mb-3">The Verdicts</div>
-            {stack.length === 0 ? (
-              <>
-                <div className="eyebrow mt-3 text-[0.6rem] text-dim">Triage clear</div>
-                <p className="mt-3 font-serif text-[18px] leading-[1.5] text-muted italic">
-                  Clear. Every loop has a verdict. Go live it.
-                </p>
-              </>
-            ) : (
-              <>
-                <div className="eyebrow mt-3 text-[0.6rem] text-accent-ink">
-                  {stack.length} loop{stack.length === 1 ? '' : 's'} need
-                  {stack.length === 1 ? 's' : ''} verdicts
-                </div>
-                <button
-                  onClick={() => setRoom('react')}
-                  className="mt-3 block w-full rounded-[14px] bg-[var(--t-card)] px-5 py-4.5 text-left transition-colors"
-                >
-                  <span className="eyebrow block text-[0.58rem] text-dim">
-                    {stack[0].kind === 'chase'
-                      ? 'a chase came due'
-                      : stack[0].kind === 'stale'
-                        ? 'an old anchor asks'
-                        : 'from the record'}
-                  </span>
-                  <span className="mt-2 block font-serif text-[17.5px] leading-[1.3] font-medium text-ink">
-                    {stack[0].task.title}
-                  </span>
-                  <span className="mt-3 flex items-center gap-2">
-                    <span
-                      className="h-[9px] w-[9px] rounded-full"
-                      style={{
-                        backgroundColor:
-                          projects.find((p) => p.id === stack[0].task.project_id)?.color ??
-                          'var(--t-silver)',
-                      }}
-                    />
-                    <span className="eyebrow text-[0.6rem] text-muted">
-                      {projects.find((p) => p.id === stack[0].task.project_id)?.name ?? 'bench'}
-                    </span>
-                    <span className="eyebrow ml-auto text-[0.58rem] text-dim">
-                      give verdicts →
-                    </span>
-                  </span>
-                </button>
-              </>
-            )}
+            <Proof of={[tasksP]} line="The verdicts aren't loading">
+              {([tasks]) => (
+                <VerdictsSeam
+                  stack={dealStack(tasks, lens, today)}
+                  projects={projects}
+                  onOpen={() => setRoom('react')}
+                />
+              )}
+            </Proof>
 
             {/* the lifecycle continues: decided things standing, then done
                 things with their times (July 29 re-ruling) */}
@@ -317,7 +284,7 @@ export function Paper() {
               <WorldTile
                 key={p.id}
                 world={p}
-                glance={glances.get(p.id)}
+                glance={glances?.get(p.id)}
                 active={lens === p.id}
                 dimmed={lens !== null && lens !== p.id}
                 onPick={() => setLens(lens === p.id ? null : p.id)}
@@ -400,6 +367,65 @@ export function Paper() {
       <ArrivalsOverlay open={arrivalsOpen} onClose={() => setArrivalsOpen(false)} />
       <UndoPill />
     </div>
+  )
+}
+
+/**
+ * The verdicts seam. It takes a PROVEN stack, so "Clear. Every loop has a
+ * verdict. Go live it." can only ever be printed over a real, succeeded
+ * read — the sentence that congratulated Chris for a clear day he never
+ * had on July 30.
+ */
+function VerdictsSeam({
+  stack,
+  projects,
+  onOpen,
+}: {
+  stack: ReturnType<typeof dealStack>
+  projects: Project[]
+  onOpen: () => void
+}) {
+  if (stack.length === 0) {
+    return (
+      <>
+        <div className="eyebrow mt-3 text-[0.6rem] text-dim">Triage clear</div>
+        <p className="mt-3 font-serif text-[18px] leading-[1.5] text-muted italic">
+          Clear. Every loop has a verdict. Go live it.
+        </p>
+      </>
+    )
+  }
+  const world = projects.find((p) => p.id === stack[0].task.project_id)
+  return (
+    <>
+      <div className="eyebrow mt-3 text-[0.6rem] text-accent-ink">
+        {stack.length} loop{stack.length === 1 ? '' : 's'} need
+        {stack.length === 1 ? 's' : ''} verdicts
+      </div>
+      <button
+        onClick={onOpen}
+        className="mt-3 block w-full rounded-[14px] bg-[var(--t-card)] px-5 py-4.5 text-left transition-colors"
+      >
+        <span className="eyebrow block text-[0.58rem] text-dim">
+          {stack[0].kind === 'chase'
+            ? 'a chase came due'
+            : stack[0].kind === 'stale'
+              ? 'an old anchor asks'
+              : 'from the record'}
+        </span>
+        <span className="mt-2 block font-serif text-[17.5px] leading-[1.3] font-medium text-ink">
+          {stack[0].task.title}
+        </span>
+        <span className="mt-3 flex items-center gap-2">
+          <span
+            className="h-[9px] w-[9px] rounded-full"
+            style={{ backgroundColor: world?.color ?? 'var(--t-silver)' }}
+          />
+          <span className="eyebrow text-[0.6rem] text-muted">{world?.name ?? 'bench'}</span>
+          <span className="eyebrow ml-auto text-[0.58rem] text-dim">give verdicts →</span>
+        </span>
+      </button>
+    </>
   )
 }
 
