@@ -35,6 +35,31 @@ import {
 
 const BATCH_DEFAULT = 8 // serverless timeouts are real; the job resumes
 
+/**
+ * THE FLOOR — NOT YET RULED (R3, July 31 2026).
+ *
+ * The July 30 dry run rewrote three entries and destroyed two of them:
+ * 210 words → "7.29.26 · Launch Deb · Launch Subseven", and 172 words →
+ * the single word "Agenda". The run reported `failed: 0`, which was true
+ * and useless — nothing threw. R2 gave the distillate a ceiling and no
+ * floor.
+ *
+ * The refusal machinery below is built and wired. The THRESHOLD is
+ * deliberately absent until Chris rules on its shape, and the report says
+ * so out loud (`floor: null`) so that `refused: 0` is an honest "no floor
+ * configured" rather than a second silent lie. When the ruling lands, it
+ * is this constant and nothing else.
+ */
+const FLOOR: { minWords: number; minRatio: number } | null = null
+
+/** Would this rewrite destroy the entry? Null floor = nothing is refused,
+ *  and the report is explicit that no floor was in force. */
+function violatesFloor(beforeWords: number, after: string): boolean {
+  if (!FLOOR) return false
+  const w = wordCount(after)
+  return w < FLOOR.minWords || (beforeWords > 0 && w / beforeWords < FLOOR.minRatio)
+}
+
 type Row = Record<string, unknown>
 
 export async function POST(request: Request): Promise<Response> {
@@ -75,20 +100,30 @@ export async function POST(request: Request): Promise<Response> {
 
   const anthropic = new Anthropic()
   const paths: Record<CeilingPath, number> = { clean: 0, regenerated: 0, fallback: 0 }
-  const results: {
+  // Every measure carries its UNIT in its name. The July 30 report called
+  // a word count `before`, it was read as characters, and the conclusion
+  // drawn from it was wrong. An instrument that can be misread is a bug in
+  // the instrument.
+  type Result = {
     id: string
     day: string
-    words: number
-    chars: number
+    beforeWords: number
+    beforeChars: number
+    afterWords: number
+    afterChars: number
+    /** afterWords / beforeWords — 0.03 is the "Agenda" rewrite */
+    kept: number
     path: CeilingPath
-    before: number
     distillate: string
-  }[] = []
+  }
+  const results: Result[] = []
+  const refusals: (Result & { keptDistillate: string })[] = []
   let failed = 0
 
   for (const entry of batch) {
     const id = String(entry.id)
-    const before = typeof entry.distillate === 'string' ? wordCount(entry.distillate) : 0
+    const existing = typeof entry.distillate === 'string' ? entry.distillate : ''
+    const beforeWords = wordCount(existing)
     try {
       const { data: rawRow, error: rawError } = await db
         .from('entry_raw')
@@ -105,6 +140,29 @@ export async function POST(request: Request): Promise<Response> {
       const out = await distillOnly(anthropic, raw)
       if (!out || !out.text) throw new Error('no distillate produced')
 
+      const measured: Result = {
+        id,
+        day: String(entry.entry_day),
+        beforeWords,
+        beforeChars: existing.length,
+        afterWords: wordCount(out.text),
+        afterChars: out.text.length,
+        kept: beforeWords > 0 ? Number((wordCount(out.text) / beforeWords).toFixed(3)) : 1,
+        path: out.path,
+        distillate: out.text,
+      }
+
+      // A REWRITE MAY NEVER BE WORSE THAN THE STATUS QUO. A refusal is a
+      // FAILURE, not a path: the existing line stays, nothing is written,
+      // and it is counted and itemized rather than left to be inferred.
+      if (violatesFloor(beforeWords, out.text)) {
+        refusals.push({ ...measured, keptDistillate: existing })
+        console.error(
+          `[redistill] ${id} REFUSED — would have gone ${beforeWords} → ${measured.afterWords} words: ${JSON.stringify(out.text)}`,
+        )
+        continue
+      }
+
       if (!dryRun) {
         // the ONLY write this job performs — the raw beneath is untouched
         const { data: updated, error: writeError } = await db
@@ -118,17 +176,9 @@ export async function POST(request: Request): Promise<Response> {
       }
 
       paths[out.path]++
-      results.push({
-        id,
-        day: String(entry.entry_day),
-        words: wordCount(out.text),
-        chars: out.text.length,
-        path: out.path,
-        before,
-        distillate: out.text,
-      })
+      results.push(measured)
       console.log(
-        `[redistill] ${id} (${String(entry.entry_day)}): ${before} → ${wordCount(out.text)} words · ${out.path}`,
+        `[redistill] ${id} (${String(entry.entry_day)}): ${beforeWords} → ${measured.afterWords} words · ${out.path}`,
       )
     } catch (err) {
       failed++
@@ -136,24 +186,34 @@ export async function POST(request: Request): Promise<Response> {
     }
   }
 
-  const longest = [...results].sort((a, b) => b.words - a.words).slice(0, 5)
+  const longest = [...results].sort((a, b) => b.afterWords - a.afterWords).slice(0, 5)
+  // the mirror of `longest`, and the one that would have caught July 30:
+  // the rewrites that threw the most away
+  const mostReduced = [...results].sort((a, b) => a.kept - b.kept).slice(0, 5)
   const fallbackRate = results.length ? paths.fallback / results.length : 0
 
   const report = {
     dryRun,
     mode,
+    floor: FLOOR, // null = no floor in force; `refused` is 0 for that reason
     entriesInRecord: all.length,
     needingWork: candidates.length,
     processed: batch.length,
     rewritten: results.length,
+    refused: refusals.length,
     failed,
     remaining: Math.max(0, candidates.length - batch.length),
     paths,
     fallbackRate: Number(fallbackRate.toFixed(2)),
     stillOverCeiling: results.filter((r) => overruns(r.distillate)).length,
     longest,
+    mostReduced,
+    refusals,
   }
-  console.log('[redistill] report', JSON.stringify({ ...report, longest: longest.length }))
+  console.log(
+    '[redistill] report',
+    JSON.stringify({ ...report, longest: longest.length, mostReduced: mostReduced.length }),
+  )
   return json(report)
 }
 
