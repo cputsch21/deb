@@ -4,6 +4,12 @@ Deb is a single-user personal operating system: one conversation with an AI
 mentor (named Deb), one door for everything, quiet structure, honest
 reflection. Owner: Chris Putsch. This repo is the only user that matters.
 
+**This file carries LAW and POINTERS only.** It is read at the top of every
+session and revised almost never, which makes it the worst possible home
+for any fact about the present. Law that gets overturned is corrected here
+in place. State is never written down — it is derived, from the top of
+`DECISIONS.md` and from `git log`.
+
 ## Read first, in this order
 1. `DECISIONS.md` — the dated rulings log. **It always wins.** When it and any
    other doc disagree, trust it and fix the other doc.
@@ -13,23 +19,24 @@ reflection. Owner: Chris Putsch. This repo is the only user that matters.
    files, not from prose. Reference implementations, never source to paste.
    Where a detail contradicts a standing law, the law wins — flag it.
    (`docs/design-target.html` is the superseded V1 shell, kept as record.)
-3. `docs/feature-list.md` — the product (39 stories, LOCKED).
+3. `docs/feature-list.md` — the product (LOCKED).
 4. `docs/ux-foundation.md` — the V1 shell, the Deck, the four D's (LOCKED;
    the shell chapter superseded by the Paper — functionality still law).
-5. `docs/build-plan.md` — the milestones and standing laws.
+5. `docs/build-plan.md` — the standing laws, and the original plan kept
+   as record. It is not a status board; where we are lives in the log.
 6. `docs/master-inventory.md` — background: the six-app archaeology this was
    distilled from (reference, not law).
 
-## Current state
-Milestone 0 complete: Vite + React 19 + TS + Tailwind v4 skeleton, Supabase
-email/password auth, deployed on Vercel (auto-deploy on push to main), Warm
-Glass design foundation in `src/index.css`. Next: **M1 — the spine**
-(projects · goals · tasks), per `docs/build-plan.md`.
+## Where we are
+Not recorded here. Read the top of `DECISIONS.md` for the most recent
+ruling, and `git log --oneline -20` for what actually shipped. **Anything
+in this file describing "where we are" is a bug in this file.**
 
 ## Stack & commands
 pnpm ONLY (one lockfile — never npm/yarn). Supabase (Postgres + auth, RLS on
-every table) · Vercel serverless under `api/` (none yet) · TanStack Query +
-Zustand (not yet installed into use) · Fraunces/Inter/JetBrains Mono.
+every table) · Vercel serverless under `api/` · TanStack Query + Zustand ·
+Fraunces/Inter/JetBrains Mono. What exists under `api/`, `src/`, and
+`supabase/` is not listed here — the repo is its own inventory.
 
 ```bash
 pnpm dev      # localhost:5173 (needs .env.local — see .env.example)
@@ -43,7 +50,7 @@ pnpm test     # tsc -b + vitest — the typecheck is NOT optional here:
 Supabase schema changes = dated idempotent `.sql` files in `supabase/`,
 applied by hand in the Supabase SQL editor. Never assume a migration ran.
 
-## GITHUB IS THE ONLY SHARED SURFACE (standing law, July 30 2026)
+## GITHUB IS THE ONLY SHARED SURFACE
 Work that isn't committed and pushed does not exist to any other session.
 - **End every session** with everything committed and pushed, or
   deliberately archived to a branch. Never leave unpushed commits. Never
@@ -70,6 +77,10 @@ Work that isn't committed and pushed does not exist to any other session.
   update/delete policy exists), not discipline.
 - Keep the raw: originals archived beside every distillate.
 - Local-timezone app-day. No hardcoded time offsets.
+- `SUPABASE_SERVICE_ROLE_KEY` is imported by `api/ingest-email.ts` and
+  **nowhere else**. That is an invariant, not a habit — documented at the
+  import site and in `DECISIONS.md`. Any new code that needs it is wrong
+  until ruled otherwise.
 
 ## Product law (the graveyard rules — learned expensively)
 - No scores, streaks, daily contracts, locks, or ceremony. Ever.
@@ -83,8 +94,11 @@ Work that isn't committed and pushed does not exist to any other session.
 
 ## Design law (Warm Glass — see the tokens in src/index.css)
 - Tonal wells, not boxes: `bg-fill`, radius 12–16px, **no borders, no rings,
-  no outlines, no drop shadows** (lone exception: the sheet's floating edge).
-- Focus = the blinking caret only. No focus styling of any kind.
+  no outlines, no drop shadows**. The sanctioned exceptions are the four
+  surfaces that genuinely float: the triage card, the conversation sheet,
+  the choosers, the undo pill. Furniture riding them stays flat.
+- Focus = the blinking caret in inputs, plus a deepened well on
+  `:focus-visible` elsewhere. Pointer and touch never see focus styling.
 - One accent moment per screen (silver at home, project color in a lens).
 - Project marker A everywhere: leading color dot + trailing mono `.eyebrow`
   tag. Project colors user-choosable — random default, any hex.
@@ -98,8 +112,8 @@ Work that isn't committed and pushed does not exist to any other session.
 ## How to work
 - Plan before building: propose scope as small tickets, get Chris's yes,
   then build exactly that. **No scope creep beyond the ticket.**
-- When a milestone stalls: finish or formally cut (dated DECISIONS entry) —
-  never start the adjacent fun thing.
+- When a piece of work stalls: finish it or formally cut it (dated
+  DECISIONS entry) — never drift into the adjacent fun thing.
 - Every deliberate ruling → a dated entry in `DECISIONS.md` (newest first).
   Intentional rule-breaks are recorded there or they didn't happen.
 - `pnpm build` green before every commit. Talk product to Chris, not

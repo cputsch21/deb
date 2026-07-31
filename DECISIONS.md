@@ -7,28 +7,72 @@
 
 ---
 
-## Current product state
+## Current state
 
-**Deb** (formerly MyOS) is a personal operating system for turning goals into
-reality — one AI mentor (Deb) across **one rail and four rooms** (Read · Review
-· React · Reflect), one door for everything, quiet structure, honest reflection.
-Product law, newest first: `docs/prd.md` (the intention) + `docs/design-target.html`
-(the approved clickable prototype — the design target) · then `docs/feature-list.md`
-and `docs/ux-foundation.md` (v1, superseded where they conflict — see July 24) ·
-`docs/build-plan.md` (the milestones, v3 — re-cut to rooms) ·
-`docs/master-inventory.md` (the cross-app archaeology it was all distilled
-from). M2 (Reflect: voice, hands, memory, first message) closed · M3 (Review +
-the intake interview) live · M4 (React: the stack + the Line) shipped, device
-pass pending · **M5 (Read: ingestion + the record) complete** — the spine, the one door,
-the distillation, minting + the learning loop, the Read room, the margins,
-and the Plaud spike report. M6 T1–T3 shipped (Arc · the shelf · PWA);
-**T4's fifteen rulings are ruled and executed (July 27)** — goals and task
-edits live in the conversation now, with the doors and the re-homed solemn
-confirm. Next: **T5 — the V1 walk**, gated on Chris's two device passes.
+Current state is the top of this log.
 
 ---
 
 ## The log (newest first)
+
+### July 31, 2026 — Truth restoration (W1): where state is allowed to live
+**PERISHABLE STATE NEVER LIVES IN A DOCUMENT THAT IS READ BUT NOT
+REVISITED.**
+
+`CLAUDE.md` is read at the top of every session and revised almost never,
+which makes it the worst possible home for any fact about the present. It
+carries **LAW and POINTERS only**. State is *derived* — from the top of
+this log and from `git log` — never stored. Law that gets overturned is
+corrected in place; state is not written down at all.
+
+**What it was lying about**, all three found by reading the file against
+the repo rather than trusting it: it announced *"Milestone 0 complete…
+Next: M1 — the spine"* while the app was eleven milestones past that; it
+claimed `api/` held no serverless functions while `api/` held six,
+including the privileged email chute; and its design law still read
+*"Focus = the blinking caret only. No focus styling of any kind,"* which
+shipped ruling 4 had overturned months of sessions earlier. A file that is
+obeyed and never checked does not decay gracefully — it decays silently,
+and every session inherits the decay.
+
+**The rules that follow from it:**
+- A statement in `CLAUDE.md` is either LAW (holds until overturned) or
+  STATE (a fact about right now). Law stays and is corrected in place.
+  State is deleted — milestone numbers, "next up", counts, file listings,
+  anything with a "currently" in it. Dates survive only as CITATIONS
+  pointing into this log.
+- **This log is append-only.** A superseded ruling stays exactly as
+  written and the superseding entry references it. Nothing is edited to
+  be retroactively right — not a typo, not a reword, not a correction.
+  That property is the whole value of the file: a log you can edit is not
+  evidence, and the reversals are the most instructive entries in it.
+- The header above this log carries no state either, for the same reason
+  it was removed from `CLAUDE.md`. It said *"Next: T5 — the V1 walk"* long
+  after the Paper, the chute, X1, R2 and S1 had all shipped past it.
+
+**Also settled here:** git identity is set repo-locally
+(`--local`, never `--global`) so commits stop being attributed to a
+machine-derived address. **Past commits keep whatever author they have —
+no history rewrite, ever.** Rewriting attribution means rewriting every
+SHA in the repo, which would invalidate `docs/ESCAPE.md`, every SHA cited
+in this log, and the archive branches. The cure is many times worse than
+the disease.
+
+**And the last piece of discipline goes:** `pnpm test` now runs
+`tsc -b && vitest run`. The compile-time guard on the S1 capability
+removals (`src/db/proof.compile-test.tsx`) was previously checked only if
+someone remembered to run the build. **Ruled: CI runs `pnpm test` on every
+push and pull request** — one job, one command, no secrets. Enforcement
+must not depend on anyone remembering anything, which is the same argument
+as the type itself, one level up.
+
+*Blocked on the day of the ruling, recorded so the gap is visible rather
+than assumed closed:* the workflow file is written and committed but
+**cannot be pushed** — the repo's OAuth token carries `gist, read:org,
+repo` and GitHub refuses any push or Contents-API write touching
+`.github/workflows/` without the `workflow` scope (verified both routes).
+It lands after `gh auth refresh -h github.com -s workflow`. Until then the
+typecheck is enforced locally by `pnpm test` and by nothing else.
 
 ### July 31, 2026 — EMPTINESS MUST BE EARNED (S1) — the law, and the mechanism that enforces it
 **The incident.** On July 30 a total authentication failure — 12 of 12
