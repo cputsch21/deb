@@ -55,7 +55,7 @@ export function TriageFocus({ lens }: { lens: string | null }) {
   const entryMeta = proven(useEntryMeta())
 
   return (
-    <Proof of={[tasks, projects, entryMeta]} what="The verdicts aren't loading" center>
+    <Proof of={[tasks, projects, entryMeta]} line="The verdicts aren't loading" center>
       {([tasks, projects, entryMeta]) => (
         <TriageStage lens={lens} tasks={tasks} projects={projects} entryMeta={entryMeta} />
       )}

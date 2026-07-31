@@ -10,7 +10,7 @@ import type { Proven } from '../db/proof'
  * values, so the inner component's props are `Task[]` and it is
  * unrenderable without proof. That is the whole enforcement.
  *
- *   <Proof of={[tasks, projects]} what="The verdicts aren't loading">
+ *   <Proof of={[tasks, projects]} line="The verdicts aren't loading">
  *     {([tasks, projects]) => <Stage tasks={tasks} projects={projects} />}
  *   </Proof>
  *
@@ -27,13 +27,15 @@ type Unproven = Extract<Proven<unknown>, { proven: false }>
 
 export function Proof<Ps extends readonly Proven<unknown>[]>({
   of,
-  what,
+  line,
   center = false,
   children,
 }: {
   of: readonly [...Ps]
-  /** The clause before the em dash: "The verdicts aren't loading" */
-  what: string
+  /** The clause before the em dash — a clause, because verb agreement
+   *  varies across slots ("the verdicts aren't" / "the list isn't"), so
+   *  the sentence cannot be built in here. */
+  line: string
   /** Full-screen focus surfaces centre their line; columns do not. */
   center?: boolean
   children: (values: ValuesOf<Ps>) => ReactNode
@@ -50,11 +52,11 @@ export function Proof<Ps extends readonly Proven<unknown>[]>({
 
   // Something has. One line, in the slot the lie would have occupied.
   const retries = unproven.flatMap((p) => (p.state === 'stalled' ? [p.retry] : []))
-  const line = <Stalled what={what} onRetry={() => retries.forEach((r) => r())} />
-  if (!center) return line
+  const stalled = <Stalled line={line} onRetry={() => retries.forEach((r) => r())} />
+  if (!center) return stalled
   return (
     <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-8 text-center">
-      {line}
+      {stalled}
     </div>
   )
 }
@@ -65,10 +67,10 @@ export function Proof<Ps extends readonly Proven<unknown>[]>({
  * colour, no badge — NO GUILT PIXELS. It disappears without ceremony
  * because the gate simply re-renders; there is no recovered state.
  */
-export function Stalled({ what, onRetry }: { what: string; onRetry: () => void }) {
+export function Stalled({ line, onRetry }: { line: string; onRetry: () => void }) {
   return (
     <p className="py-1 font-serif text-[14.5px] leading-[1.5] text-muted italic">
-      {what} &mdash; nothing is lost.{' '}
+      {line} &mdash; nothing is lost.{' '}
       <button
         onClick={onRetry}
         className="eyebrow -my-2 min-h-11 align-middle text-[0.58rem] text-dim not-italic transition-colors hover:text-ink"
