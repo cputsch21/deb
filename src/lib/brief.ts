@@ -47,6 +47,11 @@ export function useBrief(enabled: boolean) {
     queryFn: fetchBrief,
     enabled,
     staleTime: 5 * 60_000,
-    retry: false,
+    // retry:false REMOVED (ruling, July 31). It was there without a
+    // reason: /api/brief is a pure cache read of brief_cache — no model
+    // call, no tokens, no cost — so there was nothing to protect and it
+    // made the brief the one surface that could not recover from a single
+    // transient failure. Retrying is safe now because the gate renders the
+    // stall honestly while it happens.
   })
 }
