@@ -2,7 +2,7 @@ import { useGoals } from '../../db/queries/goals'
 import { useProjects } from '../../db/queries/projects'
 import { useTasks } from '../../db/queries/tasks'
 import { Proof } from '../Proof'
-import type { Task } from '../../db/types'
+import type { Project, Task } from '../../db/types'
 import { useDoor } from '../../lib/door'
 import { useLens } from '../../lib/lens'
 import { useRoom } from '../../lib/rooms'
@@ -34,9 +34,12 @@ type Dealing = {
 
 export function DaysDealings({ day, lens }: { day: string; lens: string | null }) {
   const tasks = useTasks()
+  const projects = useProjects()
   return (
-    <Proof of={[tasks]} line="The day's dealings aren't loading">
-      {([tasks]) => <Dealings day={day} lens={lens} tasks={tasks} />}
+    <Proof of={[tasks, projects]} line="The day's dealings aren't loading">
+      {([tasks, projects]) => (
+        <Dealings day={day} lens={lens} tasks={tasks} projects={projects} />
+      )}
     </Proof>
   )
 }
@@ -46,9 +49,18 @@ export function DaysDealings({ day, lens }: { day: string; lens: string | null }
  * page — the day looks like it held nothing. It renders absence only when
  * absence is proven.
  */
-function Dealings({ day, lens, tasks }: { day: string; lens: string | null; tasks: Task[] }) {
+function Dealings({
+  day,
+  lens,
+  tasks,
+  projects,
+}: {
+  day: string
+  lens: string | null
+  tasks: Task[]
+  projects: Project[]
+}) {
   const { data: goals = [] } = useGoals()
-  const { data: projects = [] } = useProjects()
   const { knock } = useDoor()
   const { setRoom } = useRoom()
   const { setLens } = useLens()

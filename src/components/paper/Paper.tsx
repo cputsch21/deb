@@ -13,7 +13,6 @@ import { paintWorld } from '../../lib/worldTheme'
 import { applyDebOrder, dealStack, deriveLine, todayKey } from '../../lib/line'
 import { useLineWhys } from '../../lib/lineWhys'
 import { epigraphLine, issueNumber, worldGlance, type WorldGlance } from '../../lib/paper'
-import { LoadFailed } from '../LoadFailed'
 import { Proof } from '../Proof'
 import { ProjectSheet } from '../ProjectSheet'
 import { MemorySheet } from '../MemorySheet'
@@ -46,11 +45,16 @@ export function Paper() {
   const { lens, setLens } = useLens()
   const { room, setRoom } = useRoom()
   const isMobile = useIsMobile()
-  const { data: projects = [], isFetched, isError, refetch } = useProjects()
+  const projectsP = useProjects()
   const tasksP = useTasks()
   const firstDayQ = useFirstEntryDay()
   const briefQ = useBrief(true)
-  const world = projects.find((p) => p.id === lens) ?? null
+  // Unproven worlds derive NOTHING — and the masthead renders NO lens
+  // dots at all, not even silver (ruling, July 31): a partial control is
+  // the lie; an absent control is honest. The WORLDS band below carries
+  // the one failure line. No whole-page takeover.
+  const projects = projectsP.proven ? projectsP.value : null
+  const world = projects?.find((p) => p.id === lens) ?? null
   const [sheet, setSheet] = useState<'closed' | 'create' | 'edit'>('closed')
   const [memoryOpen, setMemoryOpen] = useState(false)
   const [arrivalsOpen, setArrivalsOpen] = useState(false)
@@ -70,8 +74,8 @@ export function Paper() {
 
   // If the active world disappears (retired, rolled back), come home.
   useEffect(() => {
-    if (lens !== null && isFetched && !world) setLens(null)
-  }, [lens, world, isFetched, setLens])
+    if (lens !== null && projectsP.proven && !world) setLens(null)
+  }, [lens, world, projectsP.proven, setLens])
 
   // The repaint: the whole paper wears the world's color (silver at home).
   useEffect(() => {
@@ -104,7 +108,7 @@ export function Paper() {
     [tasks, today, whys.order],
   )
   const glances = useMemo(() => {
-    if (!tasks || !wholeLine) return null
+    if (!tasks || !wholeLine || !projects) return null
     const m = new Map<string, WorldGlance>()
     for (const p of projects) m.set(p.id, worldGlance(p.id, tasks, entryMeta, wholeLine, today))
     return m
@@ -115,10 +119,6 @@ export function Paper() {
     month: 'long',
     day: 'numeric',
   })
-
-  if (isError) {
-    return <LoadFailed what="The paper" onRetry={() => void refetch()} />
-  }
 
   return (
     <div className="relative h-full overflow-y-auto">
@@ -170,6 +170,8 @@ export function Paper() {
                 {hoverName ?? (world ? world.name : 'Whole life')}
               </span>
               <div className="order-1 flex gap-1 overflow-x-auto md:order-2" style={{ scrollbarWidth: 'none' }}>
+                {projects && (
+                  <>
                 <LensDot
                   active={lens === null}
                   label="Whole life"
@@ -199,6 +201,8 @@ export function Paper() {
                     />
                   </LensDot>
                 ))}
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -244,8 +248,8 @@ export function Paper() {
           {/* CENTER — THE VERDICTS seam (triage lives behind it) */}
           <section className="order-2 mt-8 min-w-0 border-hair md:order-none md:mt-0 md:border-l md:px-10">
             <div className="eyebrow mb-3">The Verdicts</div>
-            <Proof of={[tasksP]} line="The verdicts aren't loading">
-              {([tasks]) => (
+            <Proof of={[tasksP, projectsP]} line="The verdicts aren't loading">
+              {([tasks, projects]) => (
                 <VerdictsSeam
                   stack={dealStack(tasks, lens, today)}
                   projects={projects}
@@ -279,23 +283,29 @@ export function Paper() {
         <section className="mt-16">
           <hr className="mb-5 border-0 border-t border-hair" />
           <div className="eyebrow">The Worlds</div>
-          <div className="mt-3.5 grid grid-cols-1 gap-x-6 gap-y-2.5 md:grid-cols-3">
-            {projects.map((p) => (
-              <WorldTile
-                key={p.id}
-                world={p}
-                glance={glances?.get(p.id)}
-                active={lens === p.id}
-                dimmed={lens !== null && lens !== p.id}
-                onPick={() => setLens(lens === p.id ? null : p.id)}
-              />
-            ))}
-            <button
-              onClick={() => setSheet('create')}
-              className="eyebrow flex min-h-11 items-center rounded-[14px] px-5 text-dim transition-colors hover:bg-fill hover:text-ink"
-            >
-              + new world
-            </button>
+          <div className="mt-3.5">
+            <Proof of={[projectsP]} line="Your worlds aren't loading">
+              {([projects]) => (
+                <div className="grid grid-cols-1 gap-x-6 gap-y-2.5 md:grid-cols-3">
+                  {projects.map((p) => (
+                    <WorldTile
+                      key={p.id}
+                      world={p}
+                      glance={glances?.get(p.id)}
+                      active={lens === p.id}
+                      dimmed={lens !== null && lens !== p.id}
+                      onPick={() => setLens(lens === p.id ? null : p.id)}
+                    />
+                  ))}
+                  <button
+                    onClick={() => setSheet('create')}
+                    className="eyebrow flex min-h-11 items-center rounded-[14px] px-5 text-dim transition-colors hover:bg-fill hover:text-ink"
+                  >
+                    + new world
+                  </button>
+                </div>
+              )}
+            </Proof>
           </div>
         </section>
 

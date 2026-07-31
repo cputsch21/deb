@@ -51,7 +51,7 @@ export function AuthScreen() {
           onChange={(e) => setPassword(e.target.value)}
           className={well}
         />
-        {error && <p className="text-sm text-bad">{error}</p>}
+        {error && <p className="text-sm text-muted">{error}</p>}
         <button
           type="submit"
           disabled={busy}

@@ -9,7 +9,7 @@ import { useIsMobile } from '../../lib/useIsMobile'
 import { useLineWhys } from '../../lib/lineWhys'
 import { transient } from '../../lib/undo'
 import { Proof } from '../Proof'
-import type { Task } from '../../db/types'
+import type { Project, Task } from '../../db/types'
 
 /**
  * The Now strip (above the composer in Reflect): the Line's glance level —
@@ -22,15 +22,23 @@ import type { Task } from '../../db/types'
  */
 export function NowStrip({ lens }: { lens: string | null }) {
   const tasks = useTasks()
+  const projects = useProjects()
   return (
-    <Proof of={[tasks]} line="The line isn't loading">
-      {([tasks]) => <NowChips lens={lens} tasks={tasks} />}
+    <Proof of={[tasks, projects]} line="The line isn't loading">
+      {([tasks, projects]) => <NowChips lens={lens} tasks={tasks} projects={projects} />}
     </Proof>
   )
 }
 
-function NowChips({ lens, tasks }: { lens: string | null; tasks: Task[] }) {
-  const { data: projects = [] } = useProjects()
+function NowChips({
+  lens,
+  tasks,
+  projects,
+}: {
+  lens: string | null
+  tasks: Task[]
+  projects: Project[]
+}) {
   const { setDone } = useTaskMutations()
   const isMobile = useIsMobile()
   const whys = useLineWhys(true)

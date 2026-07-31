@@ -17,6 +17,7 @@ import { RAW_MAX, type Entry, type Message, type Project } from '../../db/types'
 import { streamDeb, type DebInput } from '../../lib/deb'
 import { LoadFailed } from '../LoadFailed'
 import { derive } from '../../db/proof'
+import { Proof } from '../Proof'
 import { NowStrip } from '../mobile/NowStrip'
 import { VerdictConfirm } from '../VerdictConfirm'
 import { useIsMobile } from '../../lib/useIsMobile'
@@ -33,7 +34,7 @@ type Turn = { userLine: string | null; retry: DebInput; phase: 'waiting' | 'spea
 export function Reflect({ lens }: { lens: string | null }) {
   const qc = useQueryClient()
   const { data: messages = [], isError, refetch } = useMessages(lens)
-  const { data: projects = [] } = useProjects()
+  const projectsP = useProjects()
   const { data: filedEntries = [] } = useEntries()
   // The thread does not depend on tasks — only the filed card's "N cards
   // dealt" count does. So this stays a derived value rather than gating the
@@ -48,7 +49,6 @@ export function Reflect({ lens }: { lens: string | null }) {
     revertVersion: revertEntryVersion,
     refile: refileEntry,
   } = useEntryMutations()
-  const world = projects.find((p) => p.id === lens) ?? null
   const isMobile = useIsMobile()
   const [turn, setTurn] = useState<Turn | null>(null)
   const [draft, setDraft] = useState('')
@@ -280,6 +280,20 @@ export function Reflect({ lens }: { lens: string | null }) {
   }
 
   // Law: a failed thread load never renders as an empty thread.
+  // The worlds gate the thread because every filed card and the daymark
+  // carry a WORLD NAME — provenance, not decoration. A card labelled
+  // "silver" that belongs to CTDI is a false claim about where words were
+  // said, and that outranks the cost of holding the thread back.
+  if (!projectsP.proven) {
+    return (
+      <Proof of={[projectsP]} line="The thread isn't loading" center>
+        {() => null}
+      </Proof>
+    )
+  }
+  const projects = projectsP.value
+  const world = projects.find((p) => p.id === lens) ?? null
+
   if (isError) return <LoadFailed what="The thread" onRetry={() => void refetch()} />
 
   const daymark = world
@@ -370,7 +384,7 @@ export function Reflect({ lens }: { lens: string | null }) {
               )}
               {turn.phase === 'speaking' && <Dots />}
               {turn.phase === 'error' && (
-                <p className="max-w-[88%] font-serif text-[15px] text-bad">
+                <p className="max-w-[88%] font-serif text-[15px] text-muted">
                   Deb could not answer just now.{' '}
                   <button
                     onClick={() => run(turn.retry, turn.userLine)}

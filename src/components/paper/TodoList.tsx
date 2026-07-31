@@ -23,21 +23,29 @@ import type { Project, Task } from '../../db/types'
  */
 export function TodoList({ lens }: { lens: string | null }) {
   const tasks = useTasks()
+  const projects = useProjects()
   // Header and count both live inside, because the count is derived and a
   // derived value with no proof prints no value. On failure the well's own
   // sentence names the section ("The list isn't loading"), so nothing is
   // left unlabelled.
   return (
     <div className="mt-8">
-      <Proof of={[tasks]} line="The list isn't loading">
-        {([tasks]) => <TodoLists lens={lens} tasks={tasks} />}
+      <Proof of={[tasks, projects]} line="The list isn't loading">
+        {([tasks, projects]) => <TodoLists lens={lens} tasks={tasks} projects={projects} />}
       </Proof>
     </div>
   )
 }
 
-function TodoLists({ lens, tasks }: { lens: string | null; tasks: Task[] }) {
-  const { data: projects = [] } = useProjects()
+function TodoLists({
+  lens,
+  tasks,
+  projects,
+}: {
+  lens: string | null
+  tasks: Task[]
+  projects: Project[]
+}) {
   const { setDone } = useTaskMutations()
   const whys = useLineWhys(true)
   const today = todayKey()

@@ -7,7 +7,7 @@
 export function LoadFailed({ what, onRetry }: { what: string; onRetry: () => void }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 px-8 text-center">
-      <span className="eyebrow text-bad">didn&rsquo;t load</span>
+      <span className="eyebrow text-dim">didn&rsquo;t load</span>
       <p className="max-w-sm font-serif text-lg text-muted">
         {what} couldn&rsquo;t be loaded. Nothing is lost — this screen just
         can&rsquo;t see the record right now.

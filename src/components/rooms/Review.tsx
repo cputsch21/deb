@@ -25,20 +25,30 @@ import type { Goal, Project, Task } from '../../db/types'
  */
 export function Review({ lens }: { lens: string | null }) {
   const tasks = useTasks()
+  const projects = useProjects()
+  const retired = useRetiredProjects()
   return (
-    <Proof of={[tasks]} line="The dossiers aren't loading" center>
-      {([tasks]) => <Dossiers lens={lens} tasks={tasks} />}
+    <Proof of={[tasks, projects, retired]} line="The dossiers aren't loading" center>
+      {([tasks, projects, retired]) => (
+        <Dossiers lens={lens} tasks={tasks} projects={projects} retired={retired} />
+      )}
     </Proof>
   )
 }
 
-function Dossiers({ lens, tasks }: { lens: string | null; tasks: Task[] }) {
-  const projectsQ = useProjects()
-  const retiredQ = useRetiredProjects()
+function Dossiers({
+  lens,
+  tasks,
+  projects,
+  retired,
+}: {
+  lens: string | null
+  tasks: Task[]
+  projects: Project[]
+  retired: Project[]
+}) {
   const goalsQ = useGoals()
   const { restore } = useProjectMutations()
-  const projects = projectsQ.data ?? []
-  const retired = retiredQ.data ?? []
   const goals = goalsQ.data ?? []
   const world = projects.find((p) => p.id === lens) ?? null
   // The finished shelf (M6 T2): a retired world being visited, read-only.
@@ -47,15 +57,10 @@ function Dossiers({ lens, tasks }: { lens: string | null; tasks: Task[] }) {
 
   // Law: a failed dossier load never renders as an empty study — the shelf
   // included (a missing shelf would be a silent lie about retired worlds).
-  // Tasks are gated above; these three still carry the old isError guard
-  // and get the same treatment when their hooks flip.
-  if (projectsQ.isError || goalsQ.isError || retiredQ.isError) {
-    const retry = () => {
-      void projectsQ.refetch()
-      void goalsQ.refetch()
-      void retiredQ.refetch()
-    }
-    return <LoadFailed what="The dossiers" onRetry={retry} />
+  // Tasks, worlds and the shelf are gated above; goals still carry the old
+  // isError guard and get the same treatment when useGoals flips.
+  if (goalsQ.isError) {
+    return <LoadFailed what="The dossiers" onRetry={() => void goalsQ.refetch()} />
   }
 
   return (

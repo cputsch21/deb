@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { transient } from '../../lib/undo'
+import { proven, type Proven } from '../proof'
 import { assertRowChanged, capText, optimisticWrite } from '../mutate'
 import { NAME_MAX, type Project } from '../types'
 
@@ -21,8 +22,8 @@ async function fetchRetired(): Promise<Project[]> {
   return data
 }
 
-export function useRetiredProjects() {
-  return useQuery({ queryKey: projectKeys.retired, queryFn: fetchRetired })
+export function useRetiredProjects(): Proven<Project[]> {
+  return proven(useQuery({ queryKey: projectKeys.retired, queryFn: fetchRetired }))
 }
 
 async function fetchProjects(): Promise<Project[]> {
@@ -35,8 +36,11 @@ async function fetchProjects(): Promise<Project[]> {
   return data
 }
 
-export function useProjects() {
-  return useQuery({ queryKey: projectKeys.all, queryFn: fetchProjects })
+/** EMPTINESS MUST BE EARNED — see src/db/proof.ts. An unproven worlds
+ *  read renders NO lens dots at all, not a partial rail: a partial
+ *  control is the lie, an absent control is honest. */
+export function useProjects(): Proven<Project[]> {
+  return proven(useQuery({ queryKey: projectKeys.all, queryFn: fetchProjects }))
 }
 
 const nowISO = () => new Date().toISOString()

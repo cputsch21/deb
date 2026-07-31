@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useArrivals } from '../../db/queries/ingestLog'
 import { useEntries, useEntryRaw } from '../../db/queries/entries'
 import { useProjects } from '../../db/queries/projects'
+import { Proof } from '../Proof'
 import type { Arrival, Entry, Project } from '../../db/types'
 
 /**
@@ -17,7 +18,7 @@ export function ArrivalsOverlay({ open, onClose }: { open: boolean; onClose: () 
   const [rawFor, setRawFor] = useState<Arrival | null>(null)
   const arrivalsQ = useArrivals(open, reach)
   const { data: entries = [] } = useEntries()
-  const { data: projects = [] } = useProjects()
+  const projectsP = useProjects()
 
   // Esc walks the cascade: raw → the table → the page
   useEffect(() => {
@@ -63,7 +64,13 @@ export function ArrivalsOverlay({ open, onClose }: { open: boolean; onClose: () 
               Everything that reached the paper, and what became of it.
             </p>
 
-            {arrivalsQ.isError ? (
+            {!projectsP.proven ? (
+              <div className="mt-8">
+                <Proof of={[projectsP]} line="The ledger isn't loading">
+                  {() => null}
+                </Proof>
+              </div>
+            ) : arrivalsQ.isError ? (
               <div className="mt-8 rounded-xl bg-fill2 px-4 py-3 text-[12.5px] text-muted">
                 The ledger couldn&rsquo;t be loaded — the rows are safe.{' '}
                 <button
@@ -94,7 +101,7 @@ export function ArrivalsOverlay({ open, onClose }: { open: boolean; onClose: () 
                       key={a.id}
                       arrival={a}
                       entry={a.entry_id ? (entries.find((e) => e.id === a.entry_id) ?? null) : null}
-                      projects={projects}
+                      projects={projectsP.value}
                       onOpen={() => setRawFor(a)}
                     />
                   ))}

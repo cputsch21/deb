@@ -51,7 +51,7 @@ type Exiting = { task: Task; kind: CardKind; dir: Dir }
  */
 export function TriageFocus({ lens }: { lens: string | null }) {
   const tasks = useTasks()
-  const projects = proven(useProjects())
+  const projects = useProjects()
   const entryMeta = proven(useEntryMeta())
 
   return (

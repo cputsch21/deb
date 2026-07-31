@@ -30,17 +30,25 @@ import type { Entry, EntryNote, EntrySource, Project, Task } from '../../db/type
  */
 export function RecordColumn({ lens }: { lens: string | null }) {
   const tasks = useTasks()
+  const projects = useProjects()
   return (
-    <Proof of={[tasks]} line="The record isn't loading">
-      {([tasks]) => <Record lens={lens} tasks={tasks} />}
+    <Proof of={[tasks, projects]} line="The record isn't loading">
+      {([tasks, projects]) => <Record lens={lens} tasks={tasks} projects={projects} />}
     </Proof>
   )
 }
 
-function Record({ lens, tasks }: { lens: string | null; tasks: Task[] }) {
+function Record({
+  lens,
+  tasks,
+  projects,
+}: {
+  lens: string | null
+  tasks: Task[]
+  projects: Project[]
+}) {
   const entriesQ = useEntries()
   const notesQ = useEntryNotes()
-  const { data: projects = [] } = useProjects()
   const today = todayKey()
   const [cursor, setCursor] = useState<string>(today)
 
