@@ -128,7 +128,13 @@ export async function POST(request: Request): Promise<Response> {
 
     return json({ items }, 200)
   } catch (err) {
+    // AN EMPTY RESULT AND A FAILED READ MUST BE DIFFERENT ON THE WIRE
+    // (law, July 31). This answered 200 with items:null and called itself
+    // "honest degradation" — it was the opposite: degradation reporting
+    // itself as SUCCESS, which makes the client's Proven<T> unsound.
+    // A ranking that genuinely has nothing to say still answers 200 with
+    // items:null, above; a ranking that BROKE answers 500.
     console.error('[line]', err)
-    return json({ items: null }, 200) // honest degradation, never a broken room
+    return json({ error: 'The ranking could not be built.' }, 500)
   }
 }

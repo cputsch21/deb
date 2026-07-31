@@ -11,7 +11,7 @@ import { useMaterializer } from '../../lib/materialize'
 import { useIsMobile } from '../../lib/useIsMobile'
 import { paintWorld } from '../../lib/worldTheme'
 import { applyDebOrder, dealStack, deriveLine, todayKey } from '../../lib/line'
-import { useLineWhys } from '../../lib/lineWhys'
+import { orDefaultOrder, useLineWhys } from '../../lib/lineWhys'
 import { epigraphLine, issueNumber, worldGlance, type WorldGlance } from '../../lib/paper'
 import { derive } from '../../db/proof'
 import { Proof } from '../Proof'
@@ -109,7 +109,7 @@ export function Paper() {
   // the worlds-band glance: honest derivations, muted mono (flag 6)
   const entryMetaP = useEntryMeta()
   const entryMeta = entryMetaP.proven ? entryMetaP.value : null
-  const whys = useLineWhys(true)
+  const whys = orDefaultOrder(useLineWhys(true))
   const wholeLine = useMemo(
     () => (tasks ? applyDebOrder(deriveLine(tasks, null, today), whys.order) : null),
     [tasks, today, whys.order],

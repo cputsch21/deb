@@ -6,7 +6,7 @@ import { useLens } from '../../lib/lens'
 import { useRoom } from '../../lib/rooms'
 import { applyDebOrder, deriveLine, todayKey } from '../../lib/line'
 import { useIsMobile } from '../../lib/useIsMobile'
-import { useLineWhys } from '../../lib/lineWhys'
+import { orDefaultOrder, useLineWhys } from '../../lib/lineWhys'
 import { transient } from '../../lib/undo'
 import { Proof } from '../Proof'
 import type { Project, Task } from '../../db/types'
@@ -41,7 +41,7 @@ function NowChips({
 }) {
   const { setDone } = useTaskMutations()
   const isMobile = useIsMobile()
-  const whys = useLineWhys(true)
+  const whys = orDefaultOrder(useLineWhys(true))
 
   const line = applyDebOrder(deriveLine(tasks, lens, todayKey()), whys.order).slice(
     0,

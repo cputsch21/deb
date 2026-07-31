@@ -4,7 +4,7 @@ import { useTasks, useTaskMutations } from '../../db/queries/tasks'
 import { useDoor } from '../../lib/door'
 import { useLens } from '../../lib/lens'
 import { useRoom } from '../../lib/rooms'
-import { useLineWhys } from '../../lib/lineWhys'
+import { orDefaultOrder, useLineWhys } from '../../lib/lineWhys'
 import { localDayString } from '../../lib/day'
 import { applyDebOrder, daysBetween, deriveLine, todayKey } from '../../lib/line'
 import { transient } from '../../lib/undo'
@@ -47,7 +47,7 @@ function TodoLists({
   projects: Project[]
 }) {
   const { setDone } = useTaskMutations()
-  const whys = useLineWhys(true)
+  const whys = orDefaultOrder(useLineWhys(true))
   const today = todayKey()
 
   const line = useMemo(
