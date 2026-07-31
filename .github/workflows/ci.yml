@@ -1,0 +1,44 @@
+# The enforcement must not depend on anyone remembering anything.
+#
+# `pnpm test` is `tsc -b && vitest run`, and the typecheck half is the
+# load-bearing one: src/db/proof.compile-test.tsx guards the EMPTINESS
+# MUST BE EARNED capability removals with @ts-expect-error directives, so
+# a green vitest run alone can hide a dead law (DECISIONS, July 31).
+#
+# Before this existed, nothing ran either half until Vercel built the
+# push — which fails the DEPLOY, after the code is already on main. This
+# fails the BUILD, which is a different and much stronger guarantee.
+#
+# One job, one command, by ruling. No matrix, no cache, no deploy steps.
+# It needs no secrets: the suite is pure logic and passes with no .env
+# present (verified before this file was written).
+
+name: CI
+
+on:
+  push:
+    # archived branches are archived BECAUSE they are broken against the
+    # current tree; a permanently red X trains a person to stop reading
+    # the tab, which costs more than it saves. Not machinery — the job
+    # knowing what it is for.
+    branches-ignore:
+      - 'abandoned/**'
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          # pinned to the version that wrote pnpm-lock.yaml (v9 lockfile);
+          # --frozen-lockfile is only honest if the resolver matches
+          version: 10.33.4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: pnpm install --frozen-lockfile && pnpm test
