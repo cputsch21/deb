@@ -30,6 +30,92 @@ confirm. Next: **T5 — the V1 walk**, gated on Chris's two device passes.
 
 ## The log (newest first)
 
+### July 31, 2026 — EMPTINESS MUST BE EARNED (S1) — the law, and the mechanism that enforces it
+**The incident.** On July 30 a total authentication failure — 12 of 12
+reads rejected — rendered as a finished newspaper: "Clear. Every loop has
+a verdict. Go live it.", "Nothing on the record in this lens today.",
+every world gone from the rail, and a masthead reading **No. 1**. It
+congratulated Chris for a clear day he never had. The existing guards
+were correct and UNREACHABLE: `status` never left `pending`/`paused`, so
+`isError` was never true. Enumerating failure modes failed because the
+failure was a mode nobody enumerated. Default-deny replaces vigilance,
+the same way RLS immutability replaces discipline.
+
+**The mechanism of the pause, named** (it is not the network): TanStack's
+retryer gates continuation on `focusManager.isFocused()`, which is
+`document.visibilityState !== 'hidden'`. A hidden tab pauses after the
+first failure and never reaches `error` — indefinitely. `onlineManager`
+reported ONLINE throughout; the service worker was not involved; the
+QueryClient sets no options at all. The morning brief was the only honest
+surface on the page purely because `brief.ts` set `retry: false`, so it
+skipped the pause check and reached `error` immediately.
+
+**THE LAWS.**
+
+**EMPTINESS MUST BE EARNED.** No surface renders an empty, complete, or
+celebratory state unless its queries actually succeeded. Absence of
+failure is not evidence of success.
+
+**A QUERY THAT HAS FAILED ONCE IS NOT LOADING.** `failureCount === 0` and
+not yet succeeded is *loading* and renders nothing. Anything else that is
+not success is *stalled* and says so. (The split is failureCount, not
+paused-ness: splitting on paused would have left ~7s of visible-tab
+backoff rendering as empty. This takes the lie window to zero rather than
+shortening it. Known and accepted cost: a query that fails once and
+recovers on retry 2 shows the line for a second — that flash is TRUE. If
+it proves frequent the threshold moves to 2. It is never softened with a
+timer; a delay before showing the truth is a state machine in a costume.)
+
+**A DERIVED VALUE WITH NO PROOF PRINTS NO VALUE.** Editions, counts,
+glances — absence, always. `issueNumber(null)` returning 1 is the case
+that named this: an edition number is a claim about the entire history of
+the product, and on day forty it would have said the record began this
+morning. Everything else rendered a missing thing as finished; that one
+rendered a long history as no history.
+
+**AN EMPTY RESULT AND A FAILED READ MUST BE DIFFERENT ON THE WIRE.** An
+endpoint that answers 2xx for its own failure does not merely lie to the
+client; it makes the client's proof unsound — `Proven<T>` infers success
+from the transport, so the gate would mark a failed read proven. Fixed in
+`api/brief.ts` and `api/line.ts`. **Exception: the ingest chute, by the
+July 28 ruling, and only there** — a distinguishable answer confirms the
+unguessable address exists. Its three sites now carry comments naming the
+consequence, because the next reader of this law will otherwise "fix"
+them.
+
+**RED MARKS A DOOR THAT CANNOT BE WALKED BACK THROUGH.** Not errors, not
+bad news. Consequence that outlives the click. `text-bad` removed from
+`LoadFailed`, Reflect's "Deb could not answer", and AuthScreen's sign-in
+message; kept on the four hover-and-confirm sites (retire a world, retire
+a goal, forget a fact, the permanent verdict).
+
+**The mechanism.** Enforced by `Proven<T>` (`src/db/proof.ts`) at the TYPE
+level rather than by convention: no query hook hands out an array, so
+`const { data: tasks = [] } = useTasks()` — the exact line that shipped
+the bug — does not compile anywhere. Guarded permanently by
+**`src/db/proof.compile-test.tsx`**, whose `@ts-expect-error` directives
+break the build if any removed capability ever returns; a runtime test
+cannot protect a compile-time guarantee.
+
+**The argument for capability removal, demonstrated on itself:** a careful
+hand audit, written down and reviewed, put `useTasks` at six consumers.
+The compiler found EIGHT. The two it caught were invisible to the audit
+that produced this ruling.
+
+Also: per-column, never whole-page (nuking a loaded board because one
+query coughed is the same crime inverted); an unproven worlds read
+renders NO lens dots at all, not a partial rail; the failure line inherits
+the container the CONTENT would have had (a tonal well), because a line
+floating in space reads as nothing and the point is that something is
+MISSING. `LoadFailed` retired at zero callers, verified by search.
+
+**STILL OPEN — UNEXPLAINED.** Chris's production incident was ONE 401
+among 107, on a tab he was looking at. That is not the hidden-document
+mechanism proved here — this ticket found a second, larger hole while
+looking for his. His is still unaccounted for. The gate is now the
+instrument: when it fires next it will name its own table instead of
+hiding inside a short list.
+
 ### July 30, 2026 — The parallel session: work built twice · GITHUB IS THE ONLY SHARED SURFACE
 **What happened.** A local session on Chris's MacBook built design-reckoning
 rulings 1, 2, and 12 — Deb's goal hands, the inline solemn signing, the

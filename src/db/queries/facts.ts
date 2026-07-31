@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
+import { proven, type Proven } from '../proof'
 import { transient } from '../../lib/undo'
 import { assertRowChanged, capText, optimisticWrite } from '../mutate'
 import { FACT_MAX, type FactSource, type KnownFact } from '../types'
@@ -17,8 +18,8 @@ async function fetchFacts(): Promise<KnownFact[]> {
   return data as KnownFact[]
 }
 
-export function useFacts() {
-  return useQuery({ queryKey: factKeys.all, queryFn: fetchFacts })
+export function useFacts(): Proven<KnownFact[]> {
+  return proven(useQuery({ queryKey: factKeys.all, queryFn: fetchFacts }))
 }
 
 const nowISO = () => new Date().toISOString()

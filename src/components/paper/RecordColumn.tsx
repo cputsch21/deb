@@ -9,6 +9,7 @@ import { useRoom } from '../../lib/rooms'
 import { localDayString } from '../../lib/day'
 import { addDays, shortDay, todayKey } from '../../lib/line'
 import { DaysDealings } from '../rooms/DaysDealings'
+import { Proof } from '../Proof'
 import { PageSlot } from './PageSlot'
 import type { Entry, EntryNote, EntrySource, Project, Task } from '../../db/types'
 
@@ -28,10 +29,32 @@ import type { Entry, EntryNote, EntrySource, Project, Task } from '../../db/type
  * does not exist until the calendar pillar is real.
  */
 export function RecordColumn({ lens }: { lens: string | null }) {
-  const entriesQ = useEntries()
-  const notesQ = useEntryNotes()
-  const { data: projects = [] } = useProjects()
-  const { data: tasks = [] } = useTasks()
+  const tasks = useTasks()
+  const projects = useProjects()
+  const entries = useEntries()
+  const notes = useEntryNotes()
+  return (
+    <Proof of={[tasks, projects, entries, notes]} line="The record isn't loading">
+      {([tasks, projects, entries, notes]) => (
+        <Record lens={lens} tasks={tasks} projects={projects} entries={entries} notes={notes} />
+      )}
+    </Proof>
+  )
+}
+
+function Record({
+  lens,
+  tasks,
+  projects,
+  entries,
+  notes,
+}: {
+  lens: string | null
+  tasks: Task[]
+  projects: Project[]
+  entries: Entry[]
+  notes: EntryNote[]
+}) {
   const today = todayKey()
   const [cursor, setCursor] = useState<string>(today)
 
@@ -54,10 +77,10 @@ export function RecordColumn({ lens }: { lens: string | null }) {
 
   const scoped = useMemo(
     () =>
-      (entriesQ.data ?? []).filter(
+      entries.filter(
         (e) => lens === null || e.project_id === lens || e.project_id === null,
       ),
-    [entriesQ.data, lens],
+    [entries, lens],
   )
 
   // the book's spine: every day that has a page, newest first, today always
@@ -86,23 +109,6 @@ export function RecordColumn({ lens }: { lens: string | null }) {
           )
           .sort((a, b) => (a.done_at ?? '').localeCompare(b.done_at ?? ''))
 
-  if (entriesQ.isError || notesQ.isError) {
-    return (
-      <div className="rounded-xl bg-fill2 px-4 py-3 text-[12.5px] text-muted">
-        The record couldn&rsquo;t be loaded — it is safe.{' '}
-        <button
-          onClick={() => {
-            void entriesQ.refetch()
-            void notesQ.refetch()
-          }}
-          className="underline underline-offset-2"
-        >
-          try again
-        </button>
-      </div>
-    )
-  }
-
   return (
     <div>
       {/* the page slot (July 29): the quiet third mouth — today only;
@@ -129,7 +135,7 @@ export function RecordColumn({ lens }: { lens: string | null }) {
               key={e.id}
               entry={e}
               lead={i === 0}
-              notes={(notesQ.data ?? []).filter((n) => n.entry_id === e.id)}
+              notes={notes.filter((n) => n.entry_id === e.id)}
               world={projects.find((p) => p.id === e.project_id) ?? null}
               showWorld={lens === null}
               day={day}
@@ -369,15 +375,12 @@ function RawWell({ rawId }: { rawId: string }) {
     const el = bodyRef.current
     if (!el) return
     setClipped(el.scrollHeight > el.clientHeight + 4)
-  }, [rawQ.data, full])
+  }, [rawQ, full])
 
-  if (rawQ.isError) {
+  if (!rawQ.proven) {
     return (
-      <div className="mt-2 rounded-xl bg-fill2 px-4 py-3 text-[12.5px] text-muted">
-        The raw couldn&rsquo;t be loaded — it is safe.{' '}
-        <button onClick={() => void rawQ.refetch()} className="underline underline-offset-2">
-          try again
-        </button>
+      <div className="mt-2">
+        <Proof of={[rawQ]} line="The raw isn't loading">{() => null}</Proof>
       </div>
     )
   }
@@ -390,7 +393,7 @@ function RawWell({ rawId }: { rawId: string }) {
           style={full ? undefined : { maxHeight: '40vh', overflow: 'hidden' }}
           className="rounded-xl bg-fill2 px-4 py-3.5 text-[13px] leading-[1.65] whitespace-pre-wrap text-muted"
         >
-          {rawQ.data ?? '…'}
+          {rawQ.value}
         </div>
         {!full && clipped && (
           // the fade sits ON the well, paper-coloured, and never eats taps
@@ -413,7 +416,12 @@ function RawWell({ rawId }: { rawId: string }) {
  *  one lift beneath the current raw. */
 function PriorVersions({ entryId }: { entryId: string }) {
   const revisionsQ = useEntryRevisions(entryId, true)
-  const revisions = revisionsQ.data ?? []
+  // Prior versions render as absence only when absence is proven — an
+  // unproven read must not imply the page was never revised.
+  if (!revisionsQ.proven) {
+    return <Proof of={[revisionsQ]} line="Earlier versions aren't loading">{() => null}</Proof>
+  }
+  const revisions = revisionsQ.value
   if (revisions.length === 0) return null
   return (
     <div className="mt-2">

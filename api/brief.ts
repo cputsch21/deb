@@ -43,7 +43,17 @@ export async function POST(request: Request): Promise<Response> {
     // no brief yet today — the page opens with the invitation
     return json({ appDay: today, items: null, noted: false, invited: true }, 200)
   } catch (err) {
+    // AN EMPTY RESULT AND A FAILED READ MUST BE DIFFERENT ON THE WIRE
+    // (law, July 31). This used to answer 200 with items:null — the same
+    // shape as "no brief yet" — which does not merely lie to the client,
+    // it makes the client's proof UNSOUND: Proven<T> infers success from
+    // the transport, so the gate would mark a failed read proven and
+    // render "no brief" as a verified fact about Chris's morning. A hole
+    // under the floor, not a crack in the wall.
+    //
+    // The legitimate empty case still answers 200 with invited:true, and
+    // MorningBrief's invitation path is untouched.
     console.error('[brief]', err)
-    return json({ appDay: null, items: null, noted: false, invited: false }, 200)
+    return json({ error: 'The brief could not be read.' }, 500)
   }
 }

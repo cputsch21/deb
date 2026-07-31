@@ -6,9 +6,10 @@ import { useLens } from '../../lib/lens'
 import { useRoom } from '../../lib/rooms'
 import { applyDebOrder, deriveLine, todayKey } from '../../lib/line'
 import { useIsMobile } from '../../lib/useIsMobile'
-import { useLineWhys } from '../../lib/lineWhys'
+import { orDefaultOrder, useLineWhys } from '../../lib/lineWhys'
 import { transient } from '../../lib/undo'
-import type { Task } from '../../db/types'
+import { Proof } from '../Proof'
+import type { Project, Task } from '../../db/types'
 
 /**
  * The Now strip (above the composer in Reflect): the Line's glance level —
@@ -20,11 +21,27 @@ import type { Task } from '../../db/types'
  * the Line, per the one-queue law (T4 ruling 3 closed the gap).
  */
 export function NowStrip({ lens }: { lens: string | null }) {
-  const { data: tasks = [] } = useTasks()
-  const { data: projects = [] } = useProjects()
+  const tasks = useTasks()
+  const projects = useProjects()
+  return (
+    <Proof of={[tasks, projects]} line="The line isn't loading">
+      {([tasks, projects]) => <NowChips lens={lens} tasks={tasks} projects={projects} />}
+    </Proof>
+  )
+}
+
+function NowChips({
+  lens,
+  tasks,
+  projects,
+}: {
+  lens: string | null
+  tasks: Task[]
+  projects: Project[]
+}) {
   const { setDone } = useTaskMutations()
   const isMobile = useIsMobile()
-  const whys = useLineWhys(true)
+  const whys = orDefaultOrder(useLineWhys(true))
 
   const line = applyDebOrder(deriveLine(tasks, lens, todayKey()), whys.order).slice(
     0,

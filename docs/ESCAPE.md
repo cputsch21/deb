@@ -2,6 +2,11 @@ pre-merge main: 6c7171d  (branch pre-x1-r2)
 archive of the abandoned local session:
   abandoned/local-parallel-2026-07-30
 
+pre-S1 main: a05bcdf   (S1 = "emptiness must be earned", branch
+                        s1/emptiness-must-be-earned — the Proven<T> gate)
+undo S1 before merge:  git checkout main
+undo S1 after merge:   git revert --no-edit <the S1 merge sha> -m 1 && git push
+
 undo everything:    git fetch origin && git checkout main && git pull && git revert --no-edit -m 1 bad1d86 85378a1 && git push
 world-ink only:     git revert --no-edit bad1d86 && git push
 R2 only:            git revert --no-edit 348d569 && git push

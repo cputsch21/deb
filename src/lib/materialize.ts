@@ -16,11 +16,18 @@ export async function materializeDue(qc: QueryClient): Promise<void> {
     .from('recurring_tasks')
     .select('id, project_id, title, cadence, weekly_days, monthly_day, last_materialized_on')
     .is('deleted_at', null)
-  if (error || !rhythms) return
+  // STOP SWALLOWING (ruling, July 31). A rhythm that fails to materialize
+  // is not a rendering lie — it is work that should have happened and
+  // silently didn't, which is NO SILENT DROPS, and that law's ledger is
+  // F2's first move. Deliberately NOT built here: this throws so the
+  // caller can see it, and nothing more. F2 inherits the recording.
+  if (error) throw error
+  if (!rhythms) return
 
   const today = new Date()
   const day = localDayString(today)
   let made = false
+  const dropped: string[] = []
 
   for (const r of rhythms) {
     if (r.last_materialized_on === day) continue
@@ -33,7 +40,17 @@ export async function materializeDue(qc: QueryClient): Promise<void> {
       recurring_id: r.id,
       materialized_on: day,
     })
-    if (insertError && insertError.code !== '23505') continue // fail quiet, retry next open
+    // 23505 is the duplicate-index backstop: already materialized today,
+    // which is success. Anything else is a real drop — collected and
+    // raised AFTER the loop, never thrown mid-flight: aborting here would
+    // drop every remaining rhythm to report the first one, which is more
+    // silent dropping, not less. (Recording each drop where Chris can go
+    // look at it is F2's ledger, deliberately not built here.)
+    if (insertError && insertError.code === '23505') continue
+    if (insertError) {
+      dropped.push(`${r.title}: ${insertError.message}`)
+      continue
+    }
 
     await supabase
       .from('recurring_tasks')
@@ -43,16 +60,28 @@ export async function materializeDue(qc: QueryClient): Promise<void> {
     made = true
   }
 
+  // whatever DID materialize lands first — a partial success is still a
+  // success and the tasks belong on the page before anything is raised
   if (made) await qc.invalidateQueries({ queryKey: taskKeys.all })
+  if (dropped.length > 0) {
+    throw new Error(`${dropped.length} rhythm(s) did not materialize — ${dropped.join(' · ')}`)
+  }
 }
 
 /** Runs at app open and whenever the app comes back into view. */
 export function useMaterializer() {
   const qc = useQueryClient()
   useEffect(() => {
-    void materializeDue(qc)
+    const run = () =>
+      void materializeDue(qc).catch((err) => {
+        // Visible, not silent. The honest surface for a dropped rhythm is
+        // F2's ledger; until it exists this is where it stops being
+        // invisible, and it never takes the page down with it.
+        console.error('[materialize] a rhythm did not materialize', err)
+      })
+    run()
     const onVisible = () => {
-      if (document.visibilityState === 'visible') void materializeDue(qc)
+      if (document.visibilityState === 'visible') run()
     }
     document.addEventListener('visibilitychange', onVisible)
     return () => document.removeEventListener('visibilitychange', onVisible)

@@ -1,4 +1,6 @@
 import { useProjects } from '../../db/queries/projects'
+import { Proof } from '../Proof'
+import type { Project } from '../../db/types'
 import { useBrief } from '../../lib/brief'
 
 /**
@@ -17,8 +19,16 @@ const EMPTY_MORNING = 'A clear morning — nothing on the Line, nothing owed. It
 const INVITATION = 'Drop your morning pages and I’ll build the day around them.'
 
 export function MorningBrief() {
+  const projects = useProjects()
+  return (
+    <Proof of={[projects]} line="The brief isn't loading">
+      {([projects]) => <Brief projects={projects} />}
+    </Proof>
+  )
+}
+
+function Brief({ projects }: { projects: Project[] }) {
   const brief = useBrief(true)
-  const { data: projects = [] } = useProjects()
 
   if (brief.isPending) return null // no skeletons, by law
 

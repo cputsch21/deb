@@ -15,7 +15,8 @@ import { useRoom } from '../../lib/rooms'
 import { shortDay } from '../../lib/line'
 import { RAW_MAX, type Entry, type Message, type Project } from '../../db/types'
 import { streamDeb, type DebInput } from '../../lib/deb'
-import { LoadFailed } from '../LoadFailed'
+import { derive } from '../../db/proof'
+import { Proof } from '../Proof'
 import { NowStrip } from '../mobile/NowStrip'
 import { VerdictConfirm } from '../VerdictConfirm'
 import { useIsMobile } from '../../lib/useIsMobile'
@@ -31,10 +32,13 @@ type Turn = { userLine: string | null; retry: DebInput; phase: 'waiting' | 'spea
 
 export function Reflect({ lens }: { lens: string | null }) {
   const qc = useQueryClient()
-  const { data: messages = [], isError, refetch } = useMessages(lens)
-  const { data: projects = [] } = useProjects()
-  const { data: filedEntries = [] } = useEntries()
-  const { data: allTasks = [] } = useTasks()
+  const messagesP = useMessages(lens)
+  const projectsP = useProjects()
+  const filedEntriesP = useEntries()
+  // The thread does not depend on tasks — only the filed card's "N cards
+  // dealt" count does. So this stays a derived value rather than gating the
+  // whole room: no proof, no number (never a silent "0 cards").
+  const allTasks = useTasks()
   const { remove: removeTask, update: updateTask, setDone: setTaskDone } = useTaskMutations()
   const { forget: forgetFact } = useFactMutations()
   const { update: updateProject } = useProjectMutations()
@@ -44,7 +48,6 @@ export function Reflect({ lens }: { lens: string | null }) {
     revertVersion: revertEntryVersion,
     refile: refileEntry,
   } = useEntryMutations()
-  const world = projects.find((p) => p.id === lens) ?? null
   const isMobile = useIsMobile()
   const [turn, setTurn] = useState<Turn | null>(null)
   const [draft, setDraft] = useState('')
@@ -77,15 +80,19 @@ export function Reflect({ lens }: { lens: string | null }) {
     // where the PASTE happened (spoken_in), not where the entry routed —
     // words live where they were said. Pre-ruling rows carry no spoken_in
     // and stay at silver: the record does not invent facts.
-    const scoped = filedEntries.filter((e) =>
+    const scoped = (filedEntriesP.proven ? filedEntriesP.value : []).filter((e) =>
       lens === null ? e.spoken_in === null : e.spoken_in === lens,
     )
     const items: ({ at: string; kind: 'msg'; msg: Message } | { at: string; kind: 'entry'; entry: Entry })[] = [
-      ...messages.map((m) => ({ at: m.created_at, kind: 'msg' as const, msg: m })),
+      ...(messagesP.proven ? messagesP.value : []).map((m) => ({
+        at: m.created_at,
+        kind: 'msg' as const,
+        msg: m,
+      })),
       ...scoped.map((e) => ({ at: e.created_at, kind: 'entry' as const, entry: e })),
     ]
     return items.sort((a, b) => a.at.localeCompare(b.at))
-  }, [messages, filedEntries, lens])
+  }, [messagesP, filedEntriesP, lens])
 
   // Stay pinned to the newest line.
   useEffect(() => {
@@ -254,7 +261,7 @@ export function Reflect({ lens }: { lens: string | null }) {
         } else if (e.kind === 'mission_set') {
           // Redo path: undo restores whatever the mission was before (often nothing).
           const prev =
-            qc.getQueryData<typeof projects>(projectKeys.all)?.find((p) => p.id === e.id)
+            qc.getQueryData<Project[]>(projectKeys.all)?.find((p) => p.id === e.id)
               ?.mission ?? null
           void qc.invalidateQueries({ queryKey: projectKeys.all })
           const id = e.id
@@ -276,7 +283,26 @@ export function Reflect({ lens }: { lens: string | null }) {
   }
 
   // Law: a failed thread load never renders as an empty thread.
-  if (isError) return <LoadFailed what="The thread" onRetry={() => void refetch()} />
+  // GATE THE LABEL, NOT THE THREAD (ruling, July 31).
+  //
+  // Messages and filed entries are CONTENT: a timeline missing its filed
+  // objects is a false account of the day, so both stay in the gate.
+  // Worlds are only ever a LABEL here — the daymark and each filed card's
+  // provenance line. Holding the whole conversation back because a label
+  // could not be resolved was the wrong granularity; the right move is
+  // Ruling 4's masthead logic one level down. An absent label makes no
+  // claim; a label reading "silver" over a card that belongs to CTDI
+  // makes a false one. So the thread renders and simply says less.
+  if (!filedEntriesP.proven || !messagesP.proven) {
+    return (
+      <Proof of={[filedEntriesP, messagesP]} line="The thread isn't loading" center>
+        {() => null}
+      </Proof>
+    )
+  }
+  // null = unproven. Every read of it must render absence, never a guess.
+  const worlds = projectsP.proven ? projectsP.value : null
+  const world = worlds?.find((p) => p.id === lens) ?? null
 
   const daymark = world
     ? `${world.name} · same mind, narrowed`
@@ -305,8 +331,14 @@ export function Reflect({ lens }: { lens: string | null }) {
               <FiledCard
                 key={item.entry.id}
                 entry={item.entry}
-                world={projects.find((p) => p.id === item.entry.project_id) ?? null}
-                minted={allTasks.filter((t) => t.source_entry_id === item.entry.id).length}
+                worldName={
+                  worlds
+                    ? (worlds.find((p) => p.id === item.entry.project_id)?.name ?? 'silver')
+                    : null
+                }
+                minted={derive(allTasks, (ts) =>
+                  ts.filter((t) => t.source_entry_id === item.entry.id).length,
+                )}
                 lens={lens}
               />
             ) : item.msg.role === 'deb' ? (
@@ -364,7 +396,7 @@ export function Reflect({ lens }: { lens: string | null }) {
               )}
               {turn.phase === 'speaking' && <Dots />}
               {turn.phase === 'error' && (
-                <p className="max-w-[88%] font-serif text-[15px] text-bad">
+                <p className="max-w-[88%] font-serif text-[15px] text-muted">
                   Deb could not answer just now.{' '}
                   <button
                     onClick={() => run(turn.retry, turn.userLine)}
@@ -463,13 +495,15 @@ export function Reflect({ lens }: { lens: string | null }) {
  */
 function FiledCard({
   entry,
-  world,
+  worldName,
   minted,
   lens,
 }: {
   entry: Entry
-  world: Project | null
-  minted: number
+  /** null = the worlds read is unproven; the provenance segment is then
+   *  omitted entirely rather than guessing "silver". */
+  worldName: string | null
+  minted: number | null
   lens: string | null
 }) {
   const { setRoom } = useRoom()
@@ -488,12 +522,12 @@ function FiledCard({
       className="rise ml-auto w-fit max-w-[78%] rounded-2xl bg-fill px-4 py-3 text-left transition-colors duration-150 hover:bg-fill2"
     >
       <span className="eyebrow block text-[0.58rem] text-dim">
-        filed · {world?.name ?? 'silver'} · {shortDay(entry.entry_day)}
+        filed{worldName ? ` · ${worldName}` : ''} · {shortDay(entry.entry_day)}
       </span>
       <span className="mt-1.5 block truncate font-serif text-[14px] leading-snug text-ink">
         {firstLine ?? <em className="text-muted">Filed — the raw is kept; distilling.</em>}
       </span>
-      {minted > 0 && (
+      {minted !== null && minted > 0 && (
         <span className="mt-1 block text-[11px] text-muted">
           {minted} card{minted === 1 ? '' : 's'} dealt to React
         </span>

@@ -1,4 +1,5 @@
 import { useMessages } from '../../db/queries/messages'
+import { derive } from '../../db/proof'
 import { MorningBrief } from '../rooms/MorningBrief'
 
 /**
@@ -11,8 +12,10 @@ import { MorningBrief } from '../rooms/MorningBrief'
  * focus, where the thread takes the stage at full measure.
  */
 export function DebColumn({ lens, onOpen }: { lens: string | null; onOpen: () => void }) {
-  const { data: messages = [] } = useMessages(lens)
-  const remarks = messages.filter((m) => m.role === 'deb').slice(-2)
+  const messages = useMessages(lens)
+  // Her latest remarks are a READ of the thread; unproven, the column
+  // shows the brief and says nothing in her name it cannot source.
+  const remarks = derive(messages, (ms) => ms.filter((m) => m.role === 'deb').slice(-2)) ?? []
 
   // a div-door, not a <button>: the brief inside carries its own retry
   // button and nesting interactives breaks both. The zone is the door.

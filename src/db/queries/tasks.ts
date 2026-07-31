@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { transient } from '../../lib/undo'
+import { proven, type Proven } from '../proof'
 import { assertRowChanged, capText, optimisticWrite } from '../mutate'
 import { DELEGATE_MAX, TITLE_MAX, type Task } from '../types'
 
@@ -18,8 +19,15 @@ async function fetchTasks(): Promise<Task[]> {
   return data
 }
 
-export function useTasks() {
-  return useQuery({ queryKey: taskKeys.all, queryFn: fetchTasks })
+/**
+ * EMPTINESS MUST BE EARNED: this hook does not hand out an array. A
+ * caller cannot reach the rows without proving the read succeeded, so
+ * `const { data: tasks = [] } = useTasks()` — the line that rendered
+ * "Clear. Every loop has a verdict" over a dead connection — no longer
+ * compiles. See src/db/proof.ts.
+ */
+export function useTasks(): Proven<Task[]> {
+  return proven(useQuery({ queryKey: taskKeys.all, queryFn: fetchTasks }))
 }
 
 const nowISO = () => new Date().toISOString()

@@ -1,7 +1,7 @@
 import { useLens } from '../../lib/lens'
 import { useDoor } from '../../lib/door'
 import { useRoom } from '../../lib/rooms'
-import { LoadFailed } from '../LoadFailed'
+import { Proof } from '../Proof'
 import { dealStack, deriveLine, shortDay as lineShortDay, todayKey } from '../../lib/line'
 import { useState } from 'react'
 import { useProjects, useProjectMutations, useRetiredProjects } from '../../db/queries/projects'
@@ -23,31 +23,37 @@ import type { Goal, Project, Task } from '../../db/types'
  * fullness.
  */
 export function Review({ lens }: { lens: string | null }) {
-  const projectsQ = useProjects()
-  const retiredQ = useRetiredProjects()
-  const goalsQ = useGoals()
-  const tasksQ = useTasks()
+  const tasks = useTasks()
+  const projects = useProjects()
+  const retired = useRetiredProjects()
+  const goals = useGoals()
+  return (
+    <Proof of={[tasks, projects, retired, goals]} line="The dossiers aren't loading" center>
+      {([tasks, projects, retired, goals]) => (
+        <Dossiers lens={lens} tasks={tasks} projects={projects} retired={retired} goals={goals} />
+      )}
+    </Proof>
+  )
+}
+
+function Dossiers({
+  lens,
+  tasks,
+  projects,
+  retired,
+  goals,
+}: {
+  lens: string | null
+  tasks: Task[]
+  projects: Project[]
+  retired: Project[]
+  goals: Goal[]
+}) {
   const { restore } = useProjectMutations()
-  const projects = projectsQ.data ?? []
-  const retired = retiredQ.data ?? []
-  const goals = goalsQ.data ?? []
-  const tasks = tasksQ.data ?? []
   const world = projects.find((p) => p.id === lens) ?? null
   // The finished shelf (M6 T2): a retired world being visited, read-only.
   const [shelfId, setShelfId] = useState<string | null>(null)
   const shelfWorld = retired.find((p) => p.id === shelfId) ?? null
-
-  // Law: a failed dossier load never renders as an empty study — the shelf
-  // included (a missing shelf would be a silent lie about retired worlds).
-  if (projectsQ.isError || goalsQ.isError || tasksQ.isError || retiredQ.isError) {
-    const retry = () => {
-      void projectsQ.refetch()
-      void goalsQ.refetch()
-      void tasksQ.refetch()
-      void retiredQ.refetch()
-    }
-    return <LoadFailed what="The dossiers" onRetry={retry} />
-  }
 
   return (
     <div className="momentum min-h-0 flex-1 overflow-y-auto">

@@ -1,0 +1,93 @@
+import type { ReactNode } from 'react'
+import type { Proven } from '../db/proof'
+
+/**
+ * The gate that turns proof into children — the render half of
+ * EMPTINESS MUST BE EARNED (see src/db/proof.ts for the law).
+ *
+ * A surface hands it every query it depends on. The children run only
+ * when ALL of them have actually succeeded, and they receive plain
+ * values, so the inner component's props are `Task[]` and it is
+ * unrenderable without proof. That is the whole enforcement.
+ *
+ *   <Proof of={[tasks, projects]} line="The verdicts aren't loading">
+ *     {([tasks, projects]) => <Stage tasks={tasks} projects={projects} />}
+ *   </Proof>
+ *
+ * Per-column, never whole-page (ruling, July 31): each column speaks for
+ * itself and the rest of the page stays true. Nuking a loaded board
+ * because one query coughed is the same crime inverted.
+ */
+
+type ValuesOf<Ps extends readonly Proven<unknown>[]> = {
+  [K in keyof Ps]: Ps[K] extends Proven<infer T> ? T : never
+}
+
+type Unproven = Extract<Proven<unknown>, { proven: false }>
+
+export function Proof<Ps extends readonly Proven<unknown>[]>({
+  of,
+  line,
+  center = false,
+  children,
+}: {
+  of: readonly [...Ps]
+  /** The clause before the em dash — a clause, because verb agreement
+   *  varies across slots ("the verdicts aren't" / "the list isn't"), so
+   *  the sentence cannot be built in here. */
+  line: string
+  /** Full-screen focus surfaces centre their line; columns do not. */
+  center?: boolean
+  children: (values: ValuesOf<Ps>) => ReactNode
+}) {
+  const unproven = of.filter((p) => !p.proven) as Unproven[]
+
+  if (unproven.length === 0) {
+    const values = of.map((p) => (p as { proven: true; value: unknown }).value)
+    return <>{children(values as ValuesOf<Ps>)}</>
+  }
+
+  // Nothing has gone wrong yet — render nothing. No skeletons, by law.
+  if (unproven.every((p) => p.state === 'loading')) return null
+
+  // Something has. One line, in the slot the lie would have occupied.
+  const retries = unproven.flatMap((p) => (p.state === 'stalled' ? [p.retry] : []))
+  const stalled = <Stalled line={line} onRetry={() => retries.forEach((r) => r())} />
+  if (!center) return stalled
+  return (
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-4">
+      <div className="w-full max-w-[460px]">{stalled}</div>
+    </div>
+  )
+}
+
+/**
+ * The failure line (copy approved July 31). Deb's register: plain, true,
+ * answers the fear rather than describing the fault. No icon, no badge,
+ * no colour — NO GUILT PIXELS.
+ *
+ * It sits in a TONAL WELL (ruling, July 31): the failure line inherits
+ * the container the CONTENT would have had, not the container the empty
+ * state had. Verdicts are cards in a well, rows are wells, chips are
+ * wells — so the line is a well too. A line floating in open space reads
+ * as nothing; the point is that something is MISSING. Warm Glass
+ * vocabulary only: bg-fill, radius 14, no border, no ring, no shadow.
+ *
+ * It disappears without ceremony because the gate simply re-renders;
+ * there is no recovered state and no exit transition.
+ */
+export function Stalled({ line, onRetry }: { line: string; onRetry: () => void }) {
+  return (
+    <div className="rounded-[14px] bg-fill px-4 py-3.5">
+      <p className="font-serif text-[14.5px] leading-[1.5] text-muted italic">
+        {line} &mdash; nothing is lost.{' '}
+        <button
+          onClick={onRetry}
+          className="eyebrow -my-2 min-h-11 align-middle text-[0.58rem] text-dim not-italic transition-colors hover:text-ink"
+        >
+          try again
+        </button>
+      </p>
+    </div>
+  )
+}

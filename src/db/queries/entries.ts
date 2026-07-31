@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { assertRowChanged } from '../mutate'
+import { proven, type Proven } from '../proof'
 import type { Entry, EntryMeta, EntryNote, EntryRevision } from '../types'
 
 /**
@@ -28,27 +29,29 @@ async function fetchEntryMeta(): Promise<EntryMeta[]> {
   return data as EntryMeta[]
 }
 
-export function useEntryMeta() {
-  return useQuery({ queryKey: entryKeys.meta, queryFn: fetchEntryMeta })
+export function useEntryMeta(): Proven<EntryMeta[]> {
+  return proven(useQuery({ queryKey: entryKeys.meta, queryFn: fetchEntryMeta }))
 }
 
 /** The day the record began — the masthead's edition count runs from it
  *  (time, not performance; July 29). Includes hidden entries: the record
  *  began when it began. */
-export function useFirstEntryDay() {
-  return useQuery({
-    queryKey: ['first-entry-day'] as const,
-    staleTime: 60 * 60_000, // it changes once, ever
-    queryFn: async (): Promise<string | null> => {
-      const { data, error } = await supabase
-        .from('entries')
-        .select('entry_day')
-        .order('entry_day', { ascending: true })
-        .limit(1)
-      if (error) throw error
-      return data && data.length > 0 ? String(data[0].entry_day) : null
-    },
-  })
+export function useFirstEntryDay(): Proven<string | null> {
+  return proven(
+    useQuery({
+      queryKey: ['first-entry-day'] as const,
+      staleTime: 60 * 60_000, // it changes once, ever
+      queryFn: async (): Promise<string | null> => {
+        const { data, error } = await supabase
+          .from('entries')
+          .select('entry_day')
+          .order('entry_day', { ascending: true })
+          .limit(1)
+        if (error) throw error
+        return data && data.length > 0 ? String(data[0].entry_day) : null
+      },
+    }),
+  )
 }
 
 /** Hide the entry surface (undo-of-filing). The raw beneath is untouchable. */
@@ -140,8 +143,8 @@ async function fetchEntries(): Promise<Entry[]> {
   return data as Entry[]
 }
 
-export function useEntries() {
-  return useQuery({ queryKey: entryKeys.pages, queryFn: fetchEntries })
+export function useEntries(): Proven<Entry[]> {
+  return proven(useQuery({ queryKey: entryKeys.pages, queryFn: fetchEntries }))
 }
 
 /** Deb's margin notes for the recent pages. */
@@ -156,14 +159,14 @@ async function fetchEntryNotes(): Promise<EntryNote[]> {
   return data as EntryNote[]
 }
 
-export function useEntryNotes() {
-  return useQuery({ queryKey: entryKeys.notes, queryFn: fetchEntryNotes })
+export function useEntryNotes(): Proven<EntryNote[]> {
+  return proven(useQuery({ queryKey: entryKeys.notes, queryFn: fetchEntryNotes }))
 }
 
 /** A living entry's prior versions (ritual ruling 3), newest first —
  *  fetched only when the reader lifts the page. */
-export function useEntryRevisions(entryId: string, enabled: boolean) {
-  return useQuery({
+export function useEntryRevisions(entryId: string, enabled: boolean): Proven<EntryRevision[]> {
+  return proven(useQuery({
     queryKey: entryKeys.revisions(entryId),
     enabled,
     queryFn: async (): Promise<EntryRevision[]> => {
@@ -175,12 +178,12 @@ export function useEntryRevisions(entryId: string, enabled: boolean) {
       if (error) throw error
       return data as EntryRevision[]
     },
-  })
+  }))
 }
 
 /** The raw beneath — fetched only when the tap asks for it. */
-export function useEntryRaw(rawId: string, enabled: boolean) {
-  return useQuery({
+export function useEntryRaw(rawId: string, enabled: boolean): Proven<string> {
+  return proven(useQuery({
     queryKey: entryKeys.raw(rawId),
     enabled,
     staleTime: Infinity, // the raw is immutable by law — it cannot change
@@ -193,5 +196,5 @@ export function useEntryRaw(rawId: string, enabled: boolean) {
       if (error) throw error
       return String(data.content)
     },
-  })
+  }))
 }

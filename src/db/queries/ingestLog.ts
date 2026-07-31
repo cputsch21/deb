@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import type { Arrival } from '../types'
+import { proven, type Proven } from '../proof'
 
 /**
  * The Arrivals ledger, read side (July 28): everything that ever arrived
@@ -15,8 +16,8 @@ export const arrivalKeys = {
 const RECENT_DAYS = 30
 const REACH_CAP = 500
 
-export function useArrivals(enabled: boolean, reach: 'recent' | 'all') {
-  return useQuery({
+export function useArrivals(enabled: boolean, reach: 'recent' | 'all'): Proven<Arrival[]> {
+  return proven(useQuery({
     queryKey: arrivalKeys.list(reach),
     enabled,
     queryFn: async (): Promise<Arrival[]> => {
@@ -35,5 +36,5 @@ export function useArrivals(enabled: boolean, reach: 'recent' | 'all') {
       if (error) throw error
       return data as Arrival[]
     },
-  })
+  }))
 }

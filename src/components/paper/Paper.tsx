@@ -11,9 +11,10 @@ import { useMaterializer } from '../../lib/materialize'
 import { useIsMobile } from '../../lib/useIsMobile'
 import { paintWorld } from '../../lib/worldTheme'
 import { applyDebOrder, dealStack, deriveLine, todayKey } from '../../lib/line'
-import { useLineWhys } from '../../lib/lineWhys'
+import { orDefaultOrder, useLineWhys } from '../../lib/lineWhys'
 import { epigraphLine, issueNumber, worldGlance, type WorldGlance } from '../../lib/paper'
-import { LoadFailed } from '../LoadFailed'
+import { derive } from '../../db/proof'
+import { Proof } from '../Proof'
 import { ProjectSheet } from '../ProjectSheet'
 import { MemorySheet } from '../MemorySheet'
 import { ArrivalsOverlay } from './ArrivalsOverlay'
@@ -45,11 +46,16 @@ export function Paper() {
   const { lens, setLens } = useLens()
   const { room, setRoom } = useRoom()
   const isMobile = useIsMobile()
-  const { data: projects = [], isFetched, isError, refetch } = useProjects()
-  const { data: tasks = [] } = useTasks()
+  const projectsP = useProjects()
+  const tasksP = useTasks()
   const firstDayQ = useFirstEntryDay()
   const briefQ = useBrief(true)
-  const world = projects.find((p) => p.id === lens) ?? null
+  // Unproven worlds derive NOTHING — and the masthead renders NO lens
+  // dots at all, not even silver (ruling, July 31): a partial control is
+  // the lie; an absent control is honest. The WORLDS band below carries
+  // the one failure line. No whole-page takeover.
+  const projects = projectsP.proven ? projectsP.value : null
+  const world = projects?.find((p) => p.id === lens) ?? null
   const [sheet, setSheet] = useState<'closed' | 'create' | 'edit'>('closed')
   const [memoryOpen, setMemoryOpen] = useState(false)
   const [arrivalsOpen, setArrivalsOpen] = useState(false)
@@ -62,15 +68,15 @@ export function Paper() {
   // A brand-new account's thread is never silent (T4 ruling 12).
   const qc = useQueryClient()
   useEffect(() => {
-    void plantFirstMessage().then((planted) => {
-      if (planted) void qc.invalidateQueries({ queryKey: messageKeys.all })
+    void plantFirstMessage().then((result) => {
+      if (result === 'planted') void qc.invalidateQueries({ queryKey: messageKeys.all })
     })
   }, [qc])
 
   // If the active world disappears (retired, rolled back), come home.
   useEffect(() => {
-    if (lens !== null && isFetched && !world) setLens(null)
-  }, [lens, world, isFetched, setLens])
+    if (lens !== null && projectsP.proven && !world) setLens(null)
+  }, [lens, world, projectsP.proven, setLens])
 
   // The repaint: the whole paper wears the world's color (silver at home).
   useEffect(() => {
@@ -89,18 +95,27 @@ export function Paper() {
   }, [room, setRoom])
 
   const focus = room !== 'read'
-  const stack = useMemo(() => dealStack(tasks, lens, today), [tasks, lens, today])
+  // Unproven tasks derive NOTHING (the derived-value law): no stack, no
+  // line, no glances. Every consumer below renders absence, never a zero.
+  const tasks = tasksP.proven ? tasksP.value : null
   const epigraph = epigraphLine(briefQ.data?.items)
-  const edition = issueNumber(firstDayQ.data ?? null, today)
+  // THE EDITION NUMBER. issueNumber(null, today) returned 1, so a failed
+  // read printed "No. 1" — an unproven claim about the whole history of
+  // the record, telling Chris on day forty that it began this morning.
+  // A derived value with no proof prints NO value: the masthead simply
+  // reads "Deb · The whole life, daily".
+  const edition = derive(firstDayQ, (first) => issueNumber(first, today))
 
   // the worlds-band glance: honest derivations, muted mono (flag 6)
-  const { data: entryMeta = [] } = useEntryMeta()
-  const whys = useLineWhys(true)
+  const entryMetaP = useEntryMeta()
+  const entryMeta = entryMetaP.proven ? entryMetaP.value : null
+  const whys = orDefaultOrder(useLineWhys(true))
   const wholeLine = useMemo(
-    () => applyDebOrder(deriveLine(tasks, null, today), whys.order),
+    () => (tasks ? applyDebOrder(deriveLine(tasks, null, today), whys.order) : null),
     [tasks, today, whys.order],
   )
   const glances = useMemo(() => {
+    if (!tasks || !wholeLine || !projects || !entryMeta) return null
     const m = new Map<string, WorldGlance>()
     for (const p of projects) m.set(p.id, worldGlance(p.id, tasks, entryMeta, wholeLine, today))
     return m
@@ -111,10 +126,6 @@ export function Paper() {
     month: 'long',
     day: 'numeric',
   })
-
-  if (isError) {
-    return <LoadFailed what="The paper" onRetry={() => void refetch()} />
-  }
 
   return (
     <div className="relative h-full overflow-y-auto">
@@ -128,7 +139,7 @@ export function Paper() {
         <header>
           <div className="flex items-center justify-between pb-5 md:pb-6">
             <span className="eyebrow text-dim">
-              Deb · The whole life, daily · No. {edition}
+              Deb · The whole life, daily{edition !== null && ` · No. ${edition}`}
             </span>
             <span className="flex items-center gap-1">
               {/* the masthead furniture: memory beside the ledger (P6) */}
@@ -166,6 +177,8 @@ export function Paper() {
                 {hoverName ?? (world ? world.name : 'Whole life')}
               </span>
               <div className="order-1 flex gap-1 overflow-x-auto md:order-2" style={{ scrollbarWidth: 'none' }}>
+                {projects && (
+                  <>
                 <LensDot
                   active={lens === null}
                   label="Whole life"
@@ -195,6 +208,8 @@ export function Paper() {
                     />
                   </LensDot>
                 ))}
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -240,52 +255,15 @@ export function Paper() {
           {/* CENTER — THE VERDICTS seam (triage lives behind it) */}
           <section className="order-2 mt-8 min-w-0 border-hair md:order-none md:mt-0 md:border-l md:px-10">
             <div className="eyebrow mb-3">The Verdicts</div>
-            {stack.length === 0 ? (
-              <>
-                <div className="eyebrow mt-3 text-[0.6rem] text-dim">Triage clear</div>
-                <p className="mt-3 font-serif text-[18px] leading-[1.5] text-muted italic">
-                  Clear. Every loop has a verdict. Go live it.
-                </p>
-              </>
-            ) : (
-              <>
-                <div className="eyebrow mt-3 text-[0.6rem] text-accent-ink">
-                  {stack.length} loop{stack.length === 1 ? '' : 's'} need
-                  {stack.length === 1 ? 's' : ''} verdicts
-                </div>
-                <button
-                  onClick={() => setRoom('react')}
-                  className="mt-3 block w-full rounded-[14px] bg-[var(--t-card)] px-5 py-4.5 text-left transition-colors"
-                >
-                  <span className="eyebrow block text-[0.58rem] text-dim">
-                    {stack[0].kind === 'chase'
-                      ? 'a chase came due'
-                      : stack[0].kind === 'stale'
-                        ? 'an old anchor asks'
-                        : 'from the record'}
-                  </span>
-                  <span className="mt-2 block font-serif text-[17.5px] leading-[1.3] font-medium text-ink">
-                    {stack[0].task.title}
-                  </span>
-                  <span className="mt-3 flex items-center gap-2">
-                    <span
-                      className="h-[9px] w-[9px] rounded-full"
-                      style={{
-                        backgroundColor:
-                          projects.find((p) => p.id === stack[0].task.project_id)?.color ??
-                          'var(--t-silver)',
-                      }}
-                    />
-                    <span className="eyebrow text-[0.6rem] text-muted">
-                      {projects.find((p) => p.id === stack[0].task.project_id)?.name ?? 'bench'}
-                    </span>
-                    <span className="eyebrow ml-auto text-[0.58rem] text-dim">
-                      give verdicts →
-                    </span>
-                  </span>
-                </button>
-              </>
-            )}
+            <Proof of={[tasksP, projectsP]} line="The verdicts aren't loading">
+              {([tasks, projects]) => (
+                <VerdictsSeam
+                  stack={dealStack(tasks, lens, today)}
+                  projects={projects}
+                  onOpen={() => setRoom('react')}
+                />
+              )}
+            </Proof>
 
             {/* the lifecycle continues: decided things standing, then done
                 things with their times (July 29 re-ruling) */}
@@ -312,23 +290,29 @@ export function Paper() {
         <section className="mt-16">
           <hr className="mb-5 border-0 border-t border-hair" />
           <div className="eyebrow">The Worlds</div>
-          <div className="mt-3.5 grid grid-cols-1 gap-x-6 gap-y-2.5 md:grid-cols-3">
-            {projects.map((p) => (
-              <WorldTile
-                key={p.id}
-                world={p}
-                glance={glances.get(p.id)}
-                active={lens === p.id}
-                dimmed={lens !== null && lens !== p.id}
-                onPick={() => setLens(lens === p.id ? null : p.id)}
-              />
-            ))}
-            <button
-              onClick={() => setSheet('create')}
-              className="eyebrow flex min-h-11 items-center rounded-[14px] px-5 text-dim transition-colors hover:bg-fill hover:text-ink"
-            >
-              + new world
-            </button>
+          <div className="mt-3.5">
+            <Proof of={[projectsP]} line="Your worlds aren't loading">
+              {([projects]) => (
+                <div className="grid grid-cols-1 gap-x-6 gap-y-2.5 md:grid-cols-3">
+                  {projects.map((p) => (
+                    <WorldTile
+                      key={p.id}
+                      world={p}
+                      glance={glances?.get(p.id)}
+                      active={lens === p.id}
+                      dimmed={lens !== null && lens !== p.id}
+                      onPick={() => setLens(lens === p.id ? null : p.id)}
+                    />
+                  ))}
+                  <button
+                    onClick={() => setSheet('create')}
+                    className="eyebrow flex min-h-11 items-center rounded-[14px] px-5 text-dim transition-colors hover:bg-fill hover:text-ink"
+                  >
+                    + new world
+                  </button>
+                </div>
+              )}
+            </Proof>
           </div>
         </section>
 
@@ -400,6 +384,65 @@ export function Paper() {
       <ArrivalsOverlay open={arrivalsOpen} onClose={() => setArrivalsOpen(false)} />
       <UndoPill />
     </div>
+  )
+}
+
+/**
+ * The verdicts seam. It takes a PROVEN stack, so "Clear. Every loop has a
+ * verdict. Go live it." can only ever be printed over a real, succeeded
+ * read — the sentence that congratulated Chris for a clear day he never
+ * had on July 30.
+ */
+function VerdictsSeam({
+  stack,
+  projects,
+  onOpen,
+}: {
+  stack: ReturnType<typeof dealStack>
+  projects: Project[]
+  onOpen: () => void
+}) {
+  if (stack.length === 0) {
+    return (
+      <>
+        <div className="eyebrow mt-3 text-[0.6rem] text-dim">Triage clear</div>
+        <p className="mt-3 font-serif text-[18px] leading-[1.5] text-muted italic">
+          Clear. Every loop has a verdict. Go live it.
+        </p>
+      </>
+    )
+  }
+  const world = projects.find((p) => p.id === stack[0].task.project_id)
+  return (
+    <>
+      <div className="eyebrow mt-3 text-[0.6rem] text-accent-ink">
+        {stack.length} loop{stack.length === 1 ? '' : 's'} need
+        {stack.length === 1 ? 's' : ''} verdicts
+      </div>
+      <button
+        onClick={onOpen}
+        className="mt-3 block w-full rounded-[14px] bg-[var(--t-card)] px-5 py-4.5 text-left transition-colors"
+      >
+        <span className="eyebrow block text-[0.58rem] text-dim">
+          {stack[0].kind === 'chase'
+            ? 'a chase came due'
+            : stack[0].kind === 'stale'
+              ? 'an old anchor asks'
+              : 'from the record'}
+        </span>
+        <span className="mt-2 block font-serif text-[17.5px] leading-[1.3] font-medium text-ink">
+          {stack[0].task.title}
+        </span>
+        <span className="mt-3 flex items-center gap-2">
+          <span
+            className="h-[9px] w-[9px] rounded-full"
+            style={{ backgroundColor: world?.color ?? 'var(--t-silver)' }}
+          />
+          <span className="eyebrow text-[0.6rem] text-muted">{world?.name ?? 'bench'}</span>
+          <span className="eyebrow ml-auto text-[0.58rem] text-dim">give verdicts →</span>
+        </span>
+      </button>
+    </>
   )
 }
 
