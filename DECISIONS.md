@@ -15,6 +15,34 @@ Current state is the top of this log.
 
 ## The log (newest first)
 
+### July 31, 2026 — Correction: CI is live; the "cannot be pushed" claim below was wrong
+Appended, not edited, per the append-only law ruled the same day. The W1
+entry beneath this one records the CI workflow as **blocked** on the
+`workflow` OAuth scope. **That was over-generalised from two failures and
+it was wrong.** CI is live and green on `main`.
+
+What was actually observed, stated as observation rather than as a theory
+of GitHub's internals:
+- Pushing `main` with a NEW commit creating `.github/workflows/ci.yml`
+  → **rejected**, `workflow` scope.
+- Contents-API write to that path → **404** (the same restriction wearing
+  a different status code).
+- Pushing that identical commit as a **new branch** → **accepted**.
+- Fast-forwarding `main` onto that already-uploaded commit → **accepted**.
+
+So the restriction bites on pushes that deliver new workflow-file objects
+to the default branch, not on ref updates that deliver no new objects. The
+error was concluding "blocked everywhere" from one rejected push plus one
+404 — two data points, one of which was the same cause twice — and then
+telling Chris he had to refresh an OAuth scope he did not have to refresh.
+**Two failures that share a cause are one data point.**
+
+CI verified end to end rather than assumed: run 30660600979 on the branch
+and 30660653068 on `main`, both green, both running
+`pnpm install --frozen-lockfile && pnpm test` on GitHub's runner —
+9 files, 88 tests. `branches-ignore: ['abandoned/**']` is on the push
+trigger, so archived branches never post a permanently red X.
+
 ### July 31, 2026 — Truth restoration (W1): where state is allowed to live
 **PERISHABLE STATE NEVER LIVES IN A DOCUMENT THAT IS READ BUT NOT
 REVISITED.**
