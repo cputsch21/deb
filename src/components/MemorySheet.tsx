@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Sheet } from './Sheet'
 import { useFacts, useFactMutations } from '../db/queries/facts'
+import { Proof } from './Proof'
 import { FACT_MAX, type KnownFact } from '../db/types'
 
 /**
@@ -10,7 +11,7 @@ import { FACT_MAX, type KnownFact } from '../db/types'
  * here was earned in conversation or added by Chris's own hand.
  */
 export function MemorySheet({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { data: facts = [], isError, refetch } = useFacts()
+  const factsP = useFacts()
   const { remember } = useFactMutations()
   const [draft, setDraft] = useState('')
 
@@ -40,24 +41,14 @@ export function MemorySheet({ open, onClose }: { open: boolean; onClose: () => v
       </div>
 
       <div className="mt-4 flex flex-col gap-2">
-        {isError ? (
-          <div className="flex flex-col items-center gap-2 py-6 text-center">
-            <p className="text-[13px] text-muted">
-              Her memory couldn't be loaded. Nothing is lost.
-            </p>
-            <button
-              onClick={() => void refetch()}
-              className="rounded-xl bg-fill2 px-3.5 py-1.5 text-xs text-ink"
-            >
-              Try again
-            </button>
-          </div>
-        ) : facts.length === 0 ? (
+        {!factsP.proven ? (
+          <Proof of={[factsP]} line="Her memory isn't loading">{() => null}</Proof>
+        ) : factsP.value.length === 0 ? (
           <p className="py-6 text-center text-[13px] text-dim">
             Nothing yet — an empty memory is the honest place to start.
           </p>
         ) : (
-          facts.map((f) => <FactRow key={f.id} fact={f} />)
+          factsP.value.map((f) => <FactRow key={f.id} fact={f} />)
         )}
       </div>
     </Sheet>

@@ -165,8 +165,8 @@ export function useEntryNotes(): Proven<EntryNote[]> {
 
 /** A living entry's prior versions (ritual ruling 3), newest first —
  *  fetched only when the reader lifts the page. */
-export function useEntryRevisions(entryId: string, enabled: boolean) {
-  return useQuery({
+export function useEntryRevisions(entryId: string, enabled: boolean): Proven<EntryRevision[]> {
+  return proven(useQuery({
     queryKey: entryKeys.revisions(entryId),
     enabled,
     queryFn: async (): Promise<EntryRevision[]> => {
@@ -178,12 +178,12 @@ export function useEntryRevisions(entryId: string, enabled: boolean) {
       if (error) throw error
       return data as EntryRevision[]
     },
-  })
+  }))
 }
 
 /** The raw beneath — fetched only when the tap asks for it. */
-export function useEntryRaw(rawId: string, enabled: boolean) {
-  return useQuery({
+export function useEntryRaw(rawId: string, enabled: boolean): Proven<string> {
+  return proven(useQuery({
     queryKey: entryKeys.raw(rawId),
     enabled,
     staleTime: Infinity, // the raw is immutable by law — it cannot change
@@ -196,5 +196,5 @@ export function useEntryRaw(rawId: string, enabled: boolean) {
       if (error) throw error
       return String(data.content)
     },
-  })
+  }))
 }

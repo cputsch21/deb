@@ -38,7 +38,7 @@ export function ArrivalsOverlay({ open, onClose }: { open: boolean; onClose: () 
   }, [open])
 
   if (!open) return null
-  const rows = arrivalsQ.data ?? []
+  const rows = arrivalsQ.proven ? arrivalsQ.value : null
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-bg pt-[env(safe-area-inset-top)]">
@@ -64,23 +64,16 @@ export function ArrivalsOverlay({ open, onClose }: { open: boolean; onClose: () 
               Everything that reached the paper, and what became of it.
             </p>
 
-            {!projectsP.proven || !entriesP.proven ? (
+            {!projectsP.proven || !entriesP.proven || rows === null ? (
               <div className="mt-8">
-                <Proof of={[projectsP, entriesP]} line="The ledger isn't loading">
+                <Proof
+                  of={[projectsP, entriesP, arrivalsQ]}
+                  line="The ledger isn't loading"
+                >
                   {() => null}
                 </Proof>
               </div>
-            ) : arrivalsQ.isError ? (
-              <div className="mt-8 rounded-xl bg-fill2 px-4 py-3 text-[12.5px] text-muted">
-                The ledger couldn&rsquo;t be loaded — the rows are safe.{' '}
-                <button
-                  onClick={() => void arrivalsQ.refetch()}
-                  className="underline underline-offset-2"
-                >
-                  try again
-                </button>
-              </div>
-            ) : rows.length === 0 && !arrivalsQ.isPending ? (
+            ) : rows.length === 0 ? (
               <p className="mt-8 font-serif text-[14.5px] text-dim italic">
                 {reach === 'recent'
                   ? 'Nothing has arrived in the last thirty days.'
@@ -109,7 +102,7 @@ export function ArrivalsOverlay({ open, onClose }: { open: boolean; onClose: () 
               </div>
             )}
 
-            {reach === 'recent' && !arrivalsQ.isError && (
+            {reach === 'recent' && arrivalsQ.proven && (
               <button
                 onClick={() => setReach('all')}
                 className="eyebrow mt-5 flex min-h-11 items-center text-[0.6rem] text-dim transition-colors hover:text-ink"
@@ -213,19 +206,15 @@ function RawView({
 
 function RawBody({ rawId }: { rawId: string }) {
   const rawQ = useEntryRaw(rawId, true)
-  if (rawQ.isError) {
-    return (
-      <div className="mt-5 rounded-xl bg-fill2 px-4 py-3 text-[12.5px] text-muted">
-        The raw couldn&rsquo;t be loaded — it is safe.{' '}
-        <button onClick={() => void rawQ.refetch()} className="underline underline-offset-2">
-          try again
-        </button>
-      </div>
-    )
-  }
   return (
-    <div className="mt-5 max-w-[760px] rounded-[14px] bg-fill2 px-5 py-4.5 text-[13.5px] leading-[1.7] whitespace-pre-wrap text-muted md:px-6">
-      {rawQ.data ?? '…'}
+    <div className="mt-5 max-w-[760px]">
+      <Proof of={[rawQ]} line="The raw isn't loading">
+        {([raw]) => (
+          <div className="rounded-[14px] bg-fill2 px-5 py-4.5 text-[13.5px] leading-[1.7] whitespace-pre-wrap text-muted md:px-6">
+            {raw}
+          </div>
+        )}
+      </Proof>
     </div>
   )
 }

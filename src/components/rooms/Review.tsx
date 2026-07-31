@@ -1,7 +1,6 @@
 import { useLens } from '../../lib/lens'
 import { useDoor } from '../../lib/door'
 import { useRoom } from '../../lib/rooms'
-import { LoadFailed } from '../LoadFailed'
 import { Proof } from '../Proof'
 import { dealStack, deriveLine, shortDay as lineShortDay, todayKey } from '../../lib/line'
 import { useState } from 'react'
@@ -27,10 +26,11 @@ export function Review({ lens }: { lens: string | null }) {
   const tasks = useTasks()
   const projects = useProjects()
   const retired = useRetiredProjects()
+  const goals = useGoals()
   return (
-    <Proof of={[tasks, projects, retired]} line="The dossiers aren't loading" center>
-      {([tasks, projects, retired]) => (
-        <Dossiers lens={lens} tasks={tasks} projects={projects} retired={retired} />
+    <Proof of={[tasks, projects, retired, goals]} line="The dossiers aren't loading" center>
+      {([tasks, projects, retired, goals]) => (
+        <Dossiers lens={lens} tasks={tasks} projects={projects} retired={retired} goals={goals} />
       )}
     </Proof>
   )
@@ -41,27 +41,19 @@ function Dossiers({
   tasks,
   projects,
   retired,
+  goals,
 }: {
   lens: string | null
   tasks: Task[]
   projects: Project[]
   retired: Project[]
+  goals: Goal[]
 }) {
-  const goalsQ = useGoals()
   const { restore } = useProjectMutations()
-  const goals = goalsQ.data ?? []
   const world = projects.find((p) => p.id === lens) ?? null
   // The finished shelf (M6 T2): a retired world being visited, read-only.
   const [shelfId, setShelfId] = useState<string | null>(null)
   const shelfWorld = retired.find((p) => p.id === shelfId) ?? null
-
-  // Law: a failed dossier load never renders as an empty study — the shelf
-  // included (a missing shelf would be a silent lie about retired worlds).
-  // Tasks, worlds and the shelf are gated above; goals still carry the old
-  // isError guard and get the same treatment when useGoals flips.
-  if (goalsQ.isError) {
-    return <LoadFailed what="The dossiers" onRetry={() => void goalsQ.refetch()} />
-  }
 
   return (
     <div className="momentum min-h-0 flex-1 overflow-y-auto">

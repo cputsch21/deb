@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
+import { proven, type Proven } from '../proof'
 import { transient } from '../../lib/undo'
 import { assertRowChanged, capText, optimisticWrite } from '../mutate'
 import { TITLE_MAX, type Goal, type GoalStatus } from '../types'
@@ -16,8 +17,8 @@ async function fetchGoals(): Promise<Goal[]> {
   return data
 }
 
-export function useGoals() {
-  return useQuery({ queryKey: goalKeys.all, queryFn: fetchGoals })
+export function useGoals(): Proven<Goal[]> {
+  return proven(useQuery({ queryKey: goalKeys.all, queryFn: fetchGoals }))
 }
 
 const nowISO = () => new Date().toISOString()

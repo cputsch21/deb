@@ -2,7 +2,7 @@ import { useGoals } from '../../db/queries/goals'
 import { useProjects } from '../../db/queries/projects'
 import { useTasks } from '../../db/queries/tasks'
 import { Proof } from '../Proof'
-import type { Project, Task } from '../../db/types'
+import type { Goal, Project, Task } from '../../db/types'
 import { useDoor } from '../../lib/door'
 import { useLens } from '../../lib/lens'
 import { useRoom } from '../../lib/rooms'
@@ -35,10 +35,11 @@ type Dealing = {
 export function DaysDealings({ day, lens }: { day: string; lens: string | null }) {
   const tasks = useTasks()
   const projects = useProjects()
+  const goals = useGoals()
   return (
-    <Proof of={[tasks, projects]} line="The day's dealings aren't loading">
-      {([tasks, projects]) => (
-        <Dealings day={day} lens={lens} tasks={tasks} projects={projects} />
+    <Proof of={[tasks, projects, goals]} line="The day's dealings aren't loading">
+      {([tasks, projects, goals]) => (
+        <Dealings day={day} lens={lens} tasks={tasks} projects={projects} goals={goals} />
       )}
     </Proof>
   )
@@ -54,13 +55,14 @@ function Dealings({
   lens,
   tasks,
   projects,
+  goals,
 }: {
   day: string
   lens: string | null
   tasks: Task[]
   projects: Project[]
+  goals: Goal[]
 }) {
-  const { data: goals = [] } = useGoals()
   const { knock } = useDoor()
   const { setRoom } = useRoom()
   const { setLens } = useLens()

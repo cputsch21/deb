@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import type { Message } from '../types'
+import { proven, type Proven } from '../proof'
 
 /**
  * The thread read — the thread ruling (July 28): display scopes by WHERE
@@ -26,8 +27,10 @@ async function fetchMessages(lens: string | null): Promise<Message[]> {
   return (data ?? []) as Message[]
 }
 
-export function useMessages(lens: string | null) {
-  return useQuery({ queryKey: messageKeys.list(lens), queryFn: () => fetchMessages(lens) })
+export function useMessages(lens: string | null): Proven<Message[]> {
+  return proven(
+    useQuery({ queryKey: messageKeys.list(lens), queryFn: () => fetchMessages(lens) }),
+  )
 }
 
 /** Her canonical first words — the blank-start text (docs/deb-soul.md;

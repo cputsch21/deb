@@ -375,15 +375,12 @@ function RawWell({ rawId }: { rawId: string }) {
     const el = bodyRef.current
     if (!el) return
     setClipped(el.scrollHeight > el.clientHeight + 4)
-  }, [rawQ.data, full])
+  }, [rawQ, full])
 
-  if (rawQ.isError) {
+  if (!rawQ.proven) {
     return (
-      <div className="mt-2 rounded-xl bg-fill2 px-4 py-3 text-[12.5px] text-muted">
-        The raw couldn&rsquo;t be loaded — it is safe.{' '}
-        <button onClick={() => void rawQ.refetch()} className="underline underline-offset-2">
-          try again
-        </button>
+      <div className="mt-2">
+        <Proof of={[rawQ]} line="The raw isn't loading">{() => null}</Proof>
       </div>
     )
   }
@@ -396,7 +393,7 @@ function RawWell({ rawId }: { rawId: string }) {
           style={full ? undefined : { maxHeight: '40vh', overflow: 'hidden' }}
           className="rounded-xl bg-fill2 px-4 py-3.5 text-[13px] leading-[1.65] whitespace-pre-wrap text-muted"
         >
-          {rawQ.data ?? '…'}
+          {rawQ.value}
         </div>
         {!full && clipped && (
           // the fade sits ON the well, paper-coloured, and never eats taps
@@ -419,7 +416,12 @@ function RawWell({ rawId }: { rawId: string }) {
  *  one lift beneath the current raw. */
 function PriorVersions({ entryId }: { entryId: string }) {
   const revisionsQ = useEntryRevisions(entryId, true)
-  const revisions = revisionsQ.data ?? []
+  // Prior versions render as absence only when absence is proven — an
+  // unproven read must not imply the page was never revised.
+  if (!revisionsQ.proven) {
+    return <Proof of={[revisionsQ]} line="Earlier versions aren't loading">{() => null}</Proof>
+  }
+  const revisions = revisionsQ.value
   if (revisions.length === 0) return null
   return (
     <div className="mt-2">

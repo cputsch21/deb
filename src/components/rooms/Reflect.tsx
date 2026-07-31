@@ -15,7 +15,6 @@ import { useRoom } from '../../lib/rooms'
 import { shortDay } from '../../lib/line'
 import { RAW_MAX, type Entry, type Message, type Project } from '../../db/types'
 import { streamDeb, type DebInput } from '../../lib/deb'
-import { LoadFailed } from '../LoadFailed'
 import { derive } from '../../db/proof'
 import { Proof } from '../Proof'
 import { NowStrip } from '../mobile/NowStrip'
@@ -33,7 +32,7 @@ type Turn = { userLine: string | null; retry: DebInput; phase: 'waiting' | 'spea
 
 export function Reflect({ lens }: { lens: string | null }) {
   const qc = useQueryClient()
-  const { data: messages = [], isError, refetch } = useMessages(lens)
+  const messagesP = useMessages(lens)
   const projectsP = useProjects()
   const filedEntriesP = useEntries()
   // The thread does not depend on tasks — only the filed card's "N cards
@@ -85,11 +84,15 @@ export function Reflect({ lens }: { lens: string | null }) {
       lens === null ? e.spoken_in === null : e.spoken_in === lens,
     )
     const items: ({ at: string; kind: 'msg'; msg: Message } | { at: string; kind: 'entry'; entry: Entry })[] = [
-      ...messages.map((m) => ({ at: m.created_at, kind: 'msg' as const, msg: m })),
+      ...(messagesP.proven ? messagesP.value : []).map((m) => ({
+        at: m.created_at,
+        kind: 'msg' as const,
+        msg: m,
+      })),
       ...scoped.map((e) => ({ at: e.created_at, kind: 'entry' as const, entry: e })),
     ]
     return items.sort((a, b) => a.at.localeCompare(b.at))
-  }, [messages, filedEntriesP, lens])
+  }, [messagesP, filedEntriesP, lens])
 
   // Stay pinned to the newest line.
   useEffect(() => {
@@ -284,9 +287,9 @@ export function Reflect({ lens }: { lens: string | null }) {
   // carry a WORLD NAME — provenance, not decoration. A card labelled
   // "silver" that belongs to CTDI is a false claim about where words were
   // said, and that outranks the cost of holding the thread back.
-  if (!projectsP.proven || !filedEntriesP.proven) {
+  if (!projectsP.proven || !filedEntriesP.proven || !messagesP.proven) {
     return (
-      <Proof of={[projectsP, filedEntriesP]} line="The thread isn't loading" center>
+      <Proof of={[projectsP, filedEntriesP, messagesP]} line="The thread isn't loading" center>
         {() => null}
       </Proof>
     )
@@ -294,7 +297,6 @@ export function Reflect({ lens }: { lens: string | null }) {
   const projects = projectsP.value
   const world = projects.find((p) => p.id === lens) ?? null
 
-  if (isError) return <LoadFailed what="The thread" onRetry={() => void refetch()} />
 
   const daymark = world
     ? `${world.name} · same mind, narrowed`

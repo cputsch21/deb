@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
+import { proven, type Proven } from '../proof'
 import { transient } from '../../lib/undo'
 import { assertRowChanged, capText, optimisticWrite } from '../mutate'
 import { TITLE_MAX, type Cadence, type RecurringTask } from '../types'
@@ -18,8 +19,8 @@ async function fetchRecurring(): Promise<RecurringTask[]> {
   return data
 }
 
-export function useRecurring() {
-  return useQuery({ queryKey: recurringKeys.all, queryFn: fetchRecurring })
+export function useRecurring(): Proven<RecurringTask[]> {
+  return proven(useQuery({ queryKey: recurringKeys.all, queryFn: fetchRecurring }))
 }
 
 const nowISO = () => new Date().toISOString()

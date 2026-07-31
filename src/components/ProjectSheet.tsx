@@ -5,6 +5,7 @@ import { cadenceLabel } from '../lib/day'
 import { isValidHex, randomProjectColor } from '../lib/worldTheme'
 import { useProjectMutations } from '../db/queries/projects'
 import { useRecurring, useRecurringMutations } from '../db/queries/recurring'
+import { Proof } from './Proof'
 import type { Cadence, Project } from '../db/types'
 import { NAME_MAX, TITLE_MAX } from '../db/types'
 
@@ -16,14 +17,14 @@ const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
  * its day. Retire with undo; the tasks it made stay.
  */
 function Rhythms({ projectId }: { projectId: string }) {
-  const { data: rhythms = [] } = useRecurring()
+  const rhythmsP = useRecurring()
   const { create, remove } = useRecurringMutations()
   const [title, setTitle] = useState('')
   const [cadence, setCadence] = useState<Cadence>('daily')
   const [weeklyDays, setWeeklyDays] = useState<number[]>([])
   const [monthlyDay, setMonthlyDay] = useState(1)
 
-  const mine = rhythms.filter((r) => r.project_id === projectId)
+
 
   const add = () => {
     if (!title.trim()) return
@@ -45,19 +46,30 @@ function Rhythms({ projectId }: { projectId: string }) {
     <div className="flex flex-col gap-3">
       <span className="eyebrow text-dim">Rhythms</span>
 
-      {mine.map((r) => (
-        <div key={r.id} className="group flex items-center gap-3 rounded-xl bg-fill px-3.5 py-2.5">
-          <span className="min-w-0 flex-1 truncate text-sm text-ink">{r.title}</span>
-          <span className="eyebrow shrink-0 text-dim">{cadenceLabel(r)}</span>
-          <button
-            onClick={() => remove(r.id)}
-            aria-label={`Retire ${r.title}`}
-            className="shrink-0 text-sm text-dim opacity-0 transition-opacity duration-150 group-hover:opacity-100 hover:text-bad"
-          >
-            ×
-          </button>
-        </div>
-      ))}
+      <Proof of={[rhythmsP]} line="Your rhythms aren't loading">
+        {([rhythms]) => (
+          <>
+            {rhythms
+              .filter((r) => r.project_id === projectId)
+              .map((r) => (
+                <div
+                  key={r.id}
+                  className="group flex items-center gap-3 rounded-xl bg-fill px-3.5 py-2.5"
+                >
+                  <span className="min-w-0 flex-1 truncate text-sm text-ink">{r.title}</span>
+                  <span className="eyebrow shrink-0 text-dim">{cadenceLabel(r)}</span>
+                  <button
+                    onClick={() => remove(r.id)}
+                    aria-label={`Retire ${r.title}`}
+                    className="shrink-0 text-sm text-dim opacity-0 transition-opacity duration-150 group-hover:opacity-100 hover:text-bad"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+          </>
+        )}
+      </Proof>
 
       <input
         value={title}
