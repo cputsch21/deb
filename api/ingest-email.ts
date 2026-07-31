@@ -49,6 +49,31 @@ import {
 const SIGNATURE_TOLERANCE_S = 5 * 60
 const ATTACHMENT_MAX_BYTES = 15 * 1024 * 1024 // skip anything larger, honestly manifested
 
+/**
+ * ═══ DO NOT "FIX" THIS TO RETURN AN ERROR STATUS ═══
+ *
+ * This endpoint answers 200 even when it drops or fails, and that is the
+ * SECURITY RULING OF JULY 28, not an oversight. It is the deliberate
+ * exception to the July 31 law that an empty result and a failed read
+ * must be different on the wire.
+ *
+ * What breaks if you change it: the chute's third defence layer is an
+ * unguessable local part on the address. A non-2xx answer tells whoever
+ * sent the probe that something is listening and that their mail was
+ * rejected rather than ignored — which is exactly the signal an attacker
+ * needs to confirm the address exists and start guessing in earnest. A
+ * bounce, or anything a sender can distinguish from silence, converts an
+ * unguessable address into a confirmable one and burns the layer.
+ *
+ * Every drop is still fully visible — to CHRIS, in the Arrivals ledger,
+ * which is where observability belongs. It is withheld from the SENDER,
+ * and only from the sender. The failure is never silent; it is silent in
+ * one direction, on purpose.
+ *
+ * If you are here because the new law flagged three 2xx-on-failure sites
+ * in api/, this is the one that stays. The other two (brief, line) were
+ * real and are fixed.
+ */
 const ok = (body: unknown = { received: true }) =>
   new Response(JSON.stringify(body), {
     status: 200,
@@ -246,6 +271,9 @@ export async function POST(request: Request): Promise<Response> {
   if (!email) {
     console.error('[ingest] DROP: unreadable payload shape')
     await ledger({ outcome: 'dropped_shape' })
+    // 200 BY THE JULY 28 SECURITY RULING — see the ok() helper. A
+    // distinguishable answer confirms the address exists. The drop is
+    // visible to Chris in the Arrivals ledger, never to the sender.
     return ok()
   }
 
@@ -412,12 +440,18 @@ export async function POST(request: Request): Promise<Response> {
       console.error('[ingest] brief refresh', err)
     }
 
+    // 200 BY THE JULY 28 SECURITY RULING — see the ok() helper. A
+    // distinguishable answer confirms the address exists. The drop is
+    // visible to Chris in the Arrivals ledger, never to the sender.
     return ok({ received: true, entryId: filing.entryId })
   } catch (err) {
     // a unique-index collision is the idempotency backstop, not a failure
     const code = (err as { code?: string })?.code
     if (code === '23505' || String(err).includes('23505')) {
       await ledger({ outcome: 'duplicate', source, sender: email.from, summary: email.subject })
+    // 200 BY THE JULY 28 SECURITY RULING — see the ok() helper. A
+    // distinguishable answer confirms the address exists. The drop is
+    // visible to Chris in the Arrivals ledger, never to the sender.
       return ok({ received: true, duplicate: true })
     }
     console.error('[ingest] filing failed', err)
