@@ -35,7 +35,7 @@ export function Reflect({ lens }: { lens: string | null }) {
   const qc = useQueryClient()
   const { data: messages = [], isError, refetch } = useMessages(lens)
   const projectsP = useProjects()
-  const { data: filedEntries = [] } = useEntries()
+  const filedEntriesP = useEntries()
   // The thread does not depend on tasks — only the filed card's "N cards
   // dealt" count does. So this stays a derived value rather than gating the
   // whole room: no proof, no number (never a silent "0 cards").
@@ -81,7 +81,7 @@ export function Reflect({ lens }: { lens: string | null }) {
     // where the PASTE happened (spoken_in), not where the entry routed —
     // words live where they were said. Pre-ruling rows carry no spoken_in
     // and stay at silver: the record does not invent facts.
-    const scoped = filedEntries.filter((e) =>
+    const scoped = (filedEntriesP.proven ? filedEntriesP.value : []).filter((e) =>
       lens === null ? e.spoken_in === null : e.spoken_in === lens,
     )
     const items: ({ at: string; kind: 'msg'; msg: Message } | { at: string; kind: 'entry'; entry: Entry })[] = [
@@ -89,7 +89,7 @@ export function Reflect({ lens }: { lens: string | null }) {
       ...scoped.map((e) => ({ at: e.created_at, kind: 'entry' as const, entry: e })),
     ]
     return items.sort((a, b) => a.at.localeCompare(b.at))
-  }, [messages, filedEntries, lens])
+  }, [messages, filedEntriesP, lens])
 
   // Stay pinned to the newest line.
   useEffect(() => {
@@ -284,9 +284,9 @@ export function Reflect({ lens }: { lens: string | null }) {
   // carry a WORLD NAME — provenance, not decoration. A card labelled
   // "silver" that belongs to CTDI is a false claim about where words were
   // said, and that outranks the cost of holding the thread back.
-  if (!projectsP.proven) {
+  if (!projectsP.proven || !filedEntriesP.proven) {
     return (
-      <Proof of={[projectsP]} line="The thread isn't loading" center>
+      <Proof of={[projectsP, filedEntriesP]} line="The thread isn't loading" center>
         {() => null}
       </Proof>
     )

@@ -17,7 +17,7 @@ export function ArrivalsOverlay({ open, onClose }: { open: boolean; onClose: () 
   const [reach, setReach] = useState<'recent' | 'all'>('recent')
   const [rawFor, setRawFor] = useState<Arrival | null>(null)
   const arrivalsQ = useArrivals(open, reach)
-  const { data: entries = [] } = useEntries()
+  const entriesP = useEntries()
   const projectsP = useProjects()
 
   // Esc walks the cascade: raw → the table → the page
@@ -46,7 +46,7 @@ export function ArrivalsOverlay({ open, onClose }: { open: boolean; onClose: () 
         {rawFor ? (
           <RawView
             arrival={rawFor}
-            entry={entries.find((e) => e.id === rawFor.entry_id) ?? null}
+            entry={entriesP.proven ? (entriesP.value.find((e) => e.id === rawFor.entry_id) ?? null) : null}
             onBack={() => setRawFor(null)}
           />
         ) : (
@@ -64,9 +64,9 @@ export function ArrivalsOverlay({ open, onClose }: { open: boolean; onClose: () 
               Everything that reached the paper, and what became of it.
             </p>
 
-            {!projectsP.proven ? (
+            {!projectsP.proven || !entriesP.proven ? (
               <div className="mt-8">
-                <Proof of={[projectsP]} line="The ledger isn't loading">
+                <Proof of={[projectsP, entriesP]} line="The ledger isn't loading">
                   {() => null}
                 </Proof>
               </div>
@@ -100,7 +100,7 @@ export function ArrivalsOverlay({ open, onClose }: { open: boolean; onClose: () 
                     <ArrivalRow
                       key={a.id}
                       arrival={a}
-                      entry={a.entry_id ? (entries.find((e) => e.id === a.entry_id) ?? null) : null}
+                      entry={a.entry_id ? (entriesP.value.find((e) => e.id === a.entry_id) ?? null) : null}
                       projects={projectsP.value}
                       onOpen={() => setRawFor(a)}
                     />

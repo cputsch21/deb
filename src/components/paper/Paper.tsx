@@ -13,6 +13,7 @@ import { paintWorld } from '../../lib/worldTheme'
 import { applyDebOrder, dealStack, deriveLine, todayKey } from '../../lib/line'
 import { useLineWhys } from '../../lib/lineWhys'
 import { epigraphLine, issueNumber, worldGlance, type WorldGlance } from '../../lib/paper'
+import { derive } from '../../db/proof'
 import { Proof } from '../Proof'
 import { ProjectSheet } from '../ProjectSheet'
 import { MemorySheet } from '../MemorySheet'
@@ -98,17 +99,23 @@ export function Paper() {
   // line, no glances. Every consumer below renders absence, never a zero.
   const tasks = tasksP.proven ? tasksP.value : null
   const epigraph = epigraphLine(briefQ.data?.items)
-  const edition = issueNumber(firstDayQ.data ?? null, today)
+  // THE EDITION NUMBER. issueNumber(null, today) returned 1, so a failed
+  // read printed "No. 1" — an unproven claim about the whole history of
+  // the record, telling Chris on day forty that it began this morning.
+  // A derived value with no proof prints NO value: the masthead simply
+  // reads "Deb · The whole life, daily".
+  const edition = derive(firstDayQ, (first) => issueNumber(first, today))
 
   // the worlds-band glance: honest derivations, muted mono (flag 6)
-  const { data: entryMeta = [] } = useEntryMeta()
+  const entryMetaP = useEntryMeta()
+  const entryMeta = entryMetaP.proven ? entryMetaP.value : null
   const whys = useLineWhys(true)
   const wholeLine = useMemo(
     () => (tasks ? applyDebOrder(deriveLine(tasks, null, today), whys.order) : null),
     [tasks, today, whys.order],
   )
   const glances = useMemo(() => {
-    if (!tasks || !wholeLine || !projects) return null
+    if (!tasks || !wholeLine || !projects || !entryMeta) return null
     const m = new Map<string, WorldGlance>()
     for (const p of projects) m.set(p.id, worldGlance(p.id, tasks, entryMeta, wholeLine, today))
     return m
@@ -132,7 +139,7 @@ export function Paper() {
         <header>
           <div className="flex items-center justify-between pb-5 md:pb-6">
             <span className="eyebrow text-dim">
-              Deb · The whole life, daily · No. {edition}
+              Deb · The whole life, daily{edition !== null && ` · No. ${edition}`}
             </span>
             <span className="flex items-center gap-1">
               {/* the masthead furniture: memory beside the ledger (P6) */}

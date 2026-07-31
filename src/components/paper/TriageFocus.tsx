@@ -3,7 +3,6 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useProjects } from '../../db/queries/projects'
 import { taskKeys, useTasks, useTaskMutations } from '../../db/queries/tasks'
 import { useEntryMeta } from '../../db/queries/entries'
-import { proven } from '../../db/proof'
 import { Proof } from '../Proof'
 import { supabase } from '../../lib/supabase'
 import { DELEGATE_MAX, type EntryMeta, type Project, type Task } from '../../db/types'
@@ -52,7 +51,7 @@ type Exiting = { task: Task; kind: CardKind; dir: Dir }
 export function TriageFocus({ lens }: { lens: string | null }) {
   const tasks = useTasks()
   const projects = useProjects()
-  const entryMeta = proven(useEntryMeta())
+  const entryMeta = useEntryMeta()
 
   return (
     <Proof of={[tasks, projects, entryMeta]} line="The verdicts aren't loading" center>

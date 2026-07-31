@@ -31,9 +31,13 @@ import type { Entry, EntryNote, EntrySource, Project, Task } from '../../db/type
 export function RecordColumn({ lens }: { lens: string | null }) {
   const tasks = useTasks()
   const projects = useProjects()
+  const entries = useEntries()
+  const notes = useEntryNotes()
   return (
-    <Proof of={[tasks, projects]} line="The record isn't loading">
-      {([tasks, projects]) => <Record lens={lens} tasks={tasks} projects={projects} />}
+    <Proof of={[tasks, projects, entries, notes]} line="The record isn't loading">
+      {([tasks, projects, entries, notes]) => (
+        <Record lens={lens} tasks={tasks} projects={projects} entries={entries} notes={notes} />
+      )}
     </Proof>
   )
 }
@@ -42,13 +46,15 @@ function Record({
   lens,
   tasks,
   projects,
+  entries,
+  notes,
 }: {
   lens: string | null
   tasks: Task[]
   projects: Project[]
+  entries: Entry[]
+  notes: EntryNote[]
 }) {
-  const entriesQ = useEntries()
-  const notesQ = useEntryNotes()
   const today = todayKey()
   const [cursor, setCursor] = useState<string>(today)
 
@@ -71,10 +77,10 @@ function Record({
 
   const scoped = useMemo(
     () =>
-      (entriesQ.data ?? []).filter(
+      entries.filter(
         (e) => lens === null || e.project_id === lens || e.project_id === null,
       ),
-    [entriesQ.data, lens],
+    [entries, lens],
   )
 
   // the book's spine: every day that has a page, newest first, today always
@@ -103,23 +109,6 @@ function Record({
           )
           .sort((a, b) => (a.done_at ?? '').localeCompare(b.done_at ?? ''))
 
-  if (entriesQ.isError || notesQ.isError) {
-    return (
-      <div className="rounded-xl bg-fill2 px-4 py-3 text-[12.5px] text-muted">
-        The record couldn&rsquo;t be loaded — it is safe.{' '}
-        <button
-          onClick={() => {
-            void entriesQ.refetch()
-            void notesQ.refetch()
-          }}
-          className="underline underline-offset-2"
-        >
-          try again
-        </button>
-      </div>
-    )
-  }
-
   return (
     <div>
       {/* the page slot (July 29): the quiet third mouth — today only;
@@ -146,7 +135,7 @@ function Record({
               key={e.id}
               entry={e}
               lead={i === 0}
-              notes={(notesQ.data ?? []).filter((n) => n.entry_id === e.id)}
+              notes={notes.filter((n) => n.entry_id === e.id)}
               world={projects.find((p) => p.id === e.project_id) ?? null}
               showWorld={lens === null}
               day={day}
