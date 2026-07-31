@@ -25,14 +25,17 @@ type ValuesOf<Ps extends readonly Proven<unknown>[]> = {
 
 type Unproven = Extract<Proven<unknown>, { proven: false }>
 
-export function Proof<Ps extends readonly Proven<never>[]>({
+export function Proof<Ps extends readonly Proven<unknown>[]>({
   of,
   what,
+  center = false,
   children,
 }: {
   of: readonly [...Ps]
   /** The clause before the em dash: "The verdicts aren't loading" */
   what: string
+  /** Full-screen focus surfaces centre their line; columns do not. */
+  center?: boolean
   children: (values: ValuesOf<Ps>) => ReactNode
 }) {
   const unproven = of.filter((p) => !p.proven) as Unproven[]
@@ -47,7 +50,13 @@ export function Proof<Ps extends readonly Proven<never>[]>({
 
   // Something has. One line, in the slot the lie would have occupied.
   const retries = unproven.flatMap((p) => (p.state === 'stalled' ? [p.retry] : []))
-  return <Stalled what={what} onRetry={() => retries.forEach((r) => r())} />
+  const line = <Stalled what={what} onRetry={() => retries.forEach((r) => r())} />
+  if (!center) return line
+  return (
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-8 text-center">
+      {line}
+    </div>
+  )
 }
 
 /**

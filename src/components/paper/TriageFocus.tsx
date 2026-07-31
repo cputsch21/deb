@@ -3,8 +3,10 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useProjects } from '../../db/queries/projects'
 import { taskKeys, useTasks, useTaskMutations } from '../../db/queries/tasks'
 import { useEntryMeta } from '../../db/queries/entries'
+import { proven } from '../../db/proof'
+import { Proof } from '../Proof'
 import { supabase } from '../../lib/supabase'
-import { DELEGATE_MAX, type EntryMeta, type Task } from '../../db/types'
+import { DELEGATE_MAX, type EntryMeta, type Project, type Task } from '../../db/types'
 import { useBook } from '../../lib/book'
 import { useDoor } from '../../lib/door'
 import { useLens } from '../../lib/lens'
@@ -31,7 +33,6 @@ import { addDays, ageInDays, daysBetween, dealStack, shortDay, todayKey, type Ca
 
 const FLY_MS = 220
 const CLEAR_RETURN_MS = 1600
-const NO_TASKS: Task[] = []
 
 type Dir = 'right' | 'left' | 'up' | 'down'
 type Chooser =
@@ -39,14 +40,44 @@ type Chooser =
   | { mode: 'delegate'; task: Task; kind: CardKind }
 type Exiting = { task: Task; kind: CardKind; dir: Dir }
 
+/**
+ * EMPTINESS MUST BE EARNED, and this surface earns it first (ruling,
+ * July 31). Every other failure on the page renders a lie you can
+ * refresh away. Here the verdicts are PERMANENT — VerdictConfirm exists
+ * precisely because they cannot be walked back — so a card dealt from a
+ * half-loaded stack is an irreversible answer to an incomplete question.
+ * It is the only failure in twenty whose consequence outlives the page.
+ * Nothing deals until all three reads are proven.
+ */
 export function TriageFocus({ lens }: { lens: string | null }) {
+  const tasks = proven(useTasks())
+  const projects = proven(useProjects())
+  const entryMeta = proven(useEntryMeta())
+
+  return (
+    <Proof of={[tasks, projects, entryMeta]} what="The verdicts aren't loading" center>
+      {([tasks, projects, entryMeta]) => (
+        <TriageStage lens={lens} tasks={tasks} projects={projects} entryMeta={entryMeta} />
+      )}
+    </Proof>
+  )
+}
+
+/** The stage takes proven rows — it cannot be rendered without them. */
+function TriageStage({
+  lens,
+  tasks,
+  projects,
+  entryMeta,
+}: {
+  lens: string | null
+  tasks: Task[]
+  projects: Project[]
+  entryMeta: EntryMeta[]
+}) {
   const { setRoom } = useRoom()
   const isMobile = useIsMobile()
-  const tasksQ = useTasks()
-  const tasks = tasksQ.data ?? NO_TASKS
-  const { data: projects = [] } = useProjects()
   const { update, setDone, remove } = useTaskMutations()
-  const { data: entryMeta = [] } = useEntryMeta()
   const qc = useQueryClient()
   const today = todayKey()
 
