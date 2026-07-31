@@ -34,7 +34,10 @@ Zustand (not yet installed into use) · Fraunces/Inter/JetBrains Mono.
 ```bash
 pnpm dev      # localhost:5173 (needs .env.local — see .env.example)
 pnpm build    # tsc -b + vite build — must pass before any commit
-pnpm test     # vitest
+pnpm test     # tsc -b + vitest — the typecheck is NOT optional here:
+              # proof.compile-test.tsx is a COMPILE-time guarantee, so a
+              # green vitest run alone can hide a dead law (see DECISIONS,
+              # July 31). Never reduce this back to `vitest run`.
 ```
 
 Supabase schema changes = dated idempotent `.sql` files in `supabase/`,
