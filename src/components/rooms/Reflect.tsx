@@ -261,7 +261,7 @@ export function Reflect({ lens }: { lens: string | null }) {
         } else if (e.kind === 'mission_set') {
           // Redo path: undo restores whatever the mission was before (often nothing).
           const prev =
-            qc.getQueryData<typeof projects>(projectKeys.all)?.find((p) => p.id === e.id)
+            qc.getQueryData<Project[]>(projectKeys.all)?.find((p) => p.id === e.id)
               ?.mission ?? null
           void qc.invalidateQueries({ queryKey: projectKeys.all })
           const id = e.id
@@ -283,20 +283,26 @@ export function Reflect({ lens }: { lens: string | null }) {
   }
 
   // Law: a failed thread load never renders as an empty thread.
-  // The worlds gate the thread because every filed card and the daymark
-  // carry a WORLD NAME — provenance, not decoration. A card labelled
-  // "silver" that belongs to CTDI is a false claim about where words were
-  // said, and that outranks the cost of holding the thread back.
-  if (!projectsP.proven || !filedEntriesP.proven || !messagesP.proven) {
+  // GATE THE LABEL, NOT THE THREAD (ruling, July 31).
+  //
+  // Messages and filed entries are CONTENT: a timeline missing its filed
+  // objects is a false account of the day, so both stay in the gate.
+  // Worlds are only ever a LABEL here — the daymark and each filed card's
+  // provenance line. Holding the whole conversation back because a label
+  // could not be resolved was the wrong granularity; the right move is
+  // Ruling 4's masthead logic one level down. An absent label makes no
+  // claim; a label reading "silver" over a card that belongs to CTDI
+  // makes a false one. So the thread renders and simply says less.
+  if (!filedEntriesP.proven || !messagesP.proven) {
     return (
-      <Proof of={[projectsP, filedEntriesP, messagesP]} line="The thread isn't loading" center>
+      <Proof of={[filedEntriesP, messagesP]} line="The thread isn't loading" center>
         {() => null}
       </Proof>
     )
   }
-  const projects = projectsP.value
-  const world = projects.find((p) => p.id === lens) ?? null
-
+  // null = unproven. Every read of it must render absence, never a guess.
+  const worlds = projectsP.proven ? projectsP.value : null
+  const world = worlds?.find((p) => p.id === lens) ?? null
 
   const daymark = world
     ? `${world.name} · same mind, narrowed`
@@ -325,7 +331,11 @@ export function Reflect({ lens }: { lens: string | null }) {
               <FiledCard
                 key={item.entry.id}
                 entry={item.entry}
-                world={projects.find((p) => p.id === item.entry.project_id) ?? null}
+                worldName={
+                  worlds
+                    ? (worlds.find((p) => p.id === item.entry.project_id)?.name ?? 'silver')
+                    : null
+                }
                 minted={derive(allTasks, (ts) =>
                   ts.filter((t) => t.source_entry_id === item.entry.id).length,
                 )}
@@ -485,12 +495,14 @@ export function Reflect({ lens }: { lens: string | null }) {
  */
 function FiledCard({
   entry,
-  world,
+  worldName,
   minted,
   lens,
 }: {
   entry: Entry
-  world: Project | null
+  /** null = the worlds read is unproven; the provenance segment is then
+   *  omitted entirely rather than guessing "silver". */
+  worldName: string | null
   minted: number | null
   lens: string | null
 }) {
@@ -510,7 +522,7 @@ function FiledCard({
       className="rise ml-auto w-fit max-w-[78%] rounded-2xl bg-fill px-4 py-3 text-left transition-colors duration-150 hover:bg-fill2"
     >
       <span className="eyebrow block text-[0.58rem] text-dim">
-        filed · {world?.name ?? 'silver'} · {shortDay(entry.entry_day)}
+        filed{worldName ? ` · ${worldName}` : ''} · {shortDay(entry.entry_day)}
       </span>
       <span className="mt-1.5 block truncate font-serif text-[14px] leading-snug text-ink">
         {firstLine ?? <em className="text-muted">Filed — the raw is kept; distilling.</em>}

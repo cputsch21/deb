@@ -68,8 +68,8 @@ export function Paper() {
   // A brand-new account's thread is never silent (T4 ruling 12).
   const qc = useQueryClient()
   useEffect(() => {
-    void plantFirstMessage().then((planted) => {
-      if (planted) void qc.invalidateQueries({ queryKey: messageKeys.all })
+    void plantFirstMessage().then((result) => {
+      if (result === 'planted') void qc.invalidateQueries({ queryKey: messageKeys.all })
     })
   }, [qc])
 

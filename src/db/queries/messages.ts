@@ -43,6 +43,10 @@ So — what matters most right now?`
 
 let plantAttempted = false
 
+/** planted = her first words now exist · present = they already did ·
+ *  unknown = the read failed, so we do not know and did not write. */
+export type PlantResult = 'planted' | 'present' | 'unknown'
+
 /**
  * The day-one plant, programmatic (T4 ruling 12): a brand-new account's
  * thread begins with her first message — code, not a hand-run script.
@@ -50,15 +54,35 @@ let plantAttempted = false
  * session. Chris's account already carries it from the T6 SQL, so this is
  * a no-op there. Resolves true only when a plant actually landed.
  */
-export async function plantFirstMessage(): Promise<boolean> {
-  if (plantAttempted) return false
-  plantAttempted = true
+export async function plantFirstMessage(): Promise<PlantResult> {
+  if (plantAttempted) return 'present'
   const { count, error } = await supabase
     .from('messages')
     .select('id', { count: 'exact', head: true })
-  if (error || count === null || count > 0) return false
+
+  // THREE STATES, NOT TWO (ruling, July 31). This used to fold a real
+  // error into `return false` — indistinguishable from "already planted"
+  // — so a failed count meant Deb's opening line never appeared and a
+  // fresh account met a silent Deb column. An empty state manufactured
+  // from a failure.
+  //
+  // Refusing to WRITE on unknown state is correct and is kept: we do not
+  // know whether the thread is empty, so we do not touch it. What changes
+  // is that unknown stops looking like success, and the attempt is not
+  // marked done — the next open tries again. The safe action stays; the
+  // lie goes.
+  if (error || count === null) return 'unknown'
+
+  plantAttempted = true
+  if (count > 0) return 'present'
+
   const { error: insertError } = await supabase
     .from('messages')
     .insert({ role: 'deb', content: FIRST_MESSAGE, project_id: null })
-  return !insertError
+  if (insertError) {
+    plantAttempted = false // it may still be empty; let the next open try
+    console.error('[plantFirstMessage]', insertError)
+    return 'unknown'
+  }
+  return 'planted'
 }
