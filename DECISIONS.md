@@ -15,6 +15,64 @@ Current state is the top of this log.
 
 ## The log (newest first)
 
+### July 31, 2026 — Two standing laws: construction over inspection · one exchange per ticket
+**WHERE A PROPERTY CAN BE GUARANTEED BY CONSTRUCTION, DO NOT VERIFY IT BY
+INSPECTION. A check proves the past; a constraint proves every future run.**
+
+Born from R4. The ticket asked for a new heading predicate to be proved
+safe by diffing it against every row in `entry_raw` — a report Chris would
+read once. The corpus was unreadable from a build session, so the property
+was moved into the code instead:
+`wordCount(structural) > wordCount(legacy) ? structural : legacy`. The new
+predicate can only ever be adopted when it keeps MORE, so "no disagreement
+loses content" is true of every future page, not of the seven that
+happened to be in the record on the day someone looked.
+
+This is the same move as `Proven<T>` (S1) and `proof.compile-test.tsx`
+one layer up, and it is now the default: when a review asks for a proof,
+first ask whether the thing can instead be made impossible.
+
+**Recorded as correct, not as a limitation:** the session declined to
+reach for a service-role key to read the corpus and unblock itself. The
+key's invariant (`api/ingest-email.ts` only) held under pressure from a
+task that would have been easier with it. An invariant that bends when
+inconvenient is not an invariant.
+
+*Accepted with eyes open:* the construction guarantees word COUNT, not
+phrasing — a genuinely short prose opening can be skipped in favour of
+something longer. Never shorter. Filed, not fixed; the real corpus diff
+can be run from a browser session if it ever matters.
+
+---
+
+**ONE EXCHANGE PER TICKET.** This retires the propose-and-wait-for-a-ruling
+pattern that ran through S1, W1 and R3.
+
+1. Chris proposes the ticket.
+2. **One report back** — every objection, finding, question, disagreement
+   and correction in that single report. Nothing held back. **If a ruling
+   would be needed later, it is asked for now.**
+3. Chris reads it and writes the final ticket, complete: every ruling
+   made, every gate resolved.
+4. Implement, and report when done. **No stops.**
+
+**The consequence to feel at step 2: anything not raised there gets
+implemented as written.**
+
+The one escape hatch from step 4, and its bar: break it only if
+implementing as written would be **irreversible or clearly not intended** —
+data loss, an unsanctioned schema change, a live-path change Chris did not
+know he was authorizing. *"I'd like confirmation," "there are two
+readings,"* and *"I found something interesting"* are **not** that bar.
+Those belong in step 2, or in the closing report.
+
+*Also settled, same push, both too cheap to queue:* `api/line.ts:122`
+carries a comment saying why an empty ranking answers 200 while a failed
+read answers 500, and that the difference is deliberate — a future reader
+had even odds of "fixing" the wrong one. And the CI action majors were
+pinned forward off the deprecated Node 20 runtime, because a job that will
+break with no code change attached is a trap.
+
 ### July 31, 2026 — The shared extractor (R4): shape, not a word list · the floor reaches ingest
 **THE HEADING LIST WAS THE WRONG SHAPE.** `journal|gratitude|goals|notes|
 today` is a blocklist, and a blocklist fails on the first word nobody

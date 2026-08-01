@@ -13,6 +13,11 @@
 # It needs no secrets: the suite is pure logic and passes with no .env
 # present (verified before this file was written).
 
+# Action majors pinned July 31 2026. The v4 line targeted the Node 20
+# runtime, which GitHub deprecated and was already force-running on 24 —
+# a CI that will break with no code change attached is a trap, so it was
+# pinned forward rather than left to expire. Re-check when a warning
+# reappears in the run log.
 name: CI
 
 on:
@@ -29,16 +34,16 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           # pinned to the version that wrote pnpm-lock.yaml (v9 lockfile);
           # --frozen-lockfile is only honest if the resolver matches
           version: 10.33.4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24 # matches Vercel's production runtime
 
       - run: pnpm install --frozen-lockfile && pnpm test

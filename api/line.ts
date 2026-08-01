@@ -119,6 +119,14 @@ export async function POST(request: Request): Promise<Response> {
     const items = parsed
       .filter((r) => typeof r.id === 'string' && lineIds.has(r.id) && !seen.has(r.id) && seen.add(r.id))
       .map((r) => ({ id: String(r.id), why: String(r.why ?? '').trim().slice(0, WHY_MAX) }))
+    // 200 IS CORRECT HERE AND THE 500 BELOW IS ALSO CORRECT — they are
+    // deliberately different, and the difference is the whole point of the
+    // July 31 law: AN EMPTY RESULT AND A FAILED READ MUST BE DIFFERENT ON
+    // THE WIRE. This line is a ranking that ran fine and had nothing to
+    // say; the catch is a ranking that BROKE. The client's Proven<T>
+    // infers success from the status, so collapsing these two would make
+    // "Deb has no ranking today" and "the ranking is down" the same fact.
+    // If you are here to make them consistent: don't.
     if (items.length === 0) return json({ items: null }, 200)
 
     const { error: upsertError } = await db

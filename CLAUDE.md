@@ -64,6 +64,14 @@ Work that isn't committed and pushed does not exist to any other session.
   stashed and never deleted. A stash is invisible; a branch is permanent.
 - When main is on fire, `docs/ESCAPE.md` has the tested revert commands.
 
+## CONSTRUCTION OVER INSPECTION
+**Where a property can be guaranteed by construction, do not verify it by
+inspection.** A check proves the past; a constraint proves every future
+run. When a review asks for a proof, first ask whether the thing can
+instead be made impossible — that is what `Proven<T>` does to empty
+states, what `proof.compile-test.tsx` does to the type itself, and what
+the extractor's never-shorter guard does to a corpus diff.
+
 ## Engineering law (non-negotiable, from DECISIONS.md)
 - Every visible mutation is optimistic (<50ms): patch the cache
   synchronously, persist in background, reconcile on failure.
@@ -109,9 +117,26 @@ Work that isn't committed and pushed does not exist to any other session.
 - Voice: warm sentence-case prose vs terse UPPERCASE mono labels. Payoffs
   are plain warm sentences.
 
+## ONE EXCHANGE PER TICKET
+1. Chris proposes the ticket.
+2. **One report back** — every objection, finding, question, disagreement
+   and correction in that single report. Nothing held back. **If a ruling
+   would be needed later, ask for it now.**
+3. Chris writes the final ticket, complete.
+4. Implement, and report when done. **No stops.**
+
+**Anything not raised at step 2 gets implemented as written.** That is the
+consequence to feel while writing it.
+
+Break step 4 only if implementing as written would be **irreversible or
+clearly not intended** — data loss, an unsanctioned schema change, a
+live-path change Chris did not know he was authorizing. "I'd like
+confirmation", "there are two readings" and "I found something
+interesting" are NOT that bar; they belong in step 2 or the closing
+report.
+
 ## How to work
-- Plan before building: propose scope as small tickets, get Chris's yes,
-  then build exactly that. **No scope creep beyond the ticket.**
+- Build exactly the ticket. **No scope creep beyond it.**
 - When a piece of work stalls: finish it or formally cut it (dated
   DECISIONS entry) — never drift into the adjacent fun thing.
 - Every deliberate ruling → a dated entry in `DECISIONS.md` (newest first).
