@@ -101,21 +101,49 @@ export function trimToCeiling(text: string): string {
  * its stated goals line when one is parseable, capped at the ceiling.
  * Every character comes from the page — extraction cannot hallucinate.
  */
-export function deterministicExtract(raw: string): string {
-  const clean = raw.replace(/\r/g, '')
-  const lines = clean.split('\n').map((l) => l.trim())
-  const prose = lines.filter((l) => l.length > 0)
+/**
+ * THE HEADING PREDICATE (R4, July 31 2026) — STRUCTURAL, NOT A BLOCKLIST.
+ *
+ * The old test was `journal|gratitude|goals|notes|today`. A blocklist
+ * fails on the first word nobody thought of, and that is exactly how a
+ * page headed "Agenda" became the one-word distillate "Agenda". Extending
+ * the list to agenda|meeting|call|ideas|todo fixes five and waits for the
+ * sixth.
+ *
+ * A heading is recognised by its SHAPE: short, no terminal punctuation,
+ * and followed by more content. What it says is irrelevant. This also
+ * catches the datestamp case ("7.29.26") that no word list ever would.
+ */
+export const HEADING_MAX_WORDS = 4
+export const HEADING_MAX_CHARS = 32
 
-  // the first complete sentence, from the first line that has real words
+export function isHeading(line: string, hasMoreAfter: boolean): boolean {
+  if (!hasMoreAfter) return false // a lone line is the content, not a label
+  const t = line.trim().replace(/[:：]\s*$/, '') // a trailing colon is a tell
+  if (!t) return false
+  if (/[.!?]$/.test(t)) return false // terminal punctuation means a sentence
+  return wordCount(t) <= HEADING_MAX_WORDS && t.length <= HEADING_MAX_CHARS
+}
+
+const LEGACY_HEADER = /^(journal|gratitude|goals?|notes?|today)\s*:?\s*$/i
+
+function extractFrom(raw: string, skip: (line: string, i: number, all: string[]) => boolean): string {
+  const prose = raw
+    .replace(/\r/g, '')
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0)
+
+  // the first complete sentence, from the first line that is not a label
   let first = ''
-  for (const line of prose) {
-    if (/^(journal|gratitude|goals?|notes?|today)\s*:?\s*$/i.test(line)) continue // a header
-    const m = /^(.+?[.!?])(\s|$)/.exec(line)
-    first = (m ? m[1] : line).trim()
+  for (let i = 0; i < prose.length; i++) {
+    if (skip(prose[i], i, prose)) continue
+    const m = /^(.+?[.!?])(\s|$)/.exec(prose[i])
+    first = (m ? m[1] : prose[i]).trim()
     if (first) break
   }
 
-  // the goals line: an inline "Goals: …"/"Today: …", or the line under a
+  // the goals line: an inline "Goals: …"/"Today: …", or the lines under a
   // bare "Goals"/"Today" header
   let goals = ''
   for (let i = 0; i < prose.length; i++) {
@@ -127,7 +155,7 @@ export function deterministicExtract(raw: string): string {
     if (/^(goals?|today)\s*:?\s*$/i.test(prose[i])) {
       const rest: string[] = []
       for (let j = i + 1; j < prose.length; j++) {
-        if (/^(journal|gratitude|goals?|notes?|today)\s*:?\s*$/i.test(prose[j])) break
+        if (LEGACY_HEADER.test(prose[j])) break
         rest.push(prose[j].replace(/^[-*•]\s*/, ''))
       }
       goals = rest.join(' · ').trim()
@@ -137,6 +165,41 @@ export function deterministicExtract(raw: string): string {
 
   const joined = goals && goals !== first ? `${first} · ${goals}` : first
   return trimToCeiling(joined)
+}
+
+/** The old behaviour, kept so the new one can be held against it. */
+export function legacyExtract(raw: string): string {
+  return extractFrom(raw, (line) => LEGACY_HEADER.test(line))
+}
+
+/**
+ * The structural behaviour on its own — what the predicate alone gives.
+ *
+ * AT MOST ONE HEADING IS SKIPPED. A page has a title; it does not have
+ * five. Without this cap the predicate cascades on list pages, where every
+ * short bullet is heading-shaped: `7.29.26 / Launch Deb / Launch Subseven`
+ * skipped the datestamp AND "Launch Deb" and landed on the last line. A
+ * caught regression, not a hypothetical — see the test of that exact page.
+ */
+export function structuralExtract(raw: string): string {
+  let skipped = false
+  return extractFrom(raw, (line, i, all) => {
+    if (skipped) return false
+    if (!isHeading(line, i < all.length - 1)) return false
+    skipped = true
+    return true
+  })
+}
+
+export function deterministicExtract(raw: string): string {
+  const legacy = legacyExtract(raw)
+  const structural = structuralExtract(raw)
+  // THE GUARANTEE, BY CONSTRUCTION rather than by corpus check: the new
+  // predicate can only ever be adopted when it yields MORE than the old
+  // one. A disagreement that would shorten the extract is discarded and
+  // the old result stands. This is what lets the change ship without
+  // having read every page in the record.
+  return wordCount(structural) > wordCount(legacy) ? structural : legacy
 }
 
 const DISTILL_ADDENDUM = `A piece of material just arrived through the door — a transcript, a page,
@@ -223,7 +286,16 @@ export type MintedCard = { title: string; excerpt: string | null }
 
 export type DistillResult = {
   world: string | null
-  distillate: string
+  /**
+   * NULL WHEN THE FLOOR REFUSED IT (R4, July 31 2026). On the corpus job a
+   * refusal keeps the old line; on ingest there is no old line to keep, so
+   * the entry files with NO distillate. A DERIVED VALUE WITH NO PROOF
+   * PRINTS NO VALUE, and a one-word lie about a page is worse than an
+   * honest absence. The raw is untouched and one tap away, as always.
+   */
+  distillate: string | null
+  /** the candidate the floor rejected, kept so the drop is findable */
+  distillateRejected: string | null
   cards: MintedCard[]
   notes: { kind: NoteKind; content: string; question: string | null }[]
   /** his written goals for today, verbatim-ish (ritual ruling 1) */
@@ -482,7 +554,17 @@ export async function runDistill(
     // THE CEILING, enforced in code (R2): pass 1 → one tightened
     // regeneration → deterministic extract. Which path fired is logged;
     // path 3 firing regularly means the prompt is wrong.
-    const { text: distillate } = await enforceCeiling(anthropic, raw, produced)
+    const { text: candidate } = await enforceCeiling(anthropic, raw, produced)
+    // THE FLOOR ON THE LIVE PATH. Measured against the page itself, since
+    // a first filing has no previous distillate to compare with. No
+    // placeholder, no retry loop, no bounce — an absence, logged.
+    const floorRefused = violatesFloor(wordCount(raw), candidate)
+    const distillate = floorRefused ? null : candidate
+    if (floorRefused) {
+      console.error(
+        `[distill] FLOOR REFUSED — raw ${wordCount(raw)} words, candidate ${wordCount(candidate)} words (needed ${requiredWords(wordCount(raw))}): ${JSON.stringify(candidate)}`,
+      )
+    }
     // The restraint split (ritual ruling 4): 0–2 governs her UNPROMPTED
     // notes; answers are prompted — every question earns its note.
     const allNotes = Array.isArray(obj.notes)
@@ -542,6 +624,7 @@ export async function runDistill(
     return {
       world: typeof obj.world === 'string' && obj.world.trim() ? obj.world.trim() : null,
       distillate,
+      distillateRejected: floorRefused ? candidate : null,
       cards,
       notes,
       today,

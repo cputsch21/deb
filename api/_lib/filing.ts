@@ -347,6 +347,14 @@ export async function performFiling(
     // the entry surfaces the newest raw; message_id follows the LATEST
     // drop (older replays converge harmlessly through containment — the
     // old content is fully inside the page, so nothing new mints)
+    // On a VERSION drop a floor refusal keeps the previous distillate —
+    // there IS an old line here, so the redistill semantics apply and the
+    // page never loses the one it had. Logged either way.
+    if (result?.distillateRejected) {
+      console.error(
+        `[filing] ${entryId}: version kept its previous distillate — the floor rejected ${JSON.stringify(result.distillateRejected)}`,
+      )
+    }
     const { data: upd, error: updError } = await db
       .from('entries')
       .update({
@@ -445,6 +453,15 @@ export async function performFiling(
     sourceMeta: opts.sourceMeta ?? null,
     ownerId: own,
   })
+
+  // THE ABSENCE IS FINDABLE, not merely blank (R4): a page that could not
+  // be distilled is logged with its entry id and the rejected candidate,
+  // so it can be gone and looked at rather than silently reading empty.
+  if (result?.distillateRejected) {
+    console.error(
+      `[filing] ${entryId}: FILED WITH NO DISTILLATE — the floor rejected ${JSON.stringify(result.distillateRejected)}`,
+    )
+  }
 
   const taskIds: string[] = []
   const mintedTitles: string[] = []

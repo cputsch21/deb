@@ -15,6 +15,63 @@ Current state is the top of this log.
 
 ## The log (newest first)
 
+### July 31, 2026 — The shared extractor (R4): shape, not a word list · the floor reaches ingest
+**THE HEADING LIST WAS THE WRONG SHAPE.** `journal|gratitude|goals|notes|
+today` is a blocklist, and a blocklist fails on the first word nobody
+thought of — which is exactly how a page headed **"Agenda"** became the
+one-word distillate "Agenda". Extending it to `agenda|meeting|call|ideas`
+fixes five and waits for the sixth. **A heading is now recognised by its
+SHAPE:** short (≤4 words, ≤32 chars), no terminal punctuation, and
+followed by more content. What it says is irrelevant. This also catches
+the datestamp head (`7.29.26`) that no word list ever would.
+
+**AT MOST ONE HEADING IS SKIPPED.** A page has a title; it does not have
+five. Without the cap the predicate cascades on list pages, where every
+short bullet is heading-shaped — `7.29.26 / Launch Deb / Launch Subseven`
+skipped the datestamp AND "Launch Deb" and landed on the last line. That
+was a caught regression, not a hypothetical: the test of that exact page
+failed and the cap is what fixed it.
+
+**SHIPPED WITHOUT THE CORPUS DIFF, BY CONSTRUCTION RATHER THAN BY CHECK.**
+The ruling asked for the new predicate to be proved against every row in
+`entry_raw`. That data is RLS-scoped to Chris's JWT and unreadable from a
+build session (the anon key correctly returns zero rows; no service-role
+key exists locally, and using one here would breach its standing
+invariant). Rather than fake the proof against fixtures and call it a
+corpus check, the guarantee was moved into the code: **the structural
+result is adopted only when it yields MORE words than the legacy result;
+otherwise the legacy result stands.** Every disagreement therefore keeps
+at least as much as before, which is the ship condition, made true by
+construction instead of by inspection. Both extractors stay exported and
+side-by-side so the real diff can still be run later.
+
+*The honest limit of that guarantee:* it preserves word COUNT, not the
+identical phrase. A genuinely prose two-word opening ("Rough day") is
+heading-shaped and can be skipped in favour of something longer. The
+guard makes the result never shorter; it does not make it a superset.
+
+**THE FLOOR NOW REACHES THE LIVE PATH, AND ITS FAILURE MODE IS DIFFERENT
+THERE.** `deterministicExtract` was never only the corpus job's: it sits
+in `enforceCeiling`, which is reached by **four mouths** — the composer
+(`api/chat.ts`), the page slot (`api/file.ts`), the email chute
+(`api/ingest-email.ts`), and the corpus job (`api/redistill.ts`). Found
+by search, not by memory; the ticket expected two.
+
+- On **redistill** a refusal keeps the old line.
+- On a **version drop** a refusal keeps the previous distillate — there
+  is an old line, so redistill semantics apply for free.
+- On a **first filing** there is no old line, so the entry files with
+  **`distillate: null`**. No placeholder, no retry loop, no bounce. **A
+  DERIVED VALUE WITH NO PROOF PRINTS NO VALUE**, and a one-word lie about
+  a page is worse than an honest absence. The raw is untouched and one tap
+  away, as always.
+- Every such absence logs the **entry id and the rejected candidate**, so
+  a page that could not be distilled is findable rather than merely blank.
+
+On ingest the floor measures against the PAGE (`wordCount(raw)`), since a
+first filing has no previous distillate to compare with. Same clamped
+predicate, one implementation, tested once.
+
 ### July 31, 2026 — The floor (R3): a rewrite is a proposal, not an outcome
 **A REWRITE IS A PROPOSAL, NOT AN OUTCOME.** The system may propose a
 replacement for any distillate, in any mode. It may only WRITE one that is

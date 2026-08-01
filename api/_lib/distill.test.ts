@@ -5,6 +5,8 @@ import {
   FLOOR_MIN_SOURCE_WORDS,
   FLOOR_RATIO,
   deterministicExtract,
+  isHeading,
+  legacyExtract,
   overruns,
   requiredWords,
   trimToCeiling,
@@ -184,5 +186,49 @@ describe('the floor', () => {
   it('below the binding threshold the floor does not bind at all', () => {
     expect(requiredWords(FLOOR_MIN_SOURCE_WORDS - 1)).toBe(0)
     expect(violatesFloor(FLOOR_MIN_SOURCE_WORDS - 1, 'one')).toBe(false)
+  })
+})
+
+/**
+ * THE HEADING PREDICATE (R4) — structural, not a blocklist.
+ * The two real failures from the July 30 corpus run, plus the guarantee
+ * that makes shipping this safe without having read the whole record.
+ */
+describe('the heading predicate', () => {
+  const AGENDA = 'Agenda\n- call Karthik about the ISO docs\n- invoice Larry'
+  const DATED = '7.29.26\nLaunch Deb\nLaunch Subseven'
+
+  it('the real failure: "Agenda" no longer becomes the whole distillate', () => {
+    expect(legacyExtract(AGENDA)).toBe('Agenda')
+    expect(deterministicExtract(AGENDA)).not.toBe('Agenda')
+    expect(deterministicExtract(AGENDA)).toContain('Karthik')
+  })
+
+  it('catches a datestamp head, which no word list ever would', () => {
+    expect(legacyExtract(DATED)).toBe('7.29.26')
+    expect(deterministicExtract(DATED)).toContain('Launch Deb')
+  })
+
+  it('a word nobody thought of is handled by SHAPE, not by being listed', () => {
+    for (const h of ['Agenda', 'Meeting', 'Ideas', 'Standup', 'Zebra', '§4']) {
+      expect(deterministicExtract(`${h}\nThe real first line of the page.`)).toContain('real first line')
+    }
+  })
+
+  it('a real sentence is never mistaken for a heading', () => {
+    expect(isHeading('Called Larry about the invoice today', true)).toBe(false) // too long
+    expect(isHeading('Rough day.', true)).toBe(false) // terminal punctuation
+    expect(isHeading('Agenda', false)).toBe(false) // nothing follows it
+  })
+
+  it('THE GUARANTEE: the new predicate is adopted only when it keeps MORE', () => {
+    // a page where structural detection would shorten the extract must
+    // fall back to the old result — this is why it can ship unproven
+    // against the corpus
+    const pages = [AGENDA, DATED, 'Notes\nfirst real line here', 'Just one line', '']
+    for (const p of pages) {
+      const out = deterministicExtract(p)
+      expect(wordCount(out)).toBeGreaterThanOrEqual(wordCount(legacyExtract(p)))
+    }
   })
 })
