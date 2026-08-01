@@ -3,6 +3,7 @@ import { useQueryClient, type QueryClient } from '@tanstack/react-query'
 import { supabase } from './supabase'
 import { localDayString, rhythmFiresOn } from './day'
 import { taskKeys } from '../db/queries/tasks'
+import { recordRhythmDrop } from '../db/queries/drops'
 
 /**
  * Materialization: each rhythm becomes a normal task on its day, in the
@@ -40,14 +41,22 @@ export async function materializeDue(qc: QueryClient): Promise<void> {
       recurring_id: r.id,
       materialized_on: day,
     })
-    // 23505 is the duplicate-index backstop: already materialized today,
-    // which is success. Anything else is a real drop — collected and
-    // raised AFTER the loop, never thrown mid-flight: aborting here would
-    // drop every remaining rhythm to report the first one, which is more
-    // silent dropping, not less. (Recording each drop where Chris can go
-    // look at it is F2's ledger, deliberately not built here.)
+    // 23505 is the duplicate-index backstop: ALREADY MATERIALIZED TODAY,
+    // which is a success. It must never reach the ledger — a ledger that
+    // records non-drops as drops teaches you to stop reading it inside a
+    // week, and then it is worse than nothing.
     if (insertError && insertError.code === '23505') continue
     if (insertError) {
+      // NO SILENT DROPS (F2): the durable record first, then the throw.
+      // Drops are still collected and raised AFTER the loop, never thrown
+      // mid-flight — aborting here would drop every remaining rhythm to
+      // report the first one, which is more silent dropping, not less.
+      await recordRhythmDrop({
+        rhythmId: String(r.id),
+        title: String(r.title),
+        code: insertError.code ?? null,
+        message: insertError.message,
+      })
       dropped.push(`${r.title}: ${insertError.message}`)
       continue
     }

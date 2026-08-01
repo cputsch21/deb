@@ -161,14 +161,40 @@ export type ArrivalOutcome =
   | 'dropped_recipient'
   | 'dropped_shape'
   | 'failed'
+  // F2 — the three drop outcomes (Aug 1 2026)
+  | 'no_distillate'
+  | 'distillate_refused'
+  | 'not_materialized'
+
+/** The outcomes that mean something did not land. The `only what didn't
+ *  land` door filters on exactly this set — one list, so a new outcome
+ *  cannot be added to the type and forgotten by the room. */
+export const DROP_OUTCOMES = [
+  'unreadable',
+  'dropped_sender',
+  'dropped_signature',
+  'dropped_recipient',
+  'dropped_shape',
+  'failed',
+  'no_distillate',
+  'distillate_refused',
+  'not_materialized',
+] as const satisfies readonly ArrivalOutcome[]
+
+export const isDrop = (o: ArrivalOutcome): boolean =>
+  (DROP_OUTCOMES as readonly string[]).includes(o)
+
+export type ArrivalSource = 'composer' | 'email' | 'plaud' | 'remarkable' | 'rhythm'
 
 export type Arrival = {
   id: string
-  source: 'composer' | 'email' | 'plaud' | 'remarkable'
+  source: ArrivalSource
   sender: string | null
   summary: string | null
   outcome: ArrivalOutcome
   entry_id: string | null
+  /** reconstruction payload — never user-facing sentences (voice law) */
+  detail: Record<string, unknown> | null
   created_at: string
 }
 

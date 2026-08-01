@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { randomUUID } from 'node:crypto'
-import { runDistill } from './distill.js'
+import { requiredWords, runDistill, wordCount, type DistillResult } from './distill.js'
 import { capText, loadContext, todayKeyInTz, TASK_TITLE_MAX } from './context.js'
 
 /**
@@ -200,6 +200,45 @@ export async function logArrival(
     ...(row.ownerId ? { user_id: row.ownerId } : {}),
   })
   if (error) console.error('[arrivals] log failed', error)
+}
+
+/**
+ * ONE ROW PER EVENT (F2 ruling). A filing that landed without a distillate
+ * is ONE arrival wearing a drop outcome — never a `filed` row plus a drop
+ * row, which would make "how many things arrived?" wrong.
+ *
+ * Two distinct drops share the visible fact "the page has no distillate":
+ *   · distillate_refused — the floor rejected a candidate. Repairable:
+ *     the candidate, what it scored and what was required are all kept.
+ *   · no_distillate — the extractor returned nothing at all. THIN BY
+ *     DESIGN (Ruling F): there is no candidate to store, so the row says
+ *     "re-run the extractor" and does not imply it can recover lost text.
+ */
+export function landedOutcome(
+  landed: 'filed' | 'versioned',
+  result: DistillResult | null,
+  raw: string,
+): { outcome: string; detail: Record<string, unknown> | null } {
+  if (result === null) {
+    return {
+      outcome: 'no_distillate',
+      detail: { stage: 'extract', cause: 'runDistill returned null', sourceWords: wordCount(raw) },
+    }
+  }
+  if (result.distillateRejected) {
+    const sourceWords = wordCount(raw)
+    return {
+      outcome: 'distillate_refused',
+      detail: {
+        stage: 'floor',
+        candidate: result.distillateRejected,
+        gotWords: wordCount(result.distillateRejected),
+        requiredWords: requiredWords(sourceWords),
+        sourceWords,
+      },
+    }
+  }
+  return { outcome: landed, detail: null }
 }
 
 /** A world name inside the subject is a routing HINT — never required. */
@@ -417,7 +456,7 @@ export async function performFiling(
       source: ledgerSource,
       sender: ledgerSender,
       summary: ledgerSummary,
-      outcome: 'versioned',
+      ...landedOutcome('versioned', result, raw),
       entryId,
       ownerId: own,
     })
@@ -497,7 +536,7 @@ export async function performFiling(
     source: ledgerSource,
     sender: ledgerSender,
     summary: ledgerSummary,
-    outcome: 'filed',
+    ...landedOutcome('filed', result, raw),
     entryId,
     ownerId: own,
   })

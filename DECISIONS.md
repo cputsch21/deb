@@ -15,6 +15,89 @@ Current state is the top of this log.
 
 ## The log (newest first)
 
+### August 1, 2026 — NO SILENT DROPS (F2): one ledger, and a row that can't lie
+**A ROW RECORDS A FACT; A ROOM CHOOSES THE WORDS.** Machine-readable
+classification and reconstruction payload live in the database. Human
+sentences live in the client, under voice law, where they can be
+rewritten. **Freezing copy into rows written months ago guarantees the
+oldest records speak in the oldest voice.** This is why the drop ledger
+has no `reason` column: `outcome` is the class, `detail` is the payload,
+and `outcomeLabel()` is the sentence.
+
+**ONE LEDGER, NOT THREE.** Three paths where something is handed in or
+derived and fails to land are the same fact in three costumes: extraction
+drops, materialize failures (the recording half S1 deliberately left
+unbuilt), and R4's ingest-floor absences. Three ledgers means a person
+asking *"did I lose anything?"* has to remember all three exist.
+`ingest_log` is widened rather than joined by a sibling — it was already
+append-only by RLS, owner-scoped, indexed and surfaced. Payload
+differences are what a discriminator and a `jsonb` column are for.
+
+*Recorded honestly:* a rhythm that never materialized did not **arrive**,
+so `source: 'rhythm'` is a stretch of the table's name. The misnomer is in
+the name, not the shape, and renaming is forbidden by schema discipline.
+The room's subtitle absorbs it: **"Everything that SHOULD HAVE reached the
+paper, and what became of it."** "Should have" is the whole fix — it makes
+room for the thing that was never sent because it was supposed to be born.
+
+**ONE ROW PER EVENT.** A filing that lands without a distillate is one
+arrival wearing a drop outcome, never a `filed` row plus a drop row —
+which would make "how many things arrived?" wrong.
+
+**THE ROW IS ALLOWED TO BE THIN.** When the extractor returns null there
+is no candidate to store. `no_distillate` records the stage and the cause
+and nothing else; a future repair ticket reading it learns "re-run the
+extractor," not "recover the lost text," and that is the true fact. **A row
+that implied more would be worse than a thin one.**
+
+**THE CLIENT WRITER IS RESTRICTED BY CONSTRUCTION.** `materialize.ts` runs
+in the browser, so its drop must be written from there — and a
+general-purpose client-side arrival writer would let the browser author a
+row attributed to the email chute, a forged arrival in the one table whose
+whole value is that nothing can edit it. **RLS cannot distinguish those
+cases; both are `user_id = auth.uid()`. Types can.** `recordRhythmDrop`
+has no `source` and no `outcome` parameter — not ones passed correctly,
+ones that do not exist — and `proof.compile-test.tsx` holds three
+chute-shaped calls as compile errors. Verified by deliberately widening
+the signature: the build failed with `Unused '@ts-expect-error'` at all
+three, then went green on restore.
+
+**23505 NEVER RECORDS A DROP.** A duplicate is an already-materialized
+success. **A ledger that records non-drops as drops teaches you to stop
+reading it inside a week**, and then it is worse than nothing. This is the
+guard most likely to rot silently, so it is a test.
+
+**NO GUILT PIXELS, and the door carries no information by its presence.**
+No red — a drop is bad news, not a consequence that outlives a click, so
+it gets ink, muted and Marker A like everything else. No badge, no count,
+no dot. The `only what didn't land` door **renders whether or not there is
+anything behind it**: a door that appears only when drops exist is a badge
+wearing a disguise, and hiding it on a failed read would say "nothing was
+dropped" at the exact moment we don't know. Walking through to find
+nothing is a correct and welcome answer. The ledger's read is `Proven<T>`,
+so an unreachable ledger renders stalled, never zero.
+
+**NO BACKFILL.** Historical rows keep `detail: null` and their current
+outcomes — including `filed` rows that should have said
+`distillate_refused`. Those rows are wrong AND they are the honest record
+of what the system believed at the time. **Manufacturing evidence to make
+history look consistent is an unearned empty state pointed backwards.**
+Pre-existing damage surfaces through `/api/drops`, derived from current
+state: an entry with no distillate is real evidence; an invented ledger
+row is not.
+
+**THE PERMANENT WIDENING, accepted on the record.** Once one row carries a
+new outcome value the narrow CHECK can never be restored, and the
+no-delete policy makes removing those rows impossible by design. What
+becomes permanent is a nullable column nobody must read and a constraint
+set permitting strictly more. The alternative — a ledger whose rows can be
+deleted to tidy a migration — is worse than the thing it would fix.
+Reverted code renders unknown outcomes as the literal string via
+`default: return a.outcome`: ugly, not broken.
+
+**F2 RECORDS; IT DOES NOT REPAIR.** No retry, no reprocessing, no queue
+drain. Every row carries enough to make repair possible later.
+
 ### July 31, 2026 — Two standing laws: construction over inspection · one exchange per ticket
 **WHERE A PROPERTY CAN BE GUARANTEED BY CONSTRUCTION, DO NOT VERIFY IT BY
 INSPECTION. A check proves the past; a constraint proves every future run.**

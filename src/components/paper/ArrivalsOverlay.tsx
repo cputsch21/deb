@@ -3,7 +3,7 @@ import { useArrivals } from '../../db/queries/ingestLog'
 import { useEntries, useEntryRaw } from '../../db/queries/entries'
 import { useProjects } from '../../db/queries/projects'
 import { Proof } from '../Proof'
-import type { Arrival, Entry, Project } from '../../db/types'
+import { isDrop, type Arrival, type Entry, type Project } from '../../db/types'
 
 /**
  * ARRIVALS — the full-page overlay (P6, per the V2 target): everything
@@ -15,6 +15,12 @@ import type { Arrival, Entry, Project } from '../../db/types'
  */
 export function ArrivalsOverlay({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [reach, setReach] = useState<'recent' | 'all'>('recent')
+  // THE DOOR IS ALWAYS PRESENT (Ruling C): it renders whether or not there
+  // is anything behind it. A door that appears only when drops exist is a
+  // badge wearing a disguise — its presence becomes the count. Hiding it
+  // on a failed read would say "nothing was dropped" at the exact moment
+  // we don't know. Walking through to find nothing is a correct answer.
+  const [dropsOnly, setDropsOnly] = useState(false)
   const [rawFor, setRawFor] = useState<Arrival | null>(null)
   const arrivalsQ = useArrivals(open, reach)
   const entriesP = useEntries()
@@ -38,7 +44,8 @@ export function ArrivalsOverlay({ open, onClose }: { open: boolean; onClose: () 
   }, [open])
 
   if (!open) return null
-  const rows = arrivalsQ.proven ? arrivalsQ.value : null
+  const all = arrivalsQ.proven ? arrivalsQ.value : null
+  const rows = all && dropsOnly ? all.filter((a) => isDrop(a.outcome)) : all
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-bg pt-[env(safe-area-inset-top)]">
@@ -61,7 +68,7 @@ export function ArrivalsOverlay({ open, onClose }: { open: boolean; onClose: () 
               Arrivals
             </h2>
             <p className="mt-2 font-serif text-[15.5px] text-muted italic">
-              Everything that reached the paper, and what became of it.
+              Everything that should have reached the paper, and what became of it.
             </p>
 
             {!projectsP.proven || !entriesP.proven || rows === null ? (
@@ -75,9 +82,11 @@ export function ArrivalsOverlay({ open, onClose }: { open: boolean; onClose: () 
               </div>
             ) : rows.length === 0 ? (
               <p className="mt-8 font-serif text-[14.5px] text-dim italic">
-                {reach === 'recent'
-                  ? 'Nothing has arrived in the last thirty days.'
-                  : 'Nothing has ever arrived — the ledger begins with the first drop.'}
+                {dropsOnly
+                  ? 'Nothing was dropped.'
+                  : reach === 'recent'
+                    ? 'Nothing has arrived in the last thirty days.'
+                    : 'Nothing has ever arrived — the ledger begins with the first drop.'}
               </p>
             ) : (
               <div className="mt-9">
@@ -102,14 +111,26 @@ export function ArrivalsOverlay({ open, onClose }: { open: boolean; onClose: () 
               </div>
             )}
 
-            {reach === 'recent' && arrivalsQ.proven && (
+            <div className="mt-5 flex items-center gap-5">
+              {/* no count, no badge, no dot — the door says what it does,
+                  never how many are behind it */}
               <button
-                onClick={() => setReach('all')}
-                className="eyebrow mt-5 flex min-h-11 items-center text-[0.6rem] text-dim transition-colors hover:text-ink"
+                onClick={() => setDropsOnly((v) => !v)}
+                className={`eyebrow flex min-h-11 items-center text-[0.6rem] transition-colors hover:text-ink ${
+                  dropsOnly ? 'text-ink' : 'text-dim'
+                }`}
               >
-                earlier
+                {dropsOnly ? 'everything' : "only what didn't land"}
               </button>
-            )}
+              {reach === 'recent' && arrivalsQ.proven && (
+                <button
+                  onClick={() => setReach('all')}
+                  className="eyebrow flex min-h-11 items-center text-[0.6rem] text-dim transition-colors hover:text-ink"
+                >
+                  earlier
+                </button>
+              )}
+            </div>
           </>
         )}
       </div>
@@ -241,6 +262,15 @@ function outcomeLabel(a: Arrival): string {
       return "dropped — couldn't read the payload"
     case 'failed':
       return 'failed to file'
+    // F2 — the three drops. A ROW RECORDS A FACT; A ROOM CHOOSES THE
+    // WORDS: these sentences live here, under voice law, so they can be
+    // rewritten without touching a row written months ago.
+    case 'no_distillate':
+      return 'filed — but nothing could be distilled from it'
+    case 'distillate_refused':
+      return 'filed — the distillate was too thin to keep'
+    case 'not_materialized':
+      return 'a rhythm didn’t become a task'
     default:
       return a.outcome
   }
