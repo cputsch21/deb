@@ -28,6 +28,53 @@ export const DISTILLATE_WORD_MAX = 36
 export const wordCount = (text: string): number =>
   text.trim().split(/\s+/).filter(Boolean).length
 
+/**
+ * THE FLOOR (R3, July 31 2026). The ceiling stops a distillate eating the
+ * column; the floor stops a rewrite eating the ENTRY. R2 shipped one and
+ * not the other, and the corpus run destroyed two of three entries —
+ * 172 words became the single word "Agenda".
+ *
+ * A REWRITE IS A PROPOSAL, NOT AN OUTCOME: the system may propose a
+ * replacement for any distillate in any mode; it may only WRITE one that
+ * is not worse than what it replaces. Selection decides what to attempt;
+ * this decides what survives.
+ *
+ * The shape, ruled: a ratio clamped between an absolute minimum and a
+ * third of the ceiling.
+ *
+ *   requiredWords = clamp(0.05 x beforeWords, 6, 12), and it binds only
+ *   when beforeWords >= 20.
+ *
+ * The upper clamp is the load-bearing part. A bare ratio would refuse a
+ * 900-word page compressed to a perfect 30 words — forever — which is the
+ * floor enforcing something the CEILING FORBIDS. 12 is one third of the
+ * 36-word ceiling, so the floor can never demand a number the ceiling
+ * would reject. The lower clamp is the backstop for short-but-not-tiny
+ * sources; in the real July 30 data both refusals come from the ratio.
+ *
+ * Below 20 source words it does not bind at all: a genuinely short entry
+ * rewritten to four words is not destruction, and an absolute floor would
+ * refuse forever on entries that could never satisfy it.
+ */
+export const FLOOR_MIN_SOURCE_WORDS = 20
+export const FLOOR_RATIO = 0.05
+export const FLOOR_ABS_MIN = 6
+export const FLOOR_ABS_MAX = 12 // one third of DISTILLATE_WORD_MAX
+
+/** Words a rewrite must keep to be allowed to replace `beforeWords`.
+ *  0 means the floor does not bind for this source. */
+export function requiredWords(beforeWords: number): number {
+  if (beforeWords < FLOOR_MIN_SOURCE_WORDS) return 0
+  return Math.min(Math.max(FLOOR_RATIO * beforeWords, FLOOR_ABS_MIN), FLOOR_ABS_MAX)
+}
+
+/** True when writing `after` over a `beforeWords`-long line would destroy
+ *  the entry. A violation is a FAILURE, not a path. */
+export function violatesFloor(beforeWords: number, after: string): boolean {
+  const need = requiredWords(beforeWords)
+  return need > 0 && wordCount(after) < need
+}
+
 export function overruns(text: string): boolean {
   return text.length > DISTILLATE_CHAR_MAX || wordCount(text) > DISTILLATE_WORD_MAX
 }

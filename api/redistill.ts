@@ -3,7 +3,13 @@ import { userClient } from './_lib/context.js'
 import {
   distillOnly,
   overruns,
+  requiredWords,
+  violatesFloor,
   wordCount,
+  FLOOR_ABS_MAX,
+  FLOOR_ABS_MIN,
+  FLOOR_MIN_SOURCE_WORDS,
+  FLOOR_RATIO,
   type CeilingPath,
 } from './_lib/distill.js'
 
@@ -34,31 +40,6 @@ import {
  */
 
 const BATCH_DEFAULT = 8 // serverless timeouts are real; the job resumes
-
-/**
- * THE FLOOR — NOT YET RULED (R3, July 31 2026).
- *
- * The July 30 dry run rewrote three entries and destroyed two of them:
- * 210 words → "7.29.26 · Launch Deb · Launch Subseven", and 172 words →
- * the single word "Agenda". The run reported `failed: 0`, which was true
- * and useless — nothing threw. R2 gave the distillate a ceiling and no
- * floor.
- *
- * The refusal machinery below is built and wired. The THRESHOLD is
- * deliberately absent until Chris rules on its shape, and the report says
- * so out loud (`floor: null`) so that `refused: 0` is an honest "no floor
- * configured" rather than a second silent lie. When the ruling lands, it
- * is this constant and nothing else.
- */
-const FLOOR: { minWords: number; minRatio: number } | null = null
-
-/** Would this rewrite destroy the entry? Null floor = nothing is refused,
- *  and the report is explicit that no floor was in force. */
-function violatesFloor(beforeWords: number, after: string): boolean {
-  if (!FLOOR) return false
-  const w = wordCount(after)
-  return w < FLOOR.minWords || (beforeWords > 0 && w / beforeWords < FLOOR.minRatio)
-}
 
 type Row = Record<string, unknown>
 
@@ -117,7 +98,7 @@ export async function POST(request: Request): Promise<Response> {
     distillate: string
   }
   const results: Result[] = []
-  const refusals: (Result & { keptDistillate: string })[] = []
+  const refusals: (Result & { requiredWords: number; keptDistillate: string })[] = []
   let failed = 0
 
   for (const entry of batch) {
@@ -156,7 +137,7 @@ export async function POST(request: Request): Promise<Response> {
       // FAILURE, not a path: the existing line stays, nothing is written,
       // and it is counted and itemized rather than left to be inferred.
       if (violatesFloor(beforeWords, out.text)) {
-        refusals.push({ ...measured, keptDistillate: existing })
+        refusals.push({ ...measured, requiredWords: requiredWords(beforeWords), keptDistillate: existing })
         console.error(
           `[redistill] ${id} REFUSED — would have gone ${beforeWords} → ${measured.afterWords} words: ${JSON.stringify(out.text)}`,
         )
@@ -195,14 +176,27 @@ export async function POST(request: Request): Promise<Response> {
   const report = {
     dryRun,
     mode,
-    floor: FLOOR, // null = no floor in force; `refused` is 0 for that reason
+    floor: {
+      ratio: FLOOR_RATIO,
+      absMin: FLOOR_ABS_MIN,
+      absMax: FLOOR_ABS_MAX,
+      bindsAbove: FLOOR_MIN_SOURCE_WORDS,
+    },
     entriesInRecord: all.length,
     needingWork: candidates.length,
     processed: batch.length,
     rewritten: results.length,
     refused: refusals.length,
     failed,
-    remaining: Math.max(0, candidates.length - batch.length),
+    // A counter that structurally cannot reach zero gets ignored within two
+    // runs, and then it is decoration. `pending` is work the job can still
+    // do and must converge to zero; `refused` is work it has correctly
+    // declined and will decline again until the extractor changes. Two
+    // facts, two numbers, neither able to hide inside the other.
+    remaining: {
+      pending: Math.max(0, candidates.length - batch.length),
+      refused: refusals.length,
+    },
     paths,
     fallbackRate: Number(fallbackRate.toFixed(2)),
     stillOverCeiling: results.filter((r) => overruns(r.distillate)).length,

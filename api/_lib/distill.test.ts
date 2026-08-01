@@ -1,10 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import {
-  deterministicExtract,
   DISTILLATE_CHAR_MAX,
   DISTILLATE_WORD_MAX,
+  FLOOR_MIN_SOURCE_WORDS,
+  FLOOR_RATIO,
+  deterministicExtract,
   overruns,
+  requiredWords,
   trimToCeiling,
+  violatesFloor,
   wordCount,
 } from './distill.js'
 
@@ -145,5 +149,40 @@ describe('the deterministic extract on other page species', () => {
 
   it('an empty page yields an empty extract, never invented prose', () => {
     expect(deterministicExtract('   \n  \n')).toBe('')
+  })
+})
+
+/**
+ * THE FLOOR (R3, July 31 2026) — Chris's ruling table, executable.
+ * The rows are the real July 30 corpus run plus the two synthetic cases
+ * that define the clamps. If a threshold moves, these say what changed.
+ */
+describe('the floor', () => {
+  const cases: [string, number, number, number | null, boolean][] = [
+    // label,                      before, after, required, refused
+    ['"Agenda" — 172 → 1',            172,     1,      8.6,  true],
+    ['"7.29.26 · Launch…" — 210 → 7', 210,     7,     10.5,  true],
+    ['the android page — 207 → 35',   207,    35,    10.35, false],
+    ['THE HOLE: 900 → 30',            900,    30,       12, false],
+    ['short-but-not-tiny — 30 → 3',    30,     3,        6,  true],
+    ['genuinely short — 15 → 3',       15,     3,        0, false],
+  ]
+  for (const [label, before, after, required, refused] of cases) {
+    it(label, () => {
+      expect(requiredWords(before)).toBeCloseTo(required ?? 0, 5)
+      expect(violatesFloor(before, Array(after).fill('w').join(' '))).toBe(refused)
+    })
+  }
+
+  it('the upper clamp is what closes the hole: the floor never out-demands the ceiling', () => {
+    // a bare ratio would require 45 words of a 900-word page — more than
+    // the 36-word CEILING allows, so nothing could ever pass
+    expect(FLOOR_RATIO * 900).toBeGreaterThan(DISTILLATE_WORD_MAX)
+    expect(requiredWords(900)).toBeLessThanOrEqual(DISTILLATE_WORD_MAX / 3)
+  })
+
+  it('below the binding threshold the floor does not bind at all', () => {
+    expect(requiredWords(FLOOR_MIN_SOURCE_WORDS - 1)).toBe(0)
+    expect(violatesFloor(FLOOR_MIN_SOURCE_WORDS - 1, 'one')).toBe(false)
   })
 })

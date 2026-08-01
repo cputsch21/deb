@@ -15,6 +15,75 @@ Current state is the top of this log.
 
 ## The log (newest first)
 
+### July 31, 2026 — The floor (R3): a rewrite is a proposal, not an outcome
+**A REWRITE IS A PROPOSAL, NOT AN OUTCOME.** The system may propose a
+replacement for any distillate, in any mode. It may only WRITE one that is
+not worse than what it replaces. **Selection decides what to attempt; the
+floor decides what survives.**
+
+**The incident.** R2's corpus dry run rewrote three entries and destroyed
+two: 210 words became `7.29.26 · Launch Deb · Launch Subseven`, and 172
+words became the single word **"Agenda"**. R2 gave the distillate a
+ceiling and no floor. The ceiling stops a distillate eating the column;
+the floor stops a rewrite eating the entry.
+
+**THE FLOOR, ruled:** `requiredWords = clamp(0.05 × beforeWords, 6, 12)`,
+binding only when `beforeWords ≥ 20`. Refuse when `afterWords` is below it.
+
+The upper clamp is the load-bearing part and the first proposal got it
+wrong. A bare ratio refuses a 900-word page compressed to a perfect 30
+words — forever — which is **the floor enforcing something the ceiling
+forbids**. 12 is one third of the 36-word ceiling, so the floor can never
+demand a number the ceiling would reject. (The first proposal named that
+hole and then wrote the clauses as an AND, which does not close it; only
+the clamp does.) The lower clamp is the backstop for short-but-not-tiny
+sources. In the real data both refusals come from the ratio clause.
+Below 20 source words it does not bind: a short entry rewritten to four
+words is not destruction. The ruling table is executable in
+`api/_lib/distill.test.ts`.
+
+**On refusal the existing line stays and nothing is written.** The entry
+remains over the ceiling and will be refused again every run until the
+extractor changes. That is the correct trade — an unreadably long TRUE
+distillate beats a short false one — but it means the job stops
+converging for those entries.
+
+**ACCEPTED WITH EYES OPEN, recorded so it reads as accepted rather than
+unnoticed:** in `mode: "all"` an already-in-bounds 10-word distillate can
+be replaced by a 3-word one, because the floor's `beforeWords ≥ 20`
+condition does not bind there. Accepted because `"all"` is a deliberate
+operator action run behind a dry run and `mostReduced` puts it on screen.
+No machinery is to be added for it.
+
+**THE INSTRUMENT (R3).** `failed: 0` **was not false — it was true and
+useless, which is worse.** A false number gets caught; a true and
+irrelevant one gets trusted. The defect was that **the report contained no
+failure-shaped number for the failure mode that actually occurred.** Now
+it does: `refused`, plus itemized `refusals` carrying the entry id, the
+words before and after, the path, what the floor demanded, the proposed
+text, and the existing line it would have replaced.
+
+Two further instrument rulings:
+- **Every measure carries its unit.** `before` sat unlabelled beside
+  `words` and `chars`, was read as characters, and a whole question was
+  built on the misreading. It is `beforeWords`/`beforeChars` and
+  `afterWords`/`afterChars` now. **An instrument that can be misread is a
+  bug in the instrument**, so this is part of the fix, not tidying.
+- **`remaining` splits into `pending` and `refused`.** A counter that
+  structurally cannot reach zero gets ignored within two runs and then it
+  is decoration. `pending` is work the job can still do and must converge
+  to zero; `refused` is work it has correctly declined. Two facts, two
+  numbers, neither able to hide inside the other.
+- `mostReduced` is the mirror of `longest` — sorted by what was thrown
+  away rather than what was kept. It is the list that would have caught
+  this at a glance.
+
+**The method note, because this is now twice.** Both the R2 regression and
+the R3 mis-question came from **reasoning about output instead of reading
+the generator**. The ceiling was verified by reading the report; the
+selection criterion was argued from the report's numbers. Both times the
+answer was in the source and took one read. Read the generator.
+
 ### July 31, 2026 — Correction: CI is live; the "cannot be pushed" claim below was wrong
 Appended, not edited, per the append-only law ruled the same day. The W1
 entry beneath this one records the CI workflow as **blocked** on the
