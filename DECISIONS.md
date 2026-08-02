@@ -15,6 +15,30 @@ Current state is the top of this log.
 
 ## The log (newest first)
 
+### August 2, 2026 — A MISSED PREDICTION, recorded with its number
+Before `/api/drops` was first run, this session predicted
+`withoutDistillate` would be **"low, possibly zero."**
+
+**It was 4 of 8 entries — half the record.**
+
+The prediction was made in advance and in writing precisely so it could be
+checked, and **the practice only pays if the misses go in the log too.** A
+prediction recorded only when it lands is not a forecast, it is a
+highlight reel.
+
+Why it was wrong, since that is the useful part: the reasoning ran from the
+R2 dry run, which showed 3 of 7 entries needing work and two of three
+rewrites destroyed — but that run was `dryRun: true`, so nothing was
+written. From "no damage was written that day" it concluded "there is
+little damage," which does not follow. **The R2 run measured one job's
+output; it was never a census of the record.** The two facts were adjacent
+and got treated as the same fact.
+
+The measurement cost one HTTP call. The reasoning that replaced it was
+free, confident, and wrong by a factor of at least four. This is the case
+for `/api/drops` existing at all, and for the standing rule that produced
+it: read the generator, and where you can, measure instead of arguing.
+
 ### August 1, 2026 — NO SILENT DROPS (F2): one ledger, and a row that can't lie
 **A ROW RECORDS A FACT; A ROOM CHOOSES THE WORDS.** Machine-readable
 classification and reconstruction payload live in the database. Human
