@@ -1,5 +1,6 @@
 import { Proof } from '../components/Proof'
 import { derive, type Proven } from './proof'
+import { recordRhythmDrop } from './queries/drops'
 import type { EntryMeta, Project, Task } from './types'
 import type { LineWhys } from '../lib/lineWhys'
 
@@ -80,6 +81,28 @@ export function ComponentBoundary() {
 
   // proven rows pass, as they must
   return <Proof of={[tasks]} line="x">{([t]) => <Stage tasks={t} />}</Proof>
+}
+
+/* ═══════════ F2: the client drop writer is chute-incapable ═══════════ */
+
+export async function ClientWriterRemovals() {
+  // LAW: the browser may not author a row attributed to the email chute.
+  // RLS cannot tell a forged chute row from a real one — both are
+  // user_id = auth.uid() — so the capability is removed at the type
+  // instead. These are not parameters that happen to be passed correctly;
+  // they are parameters that do not exist.
+  // @ts-expect-error
+  await recordRhythmDrop({ source: 'email', rhythmId: 'r', title: 't', code: null, message: 'm' })
+
+  // @ts-expect-error
+  await recordRhythmDrop({ outcome: 'filed', rhythmId: 'r', title: 't', code: null, message: 'm' })
+
+  // LAW: it cannot claim an entry either — a rhythm drop has no entry.
+  // @ts-expect-error
+  await recordRhythmDrop({ entry_id: 'e', rhythmId: 'r', title: 't', code: null, message: 'm' })
+
+  // the sanctioned call, which must keep compiling
+  await recordRhythmDrop({ rhythmId: 'r', title: 't', code: null, message: 'm' })
 }
 
 /* ═══════════ the positive checks — these MUST compile ═══════════ */

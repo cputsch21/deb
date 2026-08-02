@@ -13,6 +13,7 @@ import {
   violatesFloor,
   wordCount,
 } from './distill.js'
+import { landedOutcome } from './filing.js'
 
 /**
  * THE DISTILLATE IS A DISTILLATE (R2, July 30 2026).
@@ -230,5 +231,46 @@ describe('the heading predicate', () => {
       const out = deterministicExtract(p)
       expect(wordCount(out)).toBeGreaterThanOrEqual(wordCount(legacyExtract(p)))
     }
+  })
+})
+
+/**
+ * F2 — WRITERS 1 AND 2: the two server-side drop outcomes. One row per
+ * event; a filing that landed without a distillate is ONE arrival wearing
+ * a drop outcome, never a `filed` row plus a drop row.
+ */
+describe('the landed outcome', () => {
+  const raw = Array(200).fill('word').join(' ')
+
+  it('WRITER 1: the extractor returning null is no_distillate, and THIN by design', () => {
+    const r = landedOutcome('filed', null, raw)
+    expect(r.outcome).toBe('no_distillate')
+    // Ruling F: there is no candidate to store, so the row says "re-run
+    // the extractor" and must not imply it can recover lost text
+    expect(r.detail).toMatchObject({ stage: 'extract' })
+    expect(r.detail).not.toHaveProperty('candidate')
+  })
+
+  it('WRITER 2: a floor refusal is distillate_refused and is repair-complete', () => {
+    const r = landedOutcome('filed', { distillateRejected: 'Agenda' } as never, raw)
+    expect(r.outcome).toBe('distillate_refused')
+    expect(r.detail).toMatchObject({
+      stage: 'floor',
+      candidate: 'Agenda',
+      gotWords: 1,
+      sourceWords: 200,
+      requiredWords: 10,
+    })
+  })
+
+  it('a clean filing keeps its landing outcome and carries no detail', () => {
+    expect(landedOutcome('filed', { distillateRejected: null } as never, raw)).toEqual({
+      outcome: 'filed',
+      detail: null,
+    })
+    expect(landedOutcome('versioned', { distillateRejected: null } as never, raw)).toEqual({
+      outcome: 'versioned',
+      detail: null,
+    })
   })
 })

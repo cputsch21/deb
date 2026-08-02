@@ -23,7 +23,7 @@ export function useArrivals(enabled: boolean, reach: 'recent' | 'all'): Proven<A
     queryFn: async (): Promise<Arrival[]> => {
       let q = supabase
         .from('ingest_log')
-        .select('id, source, sender, summary, outcome, entry_id, created_at')
+        .select('id, source, sender, summary, outcome, entry_id, detail, created_at')
         .order('created_at', { ascending: false })
         .limit(reach === 'all' ? REACH_CAP : 200)
       if (reach === 'recent') {
