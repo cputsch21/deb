@@ -183,12 +183,28 @@ async function findVersionTarget(
 export async function logArrival(
   db: SupabaseClient,
   row: {
-    source: 'composer' | 'email' | 'plaud' | 'remarkable'
+    source: 'composer' | 'email' | 'plaud' | 'remarkable' | 'rhythm'
     sender?: string | null
     summary?: string | null
     outcome: string
     entryId?: string | null
     ownerId?: string | null
+    /**
+     * Reconstruction payload — NEVER user-facing sentences (a row records
+     * a fact; a room chooses the words).
+     *
+     * F4 FIX OF A LIVE F2 BUG: this parameter and the `detail` field below
+     * did not exist. The two F2 writers pass `...landedOutcome(...)`, and
+     * TypeScript does NOT run excess-property checks through a spread — so
+     * `detail` type-checked, compiled, shipped, and was silently dropped on
+     * the floor. Every `distillate_refused` row would have lost exactly the
+     * payload F2 promised made repair possible: the rejected candidate,
+     * what it scored, and what the floor required.
+     *
+     * Caught only because F4 passed `detail` as a NAMED property, where the
+     * excess-property check does fire. The lesson is in DECISIONS.
+     */
+    detail?: Record<string, unknown> | null
   },
 ): Promise<void> {
   const { error } = await db.from('ingest_log').insert({
@@ -197,6 +213,7 @@ export async function logArrival(
     summary: row.summary ? capText(row.summary, 200) : null,
     outcome: row.outcome,
     entry_id: row.entryId ?? null,
+    detail: row.detail ?? null,
     ...(row.ownerId ? { user_id: row.ownerId } : {}),
   })
   if (error) console.error('[arrivals] log failed', error)

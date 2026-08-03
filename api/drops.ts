@@ -40,7 +40,7 @@ export async function POST(request: Request): Promise<Response> {
     // 1 · the ledger's own histogram — what it has recorded
     const { data: log, error: logError } = await db
       .from('ingest_log')
-      .select('source, outcome, created_at')
+      .select('source, outcome, entry_id, created_at')
       .order('created_at', { ascending: false })
       .limit(1000)
     if (logError) throw logError
@@ -64,12 +64,30 @@ export async function POST(request: Request): Promise<Response> {
     const rows = (entries ?? []) as Row[]
     const undistilled = rows.filter((e) => !e.distillate || !String(e.distillate).trim())
 
+    // THE JOIN (F4). `outcome: 'filed'` was the only thing the old code
+    // could say about a landing, so it said it whether or not a distillate
+    // came with it. This counts how often it was covering an empty page —
+    // the question F2 was built on, answered with a number instead of an
+    // argument. Counts only; no ids of entry CONTENT cross the wire.
+    const filedIds = new Set(
+      ((log ?? []) as Row[])
+        .filter((r) => r.outcome === 'filed' && r.entry_id)
+        .map((r) => String(r.entry_id)),
+    )
+    const undistilledIds = new Set(undistilled.map((e) => String(e.id)))
+    const filedAndUndistilled = [...filedIds].filter((id) => undistilledIds.has(id)).length
+
     return json({
       generatedFor: 'diagnosis only — the ledger records regardless',
       ledger: {
         rowsScanned: (log ?? []).length,
         byOutcome,
         bySource,
+      },
+      overlap: {
+        filedRowsWithAnEntry: filedIds.size,
+        // how many `filed` rows were covering an entry with no distillate
+        filedAndUndistilled,
       },
       record: {
         entries: rows.length,

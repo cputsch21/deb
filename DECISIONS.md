@@ -15,6 +15,65 @@ Current state is the top of this log.
 
 ## The log (newest first)
 
+### August 2, 2026 — F4: the fifth writer · a spread that hid a bug · two closures
+**EVERY ENTRY-CREATING PATH WRITES TO THE LEDGER.** `api/chat.ts` — Deb's
+own `file_entry` hand — called `insertEntry` directly and never logged. It
+was the fifth writer, bypassing `performFiling` entirely, and while it
+existed the Arrivals subtitle was a claim the ledger could not back. It
+now logs `source: 'composer'` with `detail.stage = 'file_entry'`.
+
+It deliberately does NOT route through `landedOutcome()`: there is no
+`DistillResult` on that path, and passing null would report
+`no_distillate` on a hand that always sets one. **A ledger that records
+non-drops as drops stops being read inside a week.** Same `{outcome,
+detail}` shape, computed honestly — including the genuine empty case.
+
+---
+
+**A LIVE F2 BUG, FOUND BY F4 AND FIXED HERE.** `logArrival` never had a
+`detail` parameter. The two F2 writers pass `...landedOutcome(...)`, and
+**TypeScript does not run excess-property checks through a spread** — so
+`detail` type-checked, compiled, shipped, and was thrown away at the
+insert. Every `distillate_refused` row would have lost the rejected
+candidate, what it scored and what the floor required: **exactly the
+payload F2 promised made repair possible.**
+
+Two things let it through, and both are the lesson:
+1. **A spread is a hole in the excess-property check.** It was caught only
+   because F4 passed `detail` as a NAMED property, where the check fires.
+2. **F2's tests checked the unit, not the seam.** `landedOutcome()` was
+   tested in isolation and every assertion passed while the value it
+   returned was being discarded one call later. **A test that stops at the
+   function boundary cannot see a broken wire.** The new tests go through
+   `logArrival` to the insert payload, and were verified to fail against
+   the old code — four of them do.
+
+---
+
+**TWO CLOSURES, ruled by Chris:**
+- **The zero composer arrivals were true and the explanation was human.**
+  He has never used the composer paste path, not once. Nothing was broken;
+  a number that looked like a hole was a habit. *Recorded because the
+  session raised it as a possible larger hole and it was not one — a
+  worry that resolves to "no bug" is worth logging exactly once, so it is
+  not re-raised every time someone reads the histogram.*
+- **The four July 29 undistilled entries are closed permanently.** No
+  repair, no re-send, no backfill. The text never arrived; **the record
+  stays honest about being thin.**
+
+---
+
+**THE PREDICTION, LOGGED BEFORE THE MEASUREMENT (F4 item 2).**
+`/api/drops` now reports `overlap.filedAndUndistilled`. Before it is run,
+this session predicts **2 of 4** — that two of the four undistilled
+entries are the `unreadable` pair (null by design, correct, needing no
+repair), leaving two `filed` rows that were covering a real drop. That
+would make `outcome: 'filed'` a cover **50% of the time, not 100%**.
+
+The last prediction was wrong by a factor of four. This one is on the
+record before the number exists, which is the only arrangement under which
+being wrong is worth anything.
+
 ### August 2, 2026 — A MISSED PREDICTION, recorded with its number
 Before `/api/drops` was first run, this session predicted
 `withoutDistillate` would be **"low, possibly zero."**

@@ -3,7 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { randomUUID } from 'node:crypto'
 import { DEB_IDENTITY, SILENT_SENTINEL } from './_lib/identity.js'
 import { generateBrief } from './_lib/brief.js'
-import { insertEntry, performFiling, type FilingResult } from './_lib/filing.js'
+import { insertEntry, logArrival, performFiling, type FilingResult } from './_lib/filing.js'
 import { DISTILLATE_MAX } from './_lib/distill.js'
 import {
   FACT_MAX,
@@ -784,13 +784,39 @@ async function fileEntryTool(
     }
   }
   try {
+    const distillate = capText(content, DISTILLATE_MAX)
     const { entryId } = await insertEntry(db, {
       raw: content,
       projectId: target ? String(target.id) : null,
       spokenIn: lensProjectId,
       worldName: target ? String(target.name) : null,
-      distillate: capText(content, DISTILLATE_MAX),
+      distillate,
       tz,
+    })
+    // F4 — THE FIFTH WRITER. This hand bypasses performFiling entirely, so
+    // it must log for itself or the ledger's subtitle ("everything that
+    // SHOULD HAVE reached the paper") is a claim it cannot back. Deb
+    // filing through her own hand IS an arrival.
+    //
+    // It deliberately does NOT go through landedOutcome(): there is no
+    // DistillResult here, and passing null would report `no_distillate` on
+    // a path that always sets one. A ledger that records non-drops as
+    // drops stops being read inside a week. Same {outcome, detail} shape,
+    // computed honestly — including the genuine empty case.
+    await logArrival(db, {
+      source: 'composer', // the mouth is the conversation
+      sender: null,
+      // the same handle every other row uses: the first non-empty line
+      summary:
+        content
+          .split('\n')
+          .map((l) => l.trim())
+          .find(Boolean) ?? null,
+      outcome: distillate.trim() ? 'filed' : 'no_distillate',
+      detail: distillate.trim()
+        ? { stage: 'file_entry' }
+        : { stage: 'file_entry', cause: 'nothing to distil — the content was empty' },
+      entryId,
     })
     send({
       type: 'action',
