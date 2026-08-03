@@ -27,6 +27,15 @@ import { Review } from '../rooms/Review'
 import { Reflect } from '../rooms/Reflect'
 import type { Project } from '../../db/types'
 
+/** The four mobile destinations, in Chris's order (P7). */
+const DESTS = ['home', 'tasks', 'record', 'worlds'] as const
+type Dest = (typeof DESTS)[number]
+
+/** ONE pill style in the app. The masthead furniture is the reference —
+ *  the nav reuses it exactly rather than inventing a second. */
+const FURNITURE =
+  'eyebrow -my-2 flex min-h-11 items-center rounded-full px-3.5 text-muted transition-colors hover:bg-fill hover:text-ink'
+
 /**
  * THE PAPER — the V2 shell (July 29 ruling): the app is one page. No
  * rooms, no tabs, no navigation. Masthead · THE RECORD · TRIAGE +
@@ -60,6 +69,10 @@ export function Paper() {
   const [memoryOpen, setMemoryOpen] = useState(false)
   const [arrivalsOpen, setArrivalsOpen] = useState(false)
   const [hoverName, setHoverName] = useState<string | null>(null)
+  // MOBILE DESTINATIONS (P7). Desktop is unchanged — it keeps the whole
+  // page in one scroll, three columns and the worlds band. On a phone the
+  // same four regions become four destinations behind the pill nav.
+  const [dest, setDest] = useState<Dest>('home')
   const today = todayKey()
 
   // rhythms materialize as normal tasks at app open + on return
@@ -137,25 +150,49 @@ export function Paper() {
       >
         {/* ---------- masthead ---------- */}
         <header>
-          <div className="flex items-center justify-between pb-5 md:pb-6">
+          {/* BUILD 2, MEASURED NOT GUESSED. One row at 375px needs 537px
+              (eyebrow 229 + nav 296 + gap) against 335 available: the gap
+              fell to 0 and the eyebrow was squeezed 229 → 42px. So the
+              FALLBACK ships — eyebrow on its own line, the pill row full
+              width beneath it, still right-aligned, same pills at the same
+              type size. Desktop keeps the single row. */}
+          <div className="flex flex-col gap-1 pb-5 md:flex-row md:items-center md:justify-between md:gap-0 md:pb-6">
             <span className="eyebrow text-dim">
               Deb · The whole life, daily{edition !== null && ` · No. ${edition}`}
             </span>
-            <span className="flex items-center gap-1">
-              {/* the masthead furniture: memory beside the ledger (P6) */}
+            {/* DESKTOP furniture: memory beside the ledger (P6), unchanged.
+                On mobile both move to THE RECORD — the nav takes this slot. */}
+            <span className="hidden items-center gap-1 md:flex">
               <button
                 onClick={() => setMemoryOpen(true)}
-                className="eyebrow -my-2 flex min-h-11 items-center rounded-full px-3.5 text-muted transition-colors hover:bg-fill hover:text-ink"
+                className={FURNITURE}
               >
                 memory
               </button>
               <button
                 onClick={() => setArrivalsOpen(true)}
-                className="eyebrow -my-2 flex min-h-11 items-center rounded-full px-3.5 text-muted transition-colors hover:bg-fill hover:text-ink"
+                className={FURNITURE}
               >
                 arrivals ↗
               </button>
             </span>
+            {/* MOBILE nav: the same pill as the furniture above — one pill
+                style in the app, not two. Active takes a well fill;
+                inactive is quiet muted ink. No borders, no rings, no
+                shadows: the nav is not one of the four floating surfaces.
+                NO COUNT BADGES, on Triage or anywhere. */}
+            <nav className="-mr-3.5 flex items-center justify-end gap-0.5 md:hidden">
+              {DESTS.map((d) => (
+                <button
+                  key={d}
+                  onClick={() => setDest(d)}
+                  aria-current={dest === d ? 'page' : undefined}
+                  className={`${FURNITURE} ${dest === d ? 'bg-fill text-ink' : ''}`}
+                >
+                  {d}
+                </button>
+              ))}
+            </nav>
           </div>
           <div className="flex flex-col gap-4 pb-5 md:flex-row md:items-end md:justify-between md:gap-10 md:pb-6">
             <div className="min-w-0">
@@ -247,13 +284,36 @@ export function Paper() {
               finishes render here only on past pages (July 29 re-ruling).
               Mobile stacks the paper in the target's order: deb first,
               the lifecycle second, the record third. */}
-          <section className="order-3 min-w-0 md:order-none md:pr-11">
-            <div className="eyebrow mb-3">The Record</div>
+          <section
+            className={`order-3 min-w-0 md:order-none md:block md:pr-11 ${
+              dest === 'record' ? 'block' : 'hidden'
+            }`}
+          >
+            <div className="mb-3 flex items-center justify-between">
+              <span className="eyebrow">The Record</span>
+              {/* BUILD 3: arrivals leaves the header and lives here. Memory
+                  comes with it on mobile — the two were siblings in the
+                  header ("memory beside the ledger", P6) and stay siblings;
+                  the ticket's width budget did not include memory, and
+                  leaving it in the header would have blown the row. */}
+              <span className="flex items-center gap-0.5 md:hidden">
+                <button onClick={() => setMemoryOpen(true)} className={FURNITURE}>
+                  memory
+                </button>
+                <button onClick={() => setArrivalsOpen(true)} className={FURNITURE}>
+                  arrivals ↗
+                </button>
+              </span>
+            </div>
             <RecordColumn lens={lens} />
           </section>
 
           {/* CENTER — the TRIAGE seam (the stack lives behind it) */}
-          <section className="order-2 mt-8 min-w-0 border-hair md:order-none md:mt-0 md:border-l md:px-10">
+          <section
+            className={`order-2 mt-8 min-w-0 border-hair md:order-none md:mt-0 md:block md:border-l md:px-10 ${
+              dest === 'tasks' ? 'block' : 'hidden'
+            }`}
+          >
             <div className="eyebrow mb-3">Triage</div>
             <Proof of={[tasksP, projectsP]} line="Triage isn't loading">
               {([tasks, projects]) => (
@@ -273,7 +333,11 @@ export function Paper() {
           {/* RIGHT — DEB, THE COLUMNIST (P3): the brief as her lead piece,
               her latest remarks beneath — a read of the thread, never new
               state; the whole column a door into CONVERSATION focus */}
-          <section className="order-1 flex min-w-0 flex-col border-hair md:order-none md:mt-0 md:min-h-full md:border-l md:pl-10">
+          <section
+            className={`order-1 min-w-0 flex-col border-hair md:order-none md:mt-0 md:flex md:min-h-full md:border-l md:pl-10 ${
+              dest === 'home' ? 'flex' : 'hidden'
+            }`}
+          >
             <div className="eyebrow mb-3">Deb</div>
             <DebColumn lens={lens} onOpen={() => setRoom('reflect')} />
             <div className="flex-1" />
@@ -287,8 +351,8 @@ export function Paper() {
         </div>
 
         {/* ---------- THE WORLDS, below the fold ---------- */}
-        <section className="mt-16">
-          <hr className="mb-5 border-0 border-t border-hair" />
+        <section className={`mt-16 md:block ${dest === 'worlds' ? 'block' : 'hidden'}`}>
+          <hr className="mb-5 hidden border-0 border-t border-hair md:block" />
           <div className="eyebrow">The Worlds</div>
           <div className="mt-3.5">
             <Proof of={[projectsP]} line="Your worlds aren't loading">
