@@ -20,8 +20,8 @@ import { MemorySheet } from '../MemorySheet'
 import { ArrivalsOverlay } from './ArrivalsOverlay'
 import { UndoPill } from '../UndoPill'
 import { RecordColumn } from './RecordColumn'
-import { DebColumn } from './DebColumn'
 import { TodoList } from './TodoList'
+import { MorningBrief } from '../rooms/MorningBrief'
 import { TriageFocus } from './TriageFocus'
 import { Review } from '../rooms/Review'
 import { Reflect } from '../rooms/Reflect'
@@ -285,7 +285,7 @@ export function Paper() {
               Mobile stacks the paper in the target's order: deb first,
               the lifecycle second, the record third. */}
           <section
-            className={`order-3 min-w-0 md:order-none md:block md:pr-11 ${
+            className={`order-3 min-w-0 md:order-none md:block md:pr-11 md:max-h-[calc(100vh-15rem)] md:overflow-y-auto momentum ${
               dest === 'record' ? 'block' : 'hidden'
             }`}
           >
@@ -310,10 +310,13 @@ export function Paper() {
 
           {/* CENTER — the TRIAGE seam (the stack lives behind it) */}
           <section
-            className={`order-2 mt-8 min-w-0 border-hair md:order-none md:mt-0 md:block md:border-l md:px-10 ${
+            className={`order-2 mt-8 min-w-0 border-hair md:order-none md:mt-0 md:block md:border-l md:px-10 md:max-h-[calc(100vh-15rem)] md:overflow-y-auto momentum ${
               dest === 'tasks' ? 'block' : 'hidden'
             }`}
           >
+            {/* D2: her lead piece moved here from column three, which is
+                now the thread and nothing else. */}
+            <MorningBrief />
             <div className="eyebrow mb-3">Triage</div>
             <Proof of={[tasksP, projectsP]} line="Triage isn't loading">
               {([tasks, projects]) => (
@@ -338,15 +341,22 @@ export function Paper() {
               dest === 'home' ? 'flex' : 'hidden'
             }`}
           >
-            <div className="eyebrow mb-3">Deb</div>
-            <DebColumn lens={lens} onOpen={() => setRoom('reflect')} />
-            <div className="flex-1" />
-            {/* the composer is a door: engaging it is CONVERSATION focus */}
-            {!isMobile && (
-              <div className="sticky bottom-0 mt-9 bg-gradient-to-t from-[var(--t-bg)] from-[78%] to-transparent pt-6 pb-4">
-                <ComposerDoor onOpen={() => setRoom('reflect')} />
-              </div>
-            )}
+            <div className="mb-3 flex items-center justify-between">
+              <span className="eyebrow">Deb</span>
+              {/* D1: the thread is LIVE in the column; the pop-out is for
+                  when he wants it larger, not the only way to talk. */}
+              <button
+                onClick={() => setRoom('reflect')}
+                className="eyebrow -my-2 flex min-h-11 items-center text-[0.58rem] text-dim transition-colors hover:text-ink"
+              >
+                pop out ↗
+              </button>
+            </div>
+            {/* D1 + D2: column three is Deb's chat and nothing else. The
+                brief — her lead piece — moved to column two. */}
+            <div className="min-h-0 flex-1">
+              <Reflect lens={lens} />
+            </div>
           </section>
         </div>
 
@@ -381,7 +391,8 @@ export function Paper() {
         </section>
 
         {/* ---------- colophon ---------- */}
-        <div className="mt-14 text-center">
+        {/* she printed the paper, not the furniture: home only on mobile */}
+        <div className={`mt-14 text-center md:block ${dest === 'home' ? 'block' : 'hidden'}`}>
           <span className="eyebrow text-[0.55rem] text-dim">
             Printed this morning by Deb · Nothing leaves this page
           </span>

@@ -57,6 +57,7 @@ function Record({
 }) {
   const today = todayKey()
   const [cursor, setCursor] = useState<string>(today)
+  const [slotOpen, setSlotOpen] = useState(false)
 
   // doors land on a day — and at a spot (the book jump, July 28/29)
   const jump = useBook((s) => s.jump)
@@ -113,7 +114,21 @@ function Record({
     <div>
       {/* the page slot (July 29): the quiet third mouth — today only;
           an archive page takes no drops */}
-      {day === today && <PageSlot lens={lens} />}
+      {/* D3: the slot is something he OPENS, not something occupying the
+          top of the column asking to be used. One action, not two — the
+          door opens straight into a focused slot. Same mono-door grammar
+          as EARLIER and arrivals ↗. */}
+      {day === today &&
+        (slotOpen ? (
+          <PageSlot lens={lens} autoFocus onDone={() => setSlotOpen(false)} />
+        ) : (
+          <button
+            onClick={() => setSlotOpen(true)}
+            className="eyebrow -my-2 flex min-h-11 items-center text-[0.6rem] text-dim transition-colors hover:text-ink"
+          >
+            drop a note
+          </button>
+        ))}
 
       {/* a past page announces itself — the reader always knows the day */}
       {day !== today && (

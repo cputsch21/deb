@@ -19,7 +19,16 @@ import { RAW_MAX } from '../../db/types'
  * a slot, not an import screen — the moment it wants chrome, it is
  * violating the one-door spirit and gets cut back.
  */
-export function PageSlot({ lens }: { lens: string | null }) {
+export function PageSlot({
+  lens,
+  autoFocus = false,
+  onDone,
+}: {
+  lens: string | null
+  autoFocus?: boolean
+  /** called after a successful file, so the opener can close it again */
+  onDone?: () => void
+}) {
   const [text, setText] = useState('')
   const [focused, setFocused] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -87,6 +96,7 @@ export function PageSlot({ lens }: { lens: string | null }) {
         )
       }
       setText('')
+      onDone?.()
     } catch (err) {
       console.error('[page slot]', err)
       setFailed(true) // his words stay in the slot — never lost
@@ -98,6 +108,7 @@ export function PageSlot({ lens }: { lens: string | null }) {
   return (
     <div className="mb-5">
       <textarea
+        autoFocus={autoFocus}
         value={text}
         rows={focused || text ? 4 : 1}
         maxLength={RAW_MAX}
