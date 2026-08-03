@@ -81,6 +81,12 @@ it returned was discarded one call later.
 the excess-property check.** Where a payload crosses a boundary by spread,
 the type checker is not watching.
 
+**The tripwire on exporting for testability:** exporting a function so a
+test can assert AT THE SEAM is this law working. Exporting one so a test
+can poke at internals is not. Two such exports in a file is fine; at four,
+the file is telling you it does too much and wants splitting — stop and
+say so. (`api/chat.ts` is at two: `materialFrame`, `createTask`.)
+
 The worked example (F2 → F4, Aug 2): `logArrival` never had a `detail`
 parameter. Both writers passed `...landedOutcome(...)`; the spread
 type-checked, compiled, shipped, and `detail` was dropped at the insert —
