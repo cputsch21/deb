@@ -15,6 +15,47 @@ Current state is the top of this log.
 
 ## The log (newest first)
 
+### August 3, 2026 — P7: the mobile shell is a pill nav · VERDICTS is called Triage
+**VERDICTS IS DEAD. THE PLACE IS CALLED TRIAGE.** Renamed in the UI, the
+components and the doc comments.
+
+**The distinction that governed the sweep, because it would have been easy
+to over-apply:** *verdict* the ACT is not renamed and must not be. Giving a
+verdict is still giving a verdict, the two PERMANENT verdicts are still
+that, `VerdictConfirm` keeps its name, and `anchored_on` is still "THE one
+verdict field" in the schema. **Only the PLACE — the stage where undecided
+cards wait — becomes Triage.** Renaming the act would have broken the model
+grammar's vocabulary to fix a label.
+
+**This log was NOT edited, and that is deliberate.** The ticket asked for
+the rename in `DECISIONS.md` too. Two occurrences of "THE VERDICTS" sit
+inside historical entries, and the July 31 ruling is absolute: *touch no
+log entry — not for a typo, not to reword, not to correct something later
+proved wrong.* A rename is a reword. Those entries say what was believed
+when they were written; this entry is the mechanism for changing the name.
+**A log you can rename through is not evidence.**
+
+**THE MOBILE SHELL: four destinations behind pills** — home · tasks ·
+record · worlds, top-right, reusing the masthead furniture's pill class
+verbatim so there is one pill style in the app rather than two. Active
+takes a well fill, inactive is quiet muted ink, and there are **NO COUNT
+BADGES** — a number telling Chris how much he has not dealt with is a
+guilt pixel. Desktop is untouched.
+
+**MEASURED, NOT GUESSED, and the measurement said no.** One row at 375px
+needs **537px** (eyebrow 229.1 + nav 296.2 + gap) against **335**
+available: the gap fell to 0 and the eyebrow was squeezed from 229.1 to
+42.4px — cramped by both of the ticket's own tests. The two-line fallback
+shipped instead. The number is recorded because the alternative was
+shipping a cramped row and letting Chris find it.
+
+**A no-op recorded as a finding:** the bottom sheet was already retired.
+`Sheet.tsx` has exactly two callers, `MemorySheet` and `ProjectSheet`, and
+neither is navigation — they are the sanctioned right-side sheets. The
+navigation sheet was `WorldSheet.tsx`, deleted by THE PAPER's own P7
+retirement on July 30. **Searching found in one command what memory had
+wrong.**
+
 ### August 3, 2026 — F6: a hand may not name where a thing landed
 **THE GHOSTING BUG WAS NEVER A DROP.** Nothing was lost, nothing failed,
 and the ledger was right to have no opinion about it. The task Chris
