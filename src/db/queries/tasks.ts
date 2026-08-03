@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase'
 import { transient } from '../../lib/undo'
 import { proven, type Proven } from '../proof'
 import { assertRowChanged, capText, optimisticWrite } from '../mutate'
-import { DELEGATE_MAX, TITLE_MAX, type Task } from '../types'
+import { DELEGATE_MAX, NOTES_MAX, TITLE_MAX, type Task } from '../types'
 
 export const taskKeys = { all: ['tasks'] as const }
 
@@ -11,7 +11,7 @@ async function fetchTasks(): Promise<Task[]> {
   const { data, error } = await supabase
     .from('tasks')
     .select(
-      'id, project_id, goal_id, recurring_id, title, done_at, touched_at, anchored_on, delegated_to, chase_on, delegated_on, source_entry_id, source_excerpt, materialized_on, created_at, deleted_at',
+      'id, project_id, goal_id, recurring_id, title, notes, done_at, touched_at, anchored_on, delegated_to, chase_on, delegated_on, source_entry_id, source_excerpt, materialized_on, created_at, deleted_at',
     )
     .is('deleted_at', null)
     .order('created_at')
@@ -51,6 +51,7 @@ export function useTaskMutations() {
       goal_id: home.goalId ?? null,
       recurring_id: null,
       title: capText(title, TITLE_MAX),
+      notes: null,
       done_at: null,
       touched_at: nowISO(),
       anchored_on: null,
@@ -97,6 +98,7 @@ export function useTaskMutations() {
         | 'delegated_to'
         | 'chase_on'
         | 'delegated_on'
+        | 'notes'
       >
     >,
   ) => {
@@ -105,6 +107,7 @@ export function useTaskMutations() {
       next.title = capText(next.title, TITLE_MAX)
       if (!next.title) return
     }
+    if (next.notes != null) next.notes = capText(next.notes, NOTES_MAX)
     if (next.delegated_to != null) {
       next.delegated_to = capText(next.delegated_to, DELEGATE_MAX)
       if (!next.delegated_to) return

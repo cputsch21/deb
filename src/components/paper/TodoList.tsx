@@ -8,6 +8,7 @@ import { orDefaultOrder, useLineWhys } from '../../lib/lineWhys'
 import { localDayString } from '../../lib/day'
 import { applyDebOrder, daysBetween, deriveLine, todayKey } from '../../lib/line'
 import { transient } from '../../lib/undo'
+import { useOpenTask } from '../../lib/openTask'
 import { Proof } from '../Proof'
 import type { Project, Task } from '../../db/types'
 
@@ -147,6 +148,7 @@ function TodoRow({
   const { knock } = useDoor()
   const { setRoom } = useRoom()
   const { setLens } = useLens()
+  const openTask = useOpenTask((s) => s.open)
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const start = useRef<{ x: number; y: number } | null>(null)
   const clearHold = () => {
@@ -172,7 +174,8 @@ function TodoRow({
 
   return (
     <div
-      className="grid grid-cols-[20px_1fr_auto] items-start gap-x-2.5 rounded-xl bg-fill px-3.5 py-3 transition-colors hover:bg-fill2"
+      className="grid cursor-pointer grid-cols-[20px_1fr_auto] items-start gap-x-2.5 rounded-xl bg-fill px-3.5 py-3 transition-colors hover:bg-fill2"
+      onClick={() => openTask(task.id)}
       onContextMenu={(e) => {
         e.preventDefault()
         carry()
@@ -196,7 +199,14 @@ function TodoRow({
     >
       <button
         aria-label={`Done: ${task.title}`}
-        onClick={() => onDone(task)}
+        onClick={(e) => {
+          // THE DECISION WINS. The done circle sits inside a row that
+          // opens the modal, so without this a completion would also open
+          // it. Same care as the Triage backdrop: an action region never
+          // doubles as a navigation region.
+          e.stopPropagation()
+          onDone(task)
+        }}
         className="-m-2.5 grid h-11 w-11 place-items-center"
       >
         <span className="block h-[19px] w-[19px] rounded-full bg-fill2 transition-colors hover:bg-[var(--t-silver)]" />

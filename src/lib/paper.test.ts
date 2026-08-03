@@ -53,6 +53,7 @@ const task = (over: Partial<Task>): Task => ({
   goal_id: null,
   recurring_id: null,
   title: `task ${n}`,
+  notes: null,
   done_at: null,
   touched_at: '2026-07-20T10:00:00.000Z',
   anchored_on: null,

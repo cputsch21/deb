@@ -11,6 +11,7 @@ export const DELEGATE_MAX = 80
 
 export const FACT_MAX = 500
 export const RAW_MAX = 60000
+export const NOTES_MAX = 20000 // mirrors the tasks_notes_len CHECK
 export const DISTILLATE_MAX = 8000
 
 /** The record's surface rows (M5). The raw beneath lives in entry_raw,
@@ -129,6 +130,10 @@ export type Task = {
   recurring_id: string | null
   title: string
   done_at: string | null
+  /** X1 Phase F: the note canvas. Lives on the row, so it dies with the
+   *  task and survives an undo of its completion — completion only sets
+   *  done_at and never touches this. */
+  notes: string | null
   touched_at: string // the Bench-fade clock
   /** THE one verdict field (M4): null = undecided (the stack deals it);
    *  Do → today; Delay → its chosen day (wakes on the Line, not the stack). */

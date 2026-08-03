@@ -23,6 +23,8 @@ import { RecordColumn } from './RecordColumn'
 import { TodoList } from './TodoList'
 import { MorningBrief } from '../rooms/MorningBrief'
 import { TriageFocus } from './TriageFocus'
+import { TaskModal } from './TaskModal'
+import { useOpenTask } from '../../lib/openTask'
 import { Review } from '../rooms/Review'
 import { Reflect } from '../rooms/Reflect'
 import type { Project } from '../../db/types'
@@ -73,6 +75,10 @@ export function Paper() {
   // page in one scroll, three columns and the worlds band. On a phone the
   // same four regions become four destinations behind the pill nav.
   const [dest, setDest] = useState<Dest>('home')
+  // PHASE F: the task modal shares the focus layer, so it inherits the
+  // glass backdrop, the click-outside dismissal and the Esc cascade.
+  const openTaskId = useOpenTask((st) => st.taskId)
+  const closeTask = useOpenTask((st) => st.close)
   const today = todayKey()
 
   // rhythms materialize as normal tasks at app open + on return
@@ -101,16 +107,18 @@ export function Paper() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return
+      closeTask()
       if (room === 'reflect' || room === 'review') setRoom('read')
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [room, setRoom])
+  }, [room, setRoom, closeTask])
 
-  const focus = room !== 'read'
   // Unproven tasks derive NOTHING (the derived-value law): no stack, no
   // line, no glances. Every consumer below renders absence, never a zero.
   const tasks = tasksP.proven ? tasksP.value : null
+  const openTask = tasks?.find((t) => t.id === openTaskId) ?? null
+  const focus = room !== 'read' || openTask !== null
   const epigraph = epigraphLine(briefQ.data?.items)
   // THE EDITION NUMBER. issueNumber(null, today) returned 1, so a failed
   // read printed "No. 1" — an unproven claim about the whole history of
@@ -425,7 +433,9 @@ export function Paper() {
             // starts AND ends on the backdrop itself leaves — a stray
             // click inside any decision region is not a dismissal, and
             // where the two could overlap the decision wins.
-            if (e.target === e.currentTarget) setRoom('read')
+            if (e.target !== e.currentTarget) return
+            closeTask()
+            setRoom('read')
           }}
           className="fixed inset-0 z-40 flex flex-col overflow-hidden bg-[var(--t-bg)]/60 backdrop-blur-[50px] pt-[env(safe-area-inset-top)]">
           <div className="flex-none px-3 pt-2.5 pb-1 md:px-8 md:pt-5">
@@ -449,7 +459,14 @@ export function Paper() {
                   </div>
                 </div>
               ))}
-            {room === 'react' && <TriageFocus lens={lens} />}
+            {openTask && (
+              <TaskModal
+                task={openTask}
+                world={projects?.find((p) => p.id === openTask.project_id) ?? null}
+                onClose={closeTask}
+              />
+            )}
+            {!openTask && room === 'react' && <TriageFocus lens={lens} />}
             {room === 'review' &&
               (isMobile ? (
                 <Review lens={lens} />

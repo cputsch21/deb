@@ -1,4 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
+import { readFileSync } from 'node:fs'
 import { DROP_OUTCOMES, isDrop, type ArrivalOutcome } from './types'
 
 /**
@@ -67,5 +68,41 @@ describe('the client-side rhythm writer', () => {
     const { recordRhythmDrop } = await import('./queries/drops')
     await recordRhythmDrop({ rhythmId: 'r-2', title: 'x', code: null, message: 'boom' })
     expect(Object.keys(inserted[0])).not.toContain('reason')
+  })
+})
+
+/**
+ * X1 Phase F — THE NOTES SURVIVE AN UNDO OF A COMPLETION.
+ *
+ * Not a behaviour that was built; a behaviour that falls out of the shape,
+ * and these assert the shape so nobody "optimises" it away later by
+ * clearing notes on completion.
+ */
+/**
+ * X1 Phase F — THE NOTES SURVIVE AN UNDO OF A COMPLETION.
+ *
+ * Not a behaviour that was built; one that falls out of the shape. These
+ * assert the SHAPE, so nobody later "tidies up" by clearing notes on
+ * completion and quietly makes the undo unable to restore them.
+ */
+describe('task notes and completion', () => {
+  const src = readFileSync(new URL('./queries/tasks.ts', import.meta.url), 'utf8')
+
+  it('setDone writes done_at and NOTHING else — notes are never touched', () => {
+    const setDone = src.slice(src.indexOf('const setDone'), src.indexOf('const restore'))
+    expect(setDone).toMatch(/done_at:/)
+    expect(setDone).not.toMatch(/notes/)
+  })
+
+  it('nothing in the task layer clears notes on completion', () => {
+    // a destroy on completion could not be walked back, and RED MARKS A
+    // DOOR THAT CANNOT BE WALKED BACK THROUGH — completion is not it
+    expect(src).not.toMatch(/notes:\s*null[^,]*\/\/\s*complet/i)
+    expect(src).not.toMatch(/done_at[^}]*notes:\s*null/s)
+  })
+
+  it('the client cap mirrors the database CHECK', async () => {
+    const { NOTES_MAX } = await import('./types')
+    expect(NOTES_MAX).toBe(20000)
   })
 })
