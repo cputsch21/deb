@@ -46,4 +46,8 @@ jobs:
         with:
           node-version: 24 # matches Vercel's production runtime
 
-      - run: pnpm install --frozen-lockfile && pnpm test
+      # A CHECK THAT CANNOT FAIL A PUSH IS DECORATION (law, Aug 3 2026).
+      # `pnpm test` is tsc -b + vitest; `pnpm lint` is oxlint, which carries
+      # the api/_lib/anchor.ts import ban. The rule was verified to fire and
+      # exit 1 — and then ran nowhere, which made it a decoration. Wired.
+      - run: pnpm install --frozen-lockfile && pnpm test && pnpm lint

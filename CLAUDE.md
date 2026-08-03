@@ -72,6 +72,17 @@ instead be made impossible — that is what `Proven<T>` does to empty
 states, what `proof.compile-test.tsx` does to the type itself, and what
 the extractor's never-shorter guard does to a corpus diff.
 
+## A CHECK THAT CANNOT FAIL A PUSH IS DECORATION
+A guard is not the rule it expresses. **It is the rule plus the wiring
+that makes the rule bite.** An unwired guard is worse than no guard,
+because it is believed.
+
+These three are one family, and a guard needs all of them: **prove it by
+construction · assert it at the seam · wire it to the gate.**
+
+CI runs `pnpm test && pnpm lint`. Anything added to `package.json` that
+checks correctness goes into that chain, or it is decoration.
+
 ## A TEST THAT STOPS AT THE FUNCTION BOUNDARY CANNOT SEE A BROKEN WIRE
 Assert at the seam where a value is CONSUMED, not only where it is
 produced. `landedOutcome()` passed every assertion it had while the value
