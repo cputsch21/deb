@@ -15,6 +15,50 @@ Current state is the top of this log.
 
 ## The log (newest first)
 
+### August 3, 2026 — F6: a hand may not name where a thing landed
+**THE GHOSTING BUG WAS NEVER A DROP.** Nothing was lost, nothing failed,
+and the ledger was right to have no opinion about it. The task Chris
+watched "ghost" was in Triage the whole time, exactly where the grammar
+puts an unanchored task. What was wrong was that Deb told him it was
+somewhere else.
+
+**A HAND MAY NOT NAME WHERE A THING LANDED. THE ROW SAYS WHERE IT LANDED.**
+Deb can only speak from what a tool result tells her. A result that
+asserts a location it did not read will make her confidently contradict
+the grammar. Every hand that writes a row and then describes it must
+DERIVE the description from the row. Sibling of A ROW RECORDS A FACT; A
+ROOM CHOOSES THE WORDS — that law says the database does not pick the
+sentence; **this one says the sentence does not get to invent the fact.**
+
+**The real defect was that the sentence was a CONSTANT.** `chat.ts`
+returned *"It is on his list now"* regardless of what it wrote, and what it
+wrote was `anchored_on: null`. It is the `detail` bug again in a different
+costume: **a value asserted rather than derived.**
+
+**THE RULING — both fixes, because they were never opposites:**
+- **Behaviour.** A task Deb creates because Chris TOLD her to is anchored
+  to today. He decided when he asked; making him decide again is friction,
+  not presence. A task she INFERRED is unanchored and earns its verdict in
+  Triage — she was not told, she guessed. The hand takes a `told`
+  parameter, **defaulting to inferred, because the safe default asks
+  rather than assumes.**
+- **Words.** The sentence derives from the anchor actually written,
+  through `api/_lib/anchor.ts` — the same predicate the board reads.
+
+**THE TRADE-OFF, NAMED AND ACCEPTED:** today's board can get crowded with
+things Chris asked for. That is **an accurate mirror, not a defect.** If
+he asked for eleven things, eleven things are on today's list, and the
+board is telling the truth about the day he requested.
+
+**TWO WRONG HYPOTHESES, and what each cost.** R3: argued about `before`
+from the report's numbers; it was `wordCount` at `redistill.ts:91` — a
+word count read as characters, with a whole ticket's premise built on it.
+F3: blamed `optimisticWrite` for the ghosting; Deb's hand is server-side
+at `chat.ts:571` and never touches that path. Both corrections cost **one
+read**. Hence the habit, installed in `CLAUDE.md`: **NAME THE FILE BEFORE
+NAMING THE CAUSE** — the failure is not skipping the read, it is assuming
+you know which file the behaviour lives in.
+
 ### August 3, 2026 — A TEST THAT STOPS AT THE FUNCTION BOUNDARY CANNOT SEE A BROKEN WIRE
 **Assert at the seam where a value is CONSUMED, not only where it is
 produced.** `landedOutcome()` passed every assertion it had while the value

@@ -89,6 +89,38 @@ later caller passed `detail` as a NAMED property, where the check fires.
 This is construction-over-inspection's shadow: the check existed and
 proved the wrong thing.
 
+## A HAND MAY NOT NAME WHERE A THING LANDED. THE ROW SAYS WHERE IT LANDED.
+Deb can only speak from what a tool result tells her. **A result that
+asserts a location it did not read will make her confidently contradict
+the grammar.** Every hand that writes a row and then describes it must
+DERIVE the description from the row.
+
+Worked example: `create_task` returned the constant *"It is on his list
+now"* while writing `anchored_on: null` — which by the grammar means
+undecided, i.e. Triage, not the board. She told Chris the opposite of
+where his task was, twice, and it read as a task ghosting. Nothing was
+ever lost. The sentence now derives from the written anchor through
+`api/_lib/anchor.ts`, the same predicate the board reads.
+
+This is the sibling of A ROW RECORDS A FACT; A ROOM CHOOSES THE WORDS.
+That law says the database does not pick the sentence. **This one says the
+sentence does not get to invent the fact.**
+
+## NAME THE FILE BEFORE NAMING THE CAUSE
+Before stating a cause, state the file and line you read it in. The
+failure is not skipping the read — it is assuming you know which file the
+behaviour lives in.
+
+Both scars, because a habit installed without them is a slogan:
+- **R3:** argued about `before` from the report's numbers. It was
+  `wordCount` at `api/redistill.ts:91` — a word count read as characters,
+  and a whole ticket's premise built on it.
+- **F3:** blamed `optimisticWrite` (`src/db/mutate.ts:27`) for the
+  ghosting task. Deb's hand is server-side at `api/chat.ts:571` and never
+  touches that path.
+
+Both corrections cost one read.
+
 ## Engineering law (non-negotiable, from DECISIONS.md)
 - Every visible mutation is optimistic (<50ms): patch the cache
   synchronously, persist in background, reconcile on failure.

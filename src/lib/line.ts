@@ -1,3 +1,4 @@
+import { landsOnBoard } from '../../api/_lib/anchor.js'
 import { localDayString } from './day'
 import type { Task } from '../db/types'
 
@@ -102,8 +103,7 @@ export function deriveLine(tasks: Task[], lens: string | null, today: string): T
         open(t) &&
         inLens(t, lens) &&
         !delegated(t) &&
-        t.anchored_on !== null &&
-        t.anchored_on <= today &&
+        landsOnBoard(t.anchored_on, today) &&
         daysBetween(t.anchored_on, today) <= STALE_AFTER_DAYS,
     )
     .sort(

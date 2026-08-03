@@ -5,6 +5,7 @@ import { DEB_IDENTITY, SILENT_SENTINEL } from './_lib/identity.js'
 import { generateBrief } from './_lib/brief.js'
 import { insertEntry, logArrival, performFiling, type FilingResult } from './_lib/filing.js'
 import { DISTILLATE_MAX } from './_lib/distill.js'
+import { placementOf, placementSentence } from './_lib/anchor.js'
 import {
   FACT_MAX,
   MATERIAL_MIN,
@@ -43,7 +44,7 @@ const MAX_HOPS = 5
 /** Her one hand for now: create a task. Server stamps the lens; she picks the words. */
 const CREATE_TASK: Anthropic.Tool = {
   name: 'create_task',
-  description: `Create a task on Chris's list when he says something actionable that is HIS to do ("I owe Larry an invoice", "remind me to call the contractor", "I need to book Grace's dentist"). Act-then-correct: it exists the instant you call this, and then your words carry the confirmation — briefly, in your voice. ONLY call it for a real to-do that belongs to Chris. Do NOT call it for something he is musing about, asking a question about, delegating to someone else, or that already exists on the list (check the current state first — never re-create a task that is already there). The task lands in whatever lens he is speaking from; you do not choose where it goes.`,
+  description: `Create a task when Chris says something actionable that is HIS to do ("I owe Larry an invoice", "remind me to call the contractor", "I need to book Grace's dentist"). Act-then-correct: it exists the instant you call this, and then your words carry the confirmation — briefly, in your voice. ONLY call it for a real to-do that belongs to Chris. Do NOT call it for something he is musing about, asking a question about, delegating to someone else, or that already exists (check the current state first — never re-create a task that is already there). The task lands in whatever lens he is speaking from; you do not choose where it goes. WHERE IT LANDS depends on \`told\`, below — and the tool result tells you where it actually went. Say what the result says; never guess at its home.`,
   input_schema: {
     type: 'object',
     properties: {
@@ -51,6 +52,11 @@ const CREATE_TASK: Anthropic.Tool = {
         type: 'string',
         description:
           'The task as a clean imperative, not a transcript: "Invoice Larry", not "i owe larry an invoice". Under 200 characters.',
+      },
+      told: {
+        type: 'boolean',
+        description:
+          'TRUE only when Chris explicitly asked for this task — he told you to add it ("add a task to...", "remind me to...", "I need to X"). He already decided when he asked, so it goes straight onto today\'s list. FALSE (the default) when YOU inferred it: you noticed something in the conversation and judged it a task. You were not told, you guessed, and a guess earns his verdict — it goes to Triage. When genuinely unsure, omit it: the safe default asks rather than assumes.',
       },
     },
     required: ['title'],
@@ -487,7 +493,7 @@ export async function POST(request: Request): Promise<Response> {
           for (const use of toolUses) {
             const r =
               use.name === 'create_task'
-                ? await createTask(db, use, projectId, send)
+                ? await createTask(db, use, projectId, tz, send)
                 : use.name === 'remember'
                   ? await remember(db, use, send)
                   : use.name === 'recall'
@@ -557,26 +563,44 @@ export async function POST(request: Request): Promise<Response> {
 }
 
 /** Execute create_task: RLS-scoped insert, length-capped, then tell the client. */
-async function createTask(
+export async function createTask(
   db: SupabaseClient,
   use: Anthropic.ToolUseBlock,
   projectId: string | null,
+  tz: string,
   send: (event: Record<string, unknown>) => void,
 ): Promise<{ content: string; is_error: boolean }> {
-  const input = (use.input ?? {}) as { title?: unknown }
+  const input = (use.input ?? {}) as { title?: unknown; told?: unknown }
   const title = capText(String(input.title ?? ''), TASK_TITLE_MAX)
   if (!title) return { content: 'No title given — nothing was created.', is_error: true }
 
+  // TOLD vs INFERRED (ruling, Aug 3 2026). Chris told her to add it → he
+  // already decided when he asked, so it is anchored to today and lands on
+  // the board; making him decide again is friction, not presence. She
+  // INFERRED it → she was not told, she guessed, and a guess earns his
+  // verdict, so it goes to Triage unanchored. The default is inferred,
+  // because the safe default is the one that ASKS rather than assumes.
+  const told = input.told === true
+  const anchoredOn = told ? todayKeyInTz(tz) : null
+
   const id = randomUUID()
-  const { error } = await db.from('tasks').insert({ id, title, project_id: projectId })
+  const { error } = await db
+    .from('tasks')
+    .insert({ id, title, project_id: projectId, anchored_on: anchoredOn })
   if (error) {
     console.error('[chat] create_task', error)
     return { content: 'The write failed — the task was NOT created. Tell Chris plainly.', is_error: true }
   }
 
   send({ type: 'action', kind: 'task_created', id, title })
+  // A HAND MAY NOT NAME WHERE A THING LANDED. THE ROW SAYS WHERE IT
+  // LANDED. This sentence is derived from `anchoredOn` — the value that
+  // was actually written — through the same predicate the board reads.
+  // It cannot go stale: change what "on the board" means and both move.
   return {
-    content: `Created "${title}" (id ${id}). It is on his list now — do not create it again.`,
+    content: `Created "${title}" (id ${id}). ${placementSentence(
+      placementOf(anchoredOn, todayKeyInTz(tz)),
+    )} — do not create it again.`,
     is_error: false,
   }
 }
