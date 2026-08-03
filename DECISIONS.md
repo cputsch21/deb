@@ -15,6 +15,49 @@ Current state is the top of this log.
 
 ## The log (newest first)
 
+### August 3, 2026 — A TEST THAT STOPS AT THE FUNCTION BOUNDARY CANNOT SEE A BROKEN WIRE
+**Assert at the seam where a value is CONSUMED, not only where it is
+produced.** `landedOutcome()` passed every assertion it had while the value
+it returned was discarded one call later.
+
+**Corollary, and this is the part that generalizes: a spread is a hole in
+the excess-property check.** Where a payload crosses a boundary by spread,
+the type checker is not watching.
+
+Worked example, in full, because it is the shadow of
+construction-over-inspection — **the check existed and proved the wrong
+thing**: `logArrival` never had a `detail` parameter; both F2 writers
+passed `...landedOutcome(...)`; the spread type-checked, compiled, shipped,
+and `detail` was dropped at the insert, losing exactly the repair payload
+F2 promised. It surfaced only when F4 passed `detail` as a NAMED property,
+where the check fires. In `CLAUDE.md` beside the parent law.
+
+**THE PREDICTION LANDED.** `overlap.filedAndUndistilled` came back **2**,
+against a prediction of 2-of-4 recorded before the endpoint was run. Two
+of the four undistilled entries are the `unreadable` pair — null by design
+and needing no repair — leaving two `filed` rows that were covering a real
+drop. `outcome: 'filed'` was a cover **50% of the time, not 100%**.
+Logged with the same weight as the July 30 miss: **a practice that records
+only its hits is a highlight reel.** One miss, one hit, both with numbers.
+
+**THE GHOSTING BUG IS NOT A DROP — it is Deb's words.** Diagnosed in F5
+and NOT yet fixed (a ruling is owed). `createTask` inserts with no
+`anchored_on`, which by the model grammar means UNDECIDED: `dealStack`
+puts it in THE VERDICTS, and `deriveLine` — the TO DO board — explicitly
+requires `anchored_on !== null` and excludes it. The task is exactly where
+the grammar puts it. Her tool result says *"It is on his list now"* and she
+says *"On the list for 150 Poplar."* **Nothing failed, nothing was lost,
+and no ledger would ever have caught it, because there was no drop.** The
+F3 hypothesis (`optimisticWrite` rollback) was wrong: Deb's hand is
+server-side and never touches that path.
+
+**Silence about a filing is the same failure as silence about a drop, one
+layer up in the product.** A paste over `MATERIAL_MIN` files as an entry
+instead of entering the thread as Chris's message, and he did not know the
+path existed. The filed object was already the receipt; what was missing
+was Deb naming it. Her frame now instructs one short clause — where it
+went — with apology, mechanism, and making-it-the-subject all forbidden.
+
 ### August 2, 2026 — F4: the fifth writer · a spread that hid a bug · two closures
 **EVERY ENTRY-CREATING PATH WRITES TO THE LEDGER.** `api/chat.ts` — Deb's
 own `file_entry` hand — called `insertEntry` directly and never logged. It

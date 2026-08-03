@@ -72,6 +72,23 @@ instead be made impossible — that is what `Proven<T>` does to empty
 states, what `proof.compile-test.tsx` does to the type itself, and what
 the extractor's never-shorter guard does to a corpus diff.
 
+## A TEST THAT STOPS AT THE FUNCTION BOUNDARY CANNOT SEE A BROKEN WIRE
+Assert at the seam where a value is CONSUMED, not only where it is
+produced. `landedOutcome()` passed every assertion it had while the value
+it returned was discarded one call later.
+
+**Corollary, and this is the part that generalizes: a spread is a hole in
+the excess-property check.** Where a payload crosses a boundary by spread,
+the type checker is not watching.
+
+The worked example (F2 → F4, Aug 2): `logArrival` never had a `detail`
+parameter. Both writers passed `...landedOutcome(...)`; the spread
+type-checked, compiled, shipped, and `detail` was dropped at the insert —
+losing exactly the repair payload F2 promised. It surfaced only when a
+later caller passed `detail` as a NAMED property, where the check fires.
+This is construction-over-inspection's shadow: the check existed and
+proved the wrong thing.
+
 ## Engineering law (non-negotiable, from DECISIONS.md)
 - Every visible mutation is optimistic (<50ms): patch the cache
   synchronously, persist in background, reconcile on failure.

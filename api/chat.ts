@@ -717,7 +717,7 @@ function oneEventStream(event: Record<string, unknown>): Response {
  * files). CONTEXT only, never persisted: his pasted words live in the
  * record as the entry; the thread holds only her reply.
  */
-function materialFrame(f: FilingResult): string {
+export function materialFrame(f: FilingResult): string {
   const body = f.distillate
     ? `THE DISTILLED ENTRY (the record holds every word beneath it):\n${capText(f.distillate, 4000)}\n\nHOW THE RAW OPENS:\n${capText(f.raw, 1200)}`
     : `THE RAW, AS IT OPENS (distillation is still owed; the record holds every word):\n${capText(f.raw, 1600)}`
@@ -733,7 +733,7 @@ function materialFrame(f: FilingResult): string {
             f.mintedTitles.length === 1 ? '' : 's'
           } to React: ${f.mintedTitles.join(' · ')}`
         : ''
-    }. Do NOT file it again, and never re-create those loops.${
+    }. SAY SO, ONCE, IN ONE SHORT CLAUSE — that it went to the record, and where. He cannot see this path from outside: a long paste files as an entry instead of entering the thread as his message, and if you say nothing he has no way to know it happened. Name it plainly and move straight on to what you actually think — never apologise for filing, never explain the mechanism, never make it the subject of the reply. Do NOT file it again, and never re-create those loops.${
       f.versioned
         ? ' Engage what is NEW in this drop — the earlier material was already met this morning.'
         : ''
