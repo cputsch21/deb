@@ -14,7 +14,7 @@ import type { Project, Task } from '../../db/types'
 /**
  * TO DO + FINISHED — the center column's lower half (P5, under the
  * July 29 re-ruling): the obligation lifecycle reads top to bottom —
- * THE VERDICTS (undecided) → TO DO (decided, standing) → FINISHED
+ * TRIAGE (undecided) → TO DO (decided, standing) → FINISHED
  * (done, with times). The list is the Line, standing: her ranking, her
  * ≤12-word why on the top row only, age in muted mono, a done circle
  * per row (tap → the row settles into FINISHED beneath, same grammar,

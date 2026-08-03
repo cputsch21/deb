@@ -10,7 +10,7 @@ import type { Proven } from '../db/proof'
  * values, so the inner component's props are `Task[]` and it is
  * unrenderable without proof. That is the whole enforcement.
  *
- *   <Proof of={[tasks, projects]} line="The verdicts aren't loading">
+ *   <Proof of={[tasks, projects]} line="Triage isn't loading">
  *     {([tasks, projects]) => <Stage tasks={tasks} projects={projects} />}
  *   </Proof>
  *
@@ -33,7 +33,7 @@ export function Proof<Ps extends readonly Proven<unknown>[]>({
 }: {
   of: readonly [...Ps]
   /** The clause before the em dash — a clause, because verb agreement
-   *  varies across slots ("the verdicts aren't" / "the list isn't"), so
+   *  varies across slots ("Triage isn't" / "the list isn't"), so
    *  the sentence cannot be built in here. */
   line: string
   /** Full-screen focus surfaces centre their line; columns do not. */
@@ -68,7 +68,7 @@ export function Proof<Ps extends readonly Proven<unknown>[]>({
  *
  * It sits in a TONAL WELL (ruling, July 31): the failure line inherits
  * the container the CONTENT would have had, not the container the empty
- * state had. Verdicts are cards in a well, rows are wells, chips are
+ * state had. Triage cards are cards in a well, rows are wells, chips are
  * wells — so the line is a well too. A line floating in open space reads
  * as nothing; the point is that something is MISSING. Warm Glass
  * vocabulary only: bg-fill, radius 14, no border, no ring, no shadow.

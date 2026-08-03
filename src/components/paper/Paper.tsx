@@ -29,7 +29,7 @@ import type { Project } from '../../db/types'
 
 /**
  * THE PAPER — the V2 shell (July 29 ruling): the app is one page. No
- * rooms, no tabs, no navigation. Masthead · THE RECORD · THE VERDICTS +
+ * rooms, no tabs, no navigation. Masthead · THE RECORD · TRIAGE +
  * TO DO · DEB the columnist · THE WORLDS below the fold. Two focus
  * states — CONVERSATION and TRIAGE — where the page recedes and the
  * thread or the card takes the stage. The spec is the V2 design targets
@@ -241,7 +241,7 @@ export function Paper() {
           )}
         </header>
 
-        {/* ---------- the sheet: record · verdicts · deb ---------- */}
+        {/* ---------- the sheet: record · triage · deb ---------- */}
         <div className="mt-6 grid grid-cols-1 items-start md:grid-cols-[1.35fr_1fr_1.04fr]">
           {/* LEFT — THE RECORD (P2): taken down · dealings · earlier;
               finishes render here only on past pages (July 29 re-ruling).
@@ -252,12 +252,12 @@ export function Paper() {
             <RecordColumn lens={lens} />
           </section>
 
-          {/* CENTER — THE VERDICTS seam (triage lives behind it) */}
+          {/* CENTER — the TRIAGE seam (the stack lives behind it) */}
           <section className="order-2 mt-8 min-w-0 border-hair md:order-none md:mt-0 md:border-l md:px-10">
-            <div className="eyebrow mb-3">The Verdicts</div>
-            <Proof of={[tasksP, projectsP]} line="The verdicts aren't loading">
+            <div className="eyebrow mb-3">Triage</div>
+            <Proof of={[tasksP, projectsP]} line="Triage isn't loading">
               {([tasks, projects]) => (
-                <VerdictsSeam
+                <TriageSeam
                   stack={dealStack(tasks, lens, today)}
                   projects={projects}
                   onOpen={() => setRoom('react')}
@@ -388,12 +388,12 @@ export function Paper() {
 }
 
 /**
- * The verdicts seam. It takes a PROVEN stack, so "Clear. Every loop has a
+ * The Triage seam. It takes a PROVEN stack, so "Clear. Every loop has a
  * verdict. Go live it." can only ever be printed over a real, succeeded
  * read — the sentence that congratulated Chris for a clear day he never
  * had on July 30.
  */
-function VerdictsSeam({
+function TriageSeam({
   stack,
   projects,
   onOpen,
