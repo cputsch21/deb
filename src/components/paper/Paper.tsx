@@ -210,7 +210,13 @@ export function Paper() {
               )}
             </div>
             <div className="flex items-center gap-3 md:flex-col md:items-end md:gap-2.5 md:pb-2">
-              <span className="eyebrow order-2 min-h-[13px] truncate text-accent-ink md:order-1">
+              {/* PHASE C: the world you are in is CONTEXT FOR THE WHOLE
+                  PAGE, not a property of column one — so it sits here,
+                  above the picker that changes it. Prominence comes from
+                  TYPE SCALE AND INK WEIGHT, never chrome: the header is
+                  not one of the four floating surfaces and does not
+                  become a toolbar. */}
+              <span className="order-2 min-w-0 truncate font-serif text-[19px] leading-tight font-medium tracking-[-0.01em] text-ink md:order-1 md:text-[26px]">
                 {hoverName ?? (world ? world.name : 'Whole life')}
               </span>
               <div className="order-1 flex gap-1 overflow-x-auto md:order-2" style={{ scrollbarWidth: 'none' }}>
@@ -258,10 +264,10 @@ export function Paper() {
                 className="h-[9px] w-[9px] flex-none rounded-full"
                 style={{ backgroundColor: world.color }}
               />
-              <span className="min-w-0 truncate">
-                {world.name}
-                {world.mission ? ` — ${world.mission}` : ''}
-              </span>
+              {/* the NAME moved to the header (Phase C) — it is context for
+                  the whole page, not a line above column one. The strap
+                  keeps only what the header does not say. */}
+              <span className="min-w-0 truncate">{world.mission ?? ''}</span>
               <button
                 onClick={() => setRoom('review')}
                 className="eyebrow -my-3 ml-auto flex min-h-11 flex-none items-center px-2 text-[0.58rem] text-dim not-italic transition-colors hover:text-ink"
@@ -317,7 +323,6 @@ export function Paper() {
             {/* D2: her lead piece moved here from column three, which is
                 now the thread and nothing else. */}
             <MorningBrief />
-            <div className="eyebrow mb-3">Triage</div>
             <Proof of={[tasksP, projectsP]} line="Triage isn't loading">
               {([tasks, projects]) => (
                 <TriageSeam
@@ -407,8 +412,22 @@ export function Paper() {
       )}
 
       {/* ================= THE FOCUS LAYER ================= */}
+      {/* E1/E2 — GLASS, not a scrim. Same transparency, 50% blur behind it:
+          the blur is what separates the layers, the translucency is what
+          keeps Triage a lens over the day rather than a different app.
+          Warm Glass is named for this — depth by blur, never by outline.
+          No border, no ring, no shadow.
+          E3 — the backdrop is the dismiss region. */}
       {focus && (
-        <div className="fixed inset-0 z-40 flex flex-col overflow-hidden bg-[var(--t-bg)]/60 pt-[env(safe-area-inset-top)]">
+        <div
+          onMouseDown={(e) => {
+            // DISMISSING IS NEVER DECIDING. Only a press that both
+            // starts AND ends on the backdrop itself leaves — a stray
+            // click inside any decision region is not a dismissal, and
+            // where the two could overlap the decision wins.
+            if (e.target === e.currentTarget) setRoom('read')
+          }}
+          className="fixed inset-0 z-40 flex flex-col overflow-hidden bg-[var(--t-bg)]/60 backdrop-blur-[50px] pt-[env(safe-area-inset-top)]">
           <div className="flex-none px-3 pt-2.5 pb-1 md:px-8 md:pt-5">
             <button
               onClick={() => setRoom('read')}
@@ -477,19 +496,20 @@ function TriageSeam({
   projects: Project[]
   onOpen: () => void
 }) {
-  if (stack.length === 0) {
-    return (
-      <>
-        <div className="eyebrow mt-3 text-[0.6rem] text-dim">Triage clear</div>
-        <p className="mt-3 font-serif text-[18px] leading-[1.5] text-muted italic">
-          Clear. Every loop has a verdict. Go live it.
-        </p>
-      </>
-    )
-  }
+  // E4 — HIDE ON PROVEN EMPTY ONLY, and this function is the only place
+  // that can be trusted to do it: it renders solely inside the Proof gate,
+  // so reaching here means the read SUCCEEDED. An empty stack here is a
+  // proven-empty stack. A failed read never gets this far — the gate shows
+  // "Triage isn't loading" instead, which is why hiding and failing can
+  // never look the same. Hiding on an unproven empty would show Chris a
+  // clean page and tell him he has nothing to decide: the worst single
+  // failure this app can produce.
+  if (stack.length === 0) return null
   const world = projects.find((p) => p.id === stack[0].task.project_id)
   return (
     <>
+      {/* the section names itself only when it has something to say */}
+      <div className="eyebrow mb-3">Triage</div>
       <div className="eyebrow mt-3 text-[0.6rem] text-accent-ink">
         {stack.length} loop{stack.length === 1 ? '' : 's'} need
         {stack.length === 1 ? 's' : ''} verdicts
