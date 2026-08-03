@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   DISTILLATE_CHAR_MAX,
   DISTILLATE_WORD_MAX,
+  DISTILL_ADDENDUM,
   FLOOR_MIN_SOURCE_WORDS,
   FLOOR_RATIO,
   deterministicExtract,
@@ -272,5 +273,40 @@ describe('the landed outcome', () => {
       outcome: 'versioned',
       detail: null,
     })
+  })
+})
+
+/**
+ * X1 B2 — "TODAY, IN YOUR WORDS" IS A CLAIM, SO IT GETS A GUARD.
+ *
+ * The epigraph on the home page is labelled with his ownership: "today, in
+ * your words". The prompt already demands it — "his phrasing, trimmed,
+ * never yours... never invent a plan he didn't write" — but a PROMPT IS
+ * NOT A GUARANTEE. The distillate beside it has phrase-level provenance
+ * enforced by test since R2; this field, whose label literally claims his
+ * words, had nothing.
+ *
+ * Same family as A HAND MAY NOT NAME WHERE A THING LANDED: a sentence
+ * asserting a property nothing checks. These assert the property.
+ */
+describe('today, in your words — the claim the epigraph makes', () => {
+  it('the prompt still demands his phrasing and forbids invention', () => {
+    // if this instruction is ever softened, the label on the home page
+    // becomes a lie and this test is the thing that notices
+    expect(DISTILL_ADDENDUM).toMatch(/his phrasing, trimmed, never yours/)
+    expect(DISTILL_ADDENDUM).toMatch(/never invent a plan he didn't write/)
+  })
+
+  it('every today-word traces back to the page it came from', () => {
+    // the fixture page's own goals, as the extractor is instructed to
+    // return them — each must be his words, not new sentences
+    for (const w of ['Test HXD in internal testing environment', 'Get home by 5:30pm to play with the kids']) {
+      expect(tracesTo(w, PAGE)).toEqual([])
+    }
+  })
+
+  it('a paraphrase would FAIL this guard — the test has teeth', () => {
+    // what an abstractive model would produce instead of his line
+    expect(tracesTo('Ship the mobile build and prioritise family time', PAGE).length).toBeGreaterThan(0)
   })
 })

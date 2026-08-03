@@ -202,7 +202,7 @@ export function deterministicExtract(raw: string): string {
   return wordCount(structural) > wordCount(legacy) ? structural : legacy
 }
 
-const DISTILL_ADDENDUM = `A piece of material just arrived through the door — a transcript, a page,
+export const DISTILL_ADDENDUM = `A piece of material just arrived through the door — a transcript, a page,
 a braindump. Your jobs, in one pass:
 
 1. ROUTE it: which of Chris's worlds does this belong to? Best guess by
