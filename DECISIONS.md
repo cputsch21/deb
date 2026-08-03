@@ -40,6 +40,13 @@ drop. `outcome: 'filed'` was a cover **50% of the time, not 100%**.
 Logged with the same weight as the July 30 miss: **a practice that records
 only its hits is a highlight reel.** One miss, one hit, both with numbers.
 
+**THE LEDGER IS WORKING, and the first evidence is a rejection.** The
+ledger stands at **12 rows**; the twelfth is a `dropped_sender` from
+email — the allowlist turned something away and logged it, and **no entry
+was created**. That is all three chute defence layers doing exactly what
+the July 28 ruling built them for, and it is visible to Chris rather than
+inferred. The first thing the drop ledger proved was not a bug.
+
 **THE GHOSTING BUG IS NOT A DROP — it is Deb's words.** Diagnosed in F5
 and NOT yet fixed (a ruling is owed). `createTask` inserts with no
 `anchored_on`, which by the model grammar means UNDECIDED: `dealStack`
