@@ -658,7 +658,7 @@ function DelayChooser({
   )
 }
 
-function DelegateChooser({
+export function DelegateChooser({
   task,
   today,
   onCommit,

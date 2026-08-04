@@ -7,6 +7,73 @@
 
 ---
 
+## Aug 4 2026 — B1: THE BOARD
+
+Five columns — Delay · Delegate · Do · Done · Deleted — as an **in-page
+mode, not a fifth floating surface.** It opens leftward over The Record,
+exactly like Triage opens over the page. The July 29 four-surface ruling
+is untouched and this is written down so it is not relitigated.
+
+**`bucketOf` is the single source of where a task is** (`src/lib/bucket.ts`).
+It IMPORTS `landsOnBoard` from `api/_lib/anchor.ts` rather than
+re-deriving it — anchor.ts exists precisely so a second hand cannot
+invent a second answer. Precedence, first match wins: deleted → done →
+delegated → anchored → delay. `bucketLabel` has no `default`, so a sixth
+bucket fails to compile.
+
+**`patchFor` returns the complete row state, never a partial.** Because
+the precedence chain is ordered, moving a card DOWN it requires clearing
+every marker above the destination. Dragging a delegated task to Do
+while writing only `anchored_on` leaves `delegated_to` set, delegate
+still outranks do, and the card silently snaps back. No drag handler
+assembles a patch by hand. Twenty round-trip cases assert at the seam —
+apply the patch to a real row, then ask `bucketOf` where it actually
+went. Verified they bite: making `patchFor('do')` partial fails four.
+
+**`position` is `double precision`, not integer.** A drag inserts at
+`(prev + next) / 2` — one write. Integers have no value between 3 and 4,
+so every drag would renumber the whole column: N writes for one gesture,
+each a chance to half-fail. **The scar-in-waiting:** float64 exhausts
+after roughly 50 consecutive inserts into the identical gap; the fix
+then is a renormalisation pass over the column, NOT a migration to
+integers. Recorded now so nobody rediscovers it in production.
+
+**`delegated_to` is a column on `tasks`, not a table** — same reasoning
+as `notes` (Aug 3). The table's RLS (select · insert · update, no
+delete) is inherited wholesale; a separate table means restating all of
+it, and the restatement is where divergence gets in.
+
+**A column is untouched or claimed, never half.** Untouched = every
+position null = Deb's ranking. The first drag into a column assigns
+positions to every visible card at once, **in one `upsert`, not a loop
+of updates** — a loop can half-succeed, and a half-claimed column is
+exactly the illegal state; it would fail INTO it.
+
+### PHASE B: there is no RLS trap, and the trap was one layer up
+The tasks update policy is `using (user_id = auth.uid()) with check
+(user_id = auth.uid())` (`supabase/2026-07-22_m1_spine.sql:105-107`).
+It says **nothing** about `deleted_at`, so a soft-deleted row stays
+visible to the statement that would undelete it. Deleted is genuinely
+reversible and is **not red** — RED MARKS A DOOR THAT CANNOT BE WALKED
+BACK THROUGH, and this one can be dragged straight out.
+
+But `fetchTasks` filters `.is('deleted_at', null)`, so deleted rows never
+reached the client at all: the Deleted column would have rendered
+provably empty while holding real rows. Relaxing that filter was the
+tempting fix and the wrong one — the Line, Triage and every count assume
+deleted rows are absent, and one forgotten re-filter is a deleted task
+back on the board. They got their own door (`useDeletedTasks`), and only
+the board opens it.
+
+### Held open, not decided
+Five columns inside two columns' width makes cards **narrower** than a To
+Do row (~140px at desktop), which is the opposite of the "easier
+reading" the ticket asked for. This is geometry, not a bug: five
+side-by-side columns cannot each be wider than one of three. Shipped as
+specified; the one-line fix if Chris wants it is giving the board the
+full grid width and folding Deb away with The Record.
+
+
 ## Current state
 
 Current state is the top of this log.

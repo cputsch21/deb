@@ -11,12 +11,54 @@ async function fetchTasks(): Promise<Task[]> {
   const { data, error } = await supabase
     .from('tasks')
     .select(
-      'id, project_id, goal_id, recurring_id, title, notes, done_at, touched_at, anchored_on, delegated_to, chase_on, delegated_on, source_entry_id, source_excerpt, materialized_on, created_at, deleted_at',
+      TASK_COLS,
     )
     .is('deleted_at', null)
     .order('created_at')
   if (error) throw error
   return data
+}
+
+const TASK_COLS =
+  'id, project_id, goal_id, recurring_id, title, notes, done_at, touched_at, anchored_on, delegated_to, chase_on, delegated_on, source_entry_id, source_excerpt, materialized_on, created_at, deleted_at, position'
+
+/**
+ * THE BOARD'S DELETED COLUMN — a SECOND query, deliberately not a
+ * widening of the first (B1 Phase B, the trap one layer above RLS).
+ *
+ * The database is happy to undelete: the tasks update policy is
+ * `using (user_id = auth.uid())` and says nothing about deleted_at, so
+ * a soft-deleted row stays visible to the statement that would bring it
+ * back. But `fetchTasks` filters `.is('deleted_at', null)`, so those
+ * rows never reach the client at all — the Deleted column would have
+ * rendered permanently, provably empty while holding real rows, and
+ * "drag it back out" would have been a promise with nothing to grab.
+ *
+ * Relaxing that filter was the tempting fix and the wrong one: every
+ * other reader of `useTasks` — the Line, Triage, the counts — assumes
+ * deleted rows are absent, and each would have had to re-filter. One
+ * forgotten re-filter is a deleted task reappearing on the board. So
+ * the deleted rows get their own door, and only the board opens it.
+ */
+export const deletedTaskKeys = { all: ['tasks', 'deleted'] as const }
+
+export function useDeletedTasks(enabled: boolean): Proven<Task[]> {
+  return proven(
+    useQuery({
+      queryKey: deletedTaskKeys.all,
+      enabled,
+      queryFn: async (): Promise<Task[]> => {
+        const { data, error } = await supabase
+          .from('tasks')
+          .select(TASK_COLS)
+          .not('deleted_at', 'is', null)
+          .order('deleted_at', { ascending: false })
+          .limit(100)
+        if (error) throw error
+        return data
+      },
+    }),
+  )
 }
 
 /**
@@ -31,6 +73,11 @@ export function useTasks(): Proven<Task[]> {
 }
 
 const nowISO = () => new Date().toISOString()
+
+/** Replace the row if the cache already holds it, append if not — so a
+ *  card arriving in a cache it had left does not duplicate. */
+const upsertRow = (old: Task[], row: Task): Task[] =>
+  old.some((t) => t.id === row.id) ? old.map((t) => (t.id === row.id ? row : t)) : [...old, row]
 
 export function useTaskMutations() {
   const qc = useQueryClient()
@@ -63,6 +110,7 @@ export function useTaskMutations() {
       materialized_on: null,
       created_at: nowISO(),
       deleted_at: null,
+      position: null, // untouched column — Deb's ranking still holds
     }
     if (!row.title) return null
     void optimisticWrite(qc, {
@@ -99,6 +147,12 @@ export function useTaskMutations() {
         | 'chase_on'
         | 'delegated_on'
         | 'notes'
+        // B1: the board writes both. `deleted_at` is here because the
+        // Deleted column is a two-way door — soft delete and its
+        // reversal are the same statement in opposite directions, and
+        // `remove()` only ever goes one way.
+        | 'deleted_at'
+        | 'position'
       >
     >,
   ) => {
@@ -171,5 +225,74 @@ export function useTaskMutations() {
     if (announce && row) transient.undo(`"${row.title}" deleted`, () => restore(row))
   }
 
-  return { create, update, setDone, remove, restore }
+  /**
+   * A BOARD DROP. One row, one write, and it may cross the live/deleted
+   * boundary in either direction — so it patches BOTH caches rather
+   * than the live one only. `update()` cannot do this: it patches
+   * `taskKeys.all`, and a card dragged into Deleted would vanish from
+   * the live cache and never appear in the deleted one until a refetch.
+   *
+   * The patch is never assembled here. It arrives from `patchFor()`,
+   * whole. See src/lib/bucket.ts for why a partial is the bug.
+   */
+  const move = (task: Task, patch: Partial<Task>) => {
+    const next = { ...task, ...patch, touched_at: nowISO() }
+    const nowDeleted = next.deleted_at !== null
+    void optimisticWrite(qc, {
+      keys: [taskKeys.all, deletedTaskKeys.all],
+      patch: () => {
+        patchAll((old) =>
+          nowDeleted ? old.filter((t) => t.id !== task.id) : upsertRow(old, next),
+        )
+        qc.setQueryData<Task[]>(deletedTaskKeys.all, (old = []) =>
+          nowDeleted ? upsertRow(old, next) : old.filter((t) => t.id !== task.id),
+        )
+      },
+      persist: async () => {
+        const { data, error } = await supabase
+          .from('tasks')
+          .update({ ...patch, touched_at: nowISO() })
+          .eq('id', task.id)
+          .select('id')
+        assertRowChanged(data, error, `move task ${task.id}`)
+      },
+      onFail: "That move didn't save — put back.",
+    })
+  }
+
+  /**
+   * A COLUMN CLAIMS ITS ORDER — every visible card in it, in their
+   * current order, in ONE statement (B1 Phase D).
+   *
+   * THIS IS THE ONLY PLACE IN THE BOARD WHERE ONE GESTURE WRITES MANY
+   * ROWS, and how it is bounded matters: it is a single `upsert`, not a
+   * loop of `update`s. A loop of N round trips can half-succeed, and a
+   * half-claimed column is exactly the half-Deb half-hand state that
+   * Phase D exists to forbid — it would fail INTO the illegal state.
+   * One statement either lands or does not.
+   *
+   * It is bounded a second way: it only ever writes the cards the
+   * column is showing (one page, ten), never the whole table.
+   */
+  const claimOrder = (rows: { id: string; position: number }[]) => {
+    if (rows.length === 0) return
+    const byId = new Map(rows.map((r) => [r.id, r.position]))
+    void optimisticWrite(qc, {
+      keys: [taskKeys.all],
+      patch: () =>
+        patchAll((old) =>
+          old.map((t) => (byId.has(t.id) ? { ...t, position: byId.get(t.id)! } : t)),
+        ),
+      persist: async () => {
+        const { data, error } = await supabase
+          .from('tasks')
+          .upsert(rows, { onConflict: 'id' })
+          .select('id')
+        assertRowChanged(data, error, `claim order (${rows.length} rows)`)
+      },
+      onFail: "That order didn't save — put back.",
+    })
+  }
+
+  return { create, update, setDone, remove, restore, move, claimOrder }
 }

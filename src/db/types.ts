@@ -152,6 +152,11 @@ export type Task = {
   materialized_on: string | null
   created_at: string
   deleted_at: string | null
+  /** B1: the hand-order within a board column. NULL means the column is
+   *  untouched and still reads in Deb's ranking. Fractional, so a drag
+   *  is one write instead of renumbering the column — see
+   *  supabase/2026-08-04_board.sql for the float64 limit. */
+  position: number | null
 }
 
 /** One arrival at the filing engine (the Arrivals ledger, July 28) —

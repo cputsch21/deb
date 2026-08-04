@@ -23,6 +23,7 @@ import { RecordColumn } from './RecordColumn'
 import { TodoList } from './TodoList'
 import { MorningBrief } from '../rooms/MorningBrief'
 import { TriageFocus } from './TriageFocus'
+import { Board } from './Board'
 import { TaskModal } from './TaskModal'
 import { useOpenTask } from '../../lib/openTask'
 import { Review } from '../rooms/Review'
@@ -75,6 +76,9 @@ export function Paper() {
   // page in one scroll, three columns and the worlds band. On a phone the
   // same four regions become four destinations behind the pill nav.
   const [dest, setDest] = useState<Dest>('home')
+  // B1: the board is an IN-PAGE MODE, like Triage — not a fifth floating
+  // surface. It opens leftward over The Record and lives in this grid.
+  const [boardOpen, setBoardOpen] = useState(false)
   // PHASE F: the task modal shares the focus layer, so it inherits the
   // glass backdrop, the click-outside dismissal and the Esc cascade.
   const openTaskId = useOpenTask((st) => st.taskId)
@@ -108,11 +112,15 @@ export function Paper() {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return
       closeTask()
+      // B1: the board joins the SAME cascade rather than installing a
+      // second Esc listener — it closes last, after any card modal
+      // opened from it, so one press never collapses both.
+      if (openTaskId === null) setBoardOpen(false)
       if (room === 'reflect' || room === 'review') setRoom('read')
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [room, setRoom, closeTask])
+  }, [room, setRoom, closeTask, openTaskId])
 
   // Unproven tasks derive NOTHING (the derived-value law): no stack, no
   // line, no glances. Every consumer below renders absence, never a zero.
@@ -299,15 +307,29 @@ export function Paper() {
             flex-none at whatever height it renders, and this takes the
             rest. A world name that wraps now shortens the columns
             instead of pushing them past the fold. */}
-        <div className="mt-6 grid grid-cols-1 items-start md:min-h-0 md:flex-1 md:grid-cols-[1.35fr_1fr_1.04fr]">
+        <div
+          // CLICK OUTSIDE CLOSES THE BOARD — on the page behind it. The
+          // board itself stops the event, so a drop that lands on a
+          // column can never be read as clicking away. Dismissing is
+          // never the same gesture as moving a card.
+          onMouseDown={() => boardOpen && setBoardOpen(false)}
+          // B1: the board takes the Record's width AND the tasks column's,
+          // which is what "opens leftward and pushes The Record off
+          // screen" means. Deb keeps her column. The card width falls out
+          // of this — no pixel value is typed.
+          className={`mt-6 grid grid-cols-1 items-start md:min-h-0 md:flex-1 ${
+            boardOpen ? 'md:grid-cols-[2.35fr_1.04fr]' : 'md:grid-cols-[1.35fr_1fr_1.04fr]'
+          }`}
+        >
+          {boardOpen && <Board lens={lens} onClose={() => setBoardOpen(false)} />}
           {/* LEFT — THE RECORD (P2): taken down · dealings · earlier;
               finishes render here only on past pages (July 29 re-ruling).
               Mobile stacks the paper in the target's order: deb first,
               the lifecycle second, the record third. */}
           <section
             className={`order-3 min-w-0 md:order-none md:block md:pr-11 md:h-full md:overflow-y-auto momentum ${
-              dest === 'record' ? 'block' : 'hidden'
-            }`}
+              dest === 'record' && !boardOpen ? 'block' : 'hidden'
+            } ${boardOpen ? 'md:hidden' : ''}`}
           >
             <div className="mb-3 flex items-center justify-between">
               <span className="eyebrow">The Record</span>
@@ -331,9 +353,25 @@ export function Paper() {
           {/* CENTER — the TRIAGE seam (the stack lives behind it) */}
           <section
             className={`order-2 mt-8 min-w-0 border-hair md:order-none md:mt-0 md:block md:border-l md:px-10 md:h-full md:overflow-y-auto momentum ${
-              dest === 'tasks' ? 'block' : 'hidden'
-            }`}
+              dest === 'tasks' && !boardOpen ? 'block' : 'hidden'
+            } ${boardOpen ? 'md:hidden' : ''}`}
           >
+            {/* THE BOARD'S DOOR (B1). Marker A vocabulary and nothing
+                new: three tonal wells in a row — the same fill the cards
+                sit in — beside a mono eyebrow word. No icon set was
+                introduced to open a mode. */}
+            <button
+              onClick={() => setBoardOpen(true)}
+              className="eyebrow -mt-2 mb-1 flex min-h-11 items-center gap-1.5 text-[0.58rem] text-dim transition-colors hover:text-ink"
+            >
+              <span className="flex items-end gap-[2px]" aria-hidden>
+                <span className="h-2 w-[3px] rounded-[1px] bg-fill2" />
+                <span className="h-3 w-[3px] rounded-[1px] bg-fill2" />
+                <span className="h-[7px] w-[3px] rounded-[1px] bg-fill2" />
+              </span>
+              board
+            </button>
+
             {/* D2: her lead piece moved here from column three, which is
                 now the thread and nothing else. */}
             <MorningBrief />

@@ -65,6 +65,7 @@ const task = (over: Partial<Task>): Task => ({
   materialized_on: null,
   created_at: '2026-07-20T10:00:00.000Z',
   deleted_at: null,
+  position: null,
   ...over,
 })
 
