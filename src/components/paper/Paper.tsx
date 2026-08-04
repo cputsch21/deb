@@ -373,7 +373,15 @@ export function Paper() {
             </div>
             {/* D1 + D2: column three is Deb's chat and nothing else. The
                 brief — her lead piece — moved to column two. */}
-            <div className="min-h-0 flex-1">
+            {/* THE HEIGHT CHAIN, and it must be unbroken end to end:
+                column (h-full, flex-col) -> THIS (flex-1 AND display:flex)
+                -> Reflect root (flex-1) -> its thread (flex-1 overflow-y-auto)
+                -> its composer (flex-none, pinned).
+                This div was a plain BLOCK, so Reflect's flex-1 meant
+                nothing, its height went to auto, the thread never got a
+                bound to scroll inside, and the column's overflow-hidden
+                simply clipped the conversation. One missing `flex`. */}
+            <div className="flex min-h-0 flex-1 flex-col">
               <Reflect lens={lens} />
             </div>
           </section>
