@@ -4,6 +4,7 @@ import { useProjects } from '../../db/queries/projects'
 import { useOpenTask } from '../../lib/openTask'
 import { transient } from '../../lib/undo'
 import { todayKey } from '../../lib/line'
+import { BOARD_CARD_WIDTH } from '../../lib/pageGrid'
 import {
   BUCKETS,
   POSITION_STEP,
@@ -149,12 +150,21 @@ export function Board({ lens, onClose }: { lens: string | null; onClose: () => v
         </button>
       </div>
 
-      {/* FIVE EQUAL COLUMNS OF THE SPACE THE BOARD WAS GIVEN. The card
-          width is `1fr` of this grid and the grid spans the Record's
-          column as well as the tasks column — so cards are wider than a
-          To Do row by construction. No pixel value is typed anywhere;
-          X2 killed the last magic number and this does not add one. */}
-      <div className="grid min-h-0 flex-1 grid-cols-2 gap-x-3 gap-y-6 md:grid-cols-5">
+      {/* THE PANE SCROLLS SIDEWAYS, AND THAT IS WHAT BUYS THE WIDTH.
+          Five columns sharing the board's width made cards NARROWER than
+          a To Do row — five side-by-side columns cannot each be wider
+          than one of three. Letting the pane scroll removes the
+          constraint entirely: each column is now as wide as the ratio
+          says it should be, and the fifth simply lives off to the right.
+
+          The width itself is DERIVED (see src/lib/pageGrid.ts) — 1.25× a
+          closed-board To Do row, computed from the grid's own column
+          ratios. No pixel value is typed here; X2 killed the last magic
+          number in this app and this does not put one back. */}
+      <div
+        className="momentum grid min-h-0 flex-1 grid-flow-col grid-rows-1 gap-x-3 overflow-x-auto overflow-y-hidden pb-1"
+        style={{ gridAutoColumns: BOARD_CARD_WIDTH }}
+      >
         {BUCKETS.map((b) => (
           <Column
             key={b}

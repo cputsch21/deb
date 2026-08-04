@@ -65,13 +65,38 @@ deleted rows are absent, and one forgotten re-filter is a deleted task
 back on the board. They got their own door (`useDeletedTasks`), and only
 the board opens it.
 
-### Held open, not decided
-Five columns inside two columns' width makes cards **narrower** than a To
-Do row (~140px at desktop), which is the opposite of the "easier
-reading" the ticket asked for. This is geometry, not a bug: five
-side-by-side columns cannot each be wider than one of three. Shipped as
-specified; the one-line fix if Chris wants it is giving the board the
-full grid width and folding Deb away with The Record.
+### The pane scrolls sideways, and that is what buys the width
+Five columns sharing the board's width made cards **narrower** than a To
+Do row (~140px) — the opposite of the easier reading that was asked for,
+and not a bug: five side-by-side columns cannot each be wider than one of
+three. Ruled Aug 4: **the board pane scrolls horizontally.** That removes
+the constraint rather than trading against it — each column is now as
+wide as the ratio says, and the fifth lives off to the right.
+
+Cards are **1.25× a closed-board To Do row**, and that number is
+DERIVED, not measured once and typed (`src/lib/pageGrid.ts`). The obvious
+move — measure the row, multiply, hardcode — is right on the day it is
+written and silently wrong the moment a column ratio changes. The ratio
+is the source; the width is computed from it. Because the algebra
+cancels the third column, the 1.25× relationship holds even though the
+tasks column it is measured against is off screen while the board is
+open.
+
+Tailwind classes must be literal strings, so the grid template cannot be
+generated from those constants — two sources for one fact, which is the
+exact setup `anchor.ts` and `bucket.ts` exist to prevent. So the seam is
+asserted instead: `pageGrid.test.ts` reads Paper.tsx and fails the gate
+if a column ratio changes in one place and not the other. It is the
+closest thing to construction available when one side has to be a string
+the bundler sees at compile time.
+
+Measured in the browser's own layout engine rather than reasoned about:
+at a 1400px grid the To Do row is 333px and a board card is 416.2px —
+ratio 1.250 — with five tracks totalling 2129px inside a 971px pane and
+the last column reachable by scroll. Below ~1000px the `17rem`
+readability floor takes over from the ratio, on purpose: on a phone a To
+Do row is nearly the full screen and 1.25× of it would be wider than the
+device.
 
 
 ## Current state
