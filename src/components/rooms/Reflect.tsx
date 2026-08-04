@@ -17,7 +17,6 @@ import { RAW_MAX, type Entry, type Message, type Project } from '../../db/types'
 import { streamDeb, type DebInput } from '../../lib/deb'
 import { derive } from '../../db/proof'
 import { Proof } from '../Proof'
-import { NowStrip } from '../mobile/NowStrip'
 import { VerdictConfirm } from '../VerdictConfirm'
 import { useIsMobile } from '../../lib/useIsMobile'
 import { transient } from '../../lib/undo'
@@ -410,8 +409,6 @@ export function Reflect({ lens }: { lens: string | null }) {
           )}
         </div>
       </div>
-
-      <NowStrip lens={lens} />
 
       {/* The solemn moment, re-homed (T4 ruling 1): the app's ONE confirm,
           reserved for the permanent verdicts, now staged from conversation.
