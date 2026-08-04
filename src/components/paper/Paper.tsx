@@ -356,11 +356,11 @@ export function Paper() {
               her latest remarks beneath — a read of the thread, never new
               state; the whole column a door into CONVERSATION focus */}
           <section
-            className={`order-1 min-w-0 flex-col border-hair md:order-none md:mt-0 md:flex md:h-full md:min-h-0 md:overflow-x-hidden md:overflow-y-auto momentum md:border-l md:pl-10 ${
+            className={`order-1 min-w-0 flex-col border-hair md:order-none md:mt-0 md:flex md:h-full md:min-h-0 md:overflow-hidden md:border-l md:pl-10 ${
               dest === 'home' ? 'flex' : 'hidden'
             }`}
           >
-            <div className="mb-3 flex items-center justify-between">
+            <div className="mb-3 flex flex-none items-center justify-between">
               <span className="eyebrow">Deb</span>
               {/* D1: the thread is LIVE in the column; the pop-out is for
                   when he wants it larger, not the only way to talk. */}
