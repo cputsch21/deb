@@ -152,12 +152,12 @@ export function Paper() {
     <div className="relative h-full overflow-y-auto">
       {/* ================= THE PAGE ================= */}
       <div
-        className={`mx-auto max-w-[1420px] px-5 pt-[max(1.5rem,env(safe-area-inset-top))] pb-24 transition-[opacity,transform] duration-200 md:px-14 md:pt-9 md:pb-18 ${
+        className={`mx-auto max-w-[1420px] px-5 pt-[max(1.5rem,env(safe-area-inset-top))] pb-24 transition-[opacity,transform] duration-200 md:flex md:h-[100dvh] md:flex-col md:overflow-hidden md:px-14 md:pt-9 md:pb-0 ${
           focus ? 'pointer-events-none scale-[0.985] opacity-40 select-none' : ''
         }`}
       >
         {/* ---------- masthead ---------- */}
-        <header>
+        <header className="md:flex-none">
           {/* BUILD 2, MEASURED NOT GUESSED. One row at 375px needs 537px
               (eyebrow 229 + nav 296 + gap) against 335 available: the gap
               fell to 0 and the eyebrow was squeezed 229 → 42px. So the
@@ -293,13 +293,19 @@ export function Paper() {
         </header>
 
         {/* ---------- the sheet: record · triage · deb ---------- */}
-        <div className="mt-6 grid grid-cols-1 items-start md:grid-cols-[1.35fr_1fr_1.04fr]">
+        {/* X2: the columns are bounded by what the HEADER ACTUALLY LEAVES,
+            not by a constant. The page is a border-box flex column of
+            exactly 100dvh (its own top padding included), the header is
+            flex-none at whatever height it renders, and this takes the
+            rest. A world name that wraps now shortens the columns
+            instead of pushing them past the fold. */}
+        <div className="mt-6 grid grid-cols-1 items-start md:min-h-0 md:flex-1 md:grid-cols-[1.35fr_1fr_1.04fr]">
           {/* LEFT — THE RECORD (P2): taken down · dealings · earlier;
               finishes render here only on past pages (July 29 re-ruling).
               Mobile stacks the paper in the target's order: deb first,
               the lifecycle second, the record third. */}
           <section
-            className={`order-3 min-w-0 md:order-none md:block md:pr-11 md:max-h-[calc(100vh-15rem)] md:overflow-y-auto momentum ${
+            className={`order-3 min-w-0 md:order-none md:block md:pr-11 md:h-full md:overflow-y-auto momentum ${
               dest === 'record' ? 'block' : 'hidden'
             }`}
           >
@@ -324,7 +330,7 @@ export function Paper() {
 
           {/* CENTER — the TRIAGE seam (the stack lives behind it) */}
           <section
-            className={`order-2 mt-8 min-w-0 border-hair md:order-none md:mt-0 md:block md:border-l md:px-10 md:max-h-[calc(100vh-15rem)] md:overflow-y-auto momentum ${
+            className={`order-2 mt-8 min-w-0 border-hair md:order-none md:mt-0 md:block md:border-l md:px-10 md:h-full md:overflow-y-auto momentum ${
               dest === 'tasks' ? 'block' : 'hidden'
             }`}
           >
@@ -350,7 +356,7 @@ export function Paper() {
               her latest remarks beneath — a read of the thread, never new
               state; the whole column a door into CONVERSATION focus */}
           <section
-            className={`order-1 min-w-0 flex-col border-hair md:order-none md:mt-0 md:flex md:min-h-full md:border-l md:pl-10 ${
+            className={`order-1 min-w-0 flex-col border-hair md:order-none md:mt-0 md:flex md:h-full md:min-h-0 md:overflow-y-auto momentum md:border-l md:pl-10 ${
               dest === 'home' ? 'flex' : 'hidden'
             }`}
           >
@@ -373,6 +379,18 @@ export function Paper() {
           </section>
         </div>
 
+      </div>
+
+      {/* ---------- BELOW THE FOLD ----------
+          Worlds and the colophon live OUTSIDE the 100dvh page, because
+          that container is now overflow-hidden: bounded columns are the
+          point, and anything left inside would be clipped rather than
+          reachable. The outer scroller reaches these. */}
+      <div
+        className={`mx-auto max-w-[1420px] px-5 pb-24 transition-[opacity,transform] duration-200 md:px-14 md:pb-18 ${
+          focus ? 'pointer-events-none scale-[0.985] opacity-40 select-none' : ''
+        }`}
+      >
         {/* ---------- THE WORLDS, below the fold ---------- */}
         <section className={`mt-16 md:block ${dest === 'worlds' ? 'block' : 'hidden'}`}>
           <hr className="mb-5 hidden border-0 border-t border-hair md:block" />

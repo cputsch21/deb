@@ -50,4 +50,9 @@ jobs:
       # `pnpm test` is tsc -b + vitest; `pnpm lint` is oxlint, which carries
       # the api/_lib/anchor.ts import ban. The rule was verified to fire and
       # exit 1 — and then ran nowhere, which made it a decoration. Wired.
-      - run: pnpm install --frozen-lockfile && pnpm test && pnpm lint
+      # A CHECK THAT CANNOT FAIL A PUSH IS DECORATION. `pnpm build` is the
+      # BUNDLER, not just the typecheck — without it main can carry a
+      # broken bundle and we learn from a failed Vercel deploy, after the
+      # fact. tsc -b is incremental, so the second run of it is ~free and
+      # the real cost is vite alone (~4s locally).
+      - run: pnpm install --frozen-lockfile && pnpm test && pnpm lint && pnpm build

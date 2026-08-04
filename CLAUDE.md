@@ -72,15 +72,30 @@ instead be made impossible — that is what `Proven<T>` does to empty
 states, what `proof.compile-test.tsx` does to the type itself, and what
 the extractor's never-shorter guard does to a corpus diff.
 
+## A GREEN BUILD IS NOT PROOF THAT AN EDIT LANDED
+A replacement that matches nothing is a no-op, and **a no-op leaves the
+build exactly as green as a success.** Verify the CHANGE, not the survival
+of the thing you changed. Where a scripted edit can silently match
+nothing, either use a tool that fails on no-match, or assert the new
+content is present before committing.
+
+Third instance of one pattern in nine days, all three checked downstream
+of the failure: the `detail` spread type-checked while being discarded, a
+test passed while asserting nothing, a replacement no-opped under a green
+build.
+
+**These four are one law wearing four coats: prove it by construction ·
+assert it at the seam · wire it to the gate · verify the edit, not the
+build.**
+
 ## A CHECK THAT CANNOT FAIL A PUSH IS DECORATION
 A guard is not the rule it expresses. **It is the rule plus the wiring
 that makes the rule bite.** An unwired guard is worse than no guard,
 because it is believed.
 
-These three are one family, and a guard needs all of them: **prove it by
-construction · assert it at the seam · wire it to the gate.**
-
-CI runs `pnpm test && pnpm lint`. Anything added to `package.json` that
+CI runs `pnpm test && pnpm lint && pnpm build` — the last one is the
+BUNDLER, not just the typecheck: without it main can carry a broken bundle
+and we learn from a failed deploy. Anything added to `package.json` that
 checks correctness goes into that chain, or it is decoration.
 
 ## A TEST THAT STOPS AT THE FUNCTION BOUNDARY CANNOT SEE A BROKEN WIRE
