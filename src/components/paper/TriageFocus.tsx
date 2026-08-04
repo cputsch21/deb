@@ -266,6 +266,7 @@ function TriageStage({
                 today={today}
                 exiting={exiting}
                 onFly={fly}
+                onFinish={finish}
                 onLit={setLit}
               />
             </div>
@@ -285,6 +286,7 @@ function TriageStage({
               today={today}
               exiting={exiting}
               onFly={fly}
+                onFinish={finish}
               onLit={setLit}
             />
           </div>
@@ -323,6 +325,7 @@ function TriageCard({
   today,
   exiting,
   onFly,
+  onFinish,
   onLit,
 }: {
   staged: { task: Task; kind: CardKind }
@@ -331,6 +334,7 @@ function TriageCard({
   today: string
   exiting: Exiting | null
   onFly: (dir: Dir) => void
+  onFinish: () => void
   onLit: (dir: Dir | null) => void
 }) {
   const { task, kind } = staged
@@ -447,8 +451,30 @@ function TriageCard({
         setDxy(null)
       }}
     >
-      <span className="eyebrow block text-[0.58rem] text-dim">
-        {provenance(task, kind, entry)}
+      <span className="flex items-center gap-2.5">
+        {/* ALREADY DONE — the visible form of what Enter has always done
+            here (July 29, flag 5). That ruling made it keyboard-only and
+            "no new visual"; P7 then gave triage a MOBILE shell, where
+            there is no keyboard and the capability was simply
+            unreachable. The affordance follows the platform.
+            Same done-circle grammar as the To Do rows, so no new
+            vocabulary is introduced. It stops propagation because the
+            card is draggable and sits on a dismiss backdrop, and A
+            DECISION REGION NEVER DOUBLES AS A DRAG OR DISMISS REGION. */}
+        <button
+          aria-label={`Already done: ${task.title}`}
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation()
+            onFinish()
+          }}
+          className="-m-2.5 grid h-11 w-11 flex-none place-items-center"
+        >
+          <span className="block h-[19px] w-[19px] rounded-full bg-fill2 transition-colors hover:bg-[var(--t-silver)]" />
+        </button>
+        <span className="eyebrow block text-[0.58rem] text-dim">
+          {provenance(task, kind, entry)}
+        </span>
       </span>
       <div className="mt-2.5 font-serif text-[21px] leading-[1.3] font-medium tracking-[-0.005em] text-ink md:text-[22px]">
         {kind === 'chase' ? `Chase ${task.delegated_to} — ${task.title}` : task.title}

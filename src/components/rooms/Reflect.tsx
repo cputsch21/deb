@@ -309,7 +309,7 @@ export function Reflect({ lens }: { lens: string | null }) {
     : new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col">
       {/* The quote is quiet for now (July 24 ruling) — it may return elsewhere.
           Its breathing room stays exactly: an invisible line box of the same
           type metrics, so the thread never shifts. */}

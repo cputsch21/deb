@@ -356,7 +356,7 @@ export function Paper() {
               her latest remarks beneath — a read of the thread, never new
               state; the whole column a door into CONVERSATION focus */}
           <section
-            className={`order-1 min-w-0 flex-col border-hair md:order-none md:mt-0 md:flex md:h-full md:min-h-0 md:overflow-y-auto momentum md:border-l md:pl-10 ${
+            className={`order-1 min-w-0 flex-col border-hair md:order-none md:mt-0 md:flex md:h-full md:min-h-0 md:overflow-x-hidden md:overflow-y-auto momentum md:border-l md:pl-10 ${
               dest === 'home' ? 'flex' : 'hidden'
             }`}
           >

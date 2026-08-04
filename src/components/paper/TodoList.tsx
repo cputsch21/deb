@@ -174,7 +174,7 @@ function TodoRow({
 
   return (
     <div
-      className="grid cursor-pointer grid-cols-[20px_1fr_auto] items-start gap-x-2.5 rounded-xl bg-fill px-3.5 py-3 transition-colors hover:bg-fill2"
+      className="grid cursor-pointer grid-cols-[20px_minmax(0,1fr)_auto] items-start gap-x-2.5 rounded-xl bg-fill px-3.5 py-3 transition-colors hover:bg-fill2"
       onClick={() => openTask(task.id)}
       onContextMenu={(e) => {
         e.preventDefault()
@@ -217,7 +217,9 @@ function TodoRow({
             className="h-2 w-2 flex-none rounded-full"
             style={{ backgroundColor: world?.color ?? 'var(--t-silver)' }}
           />
-          <span className="truncate text-[14px] leading-[1.35] font-medium text-ink">
+          {/* WRAPPED, not truncated: a task he cannot read whole is a task
+              he cannot act on. min-w-0 stays so the flex row still shrinks. */}
+          <span className="min-w-0 text-[14px] leading-[1.4] font-medium break-words text-ink">
             {task.title}
           </span>
         </div>
