@@ -137,9 +137,16 @@
   }
   @keyframes spin { to { transform: rotate(360deg); } }
   .shots { position: relative; width: 100%; max-width: 640px; margin: 0 auto; }
-  .shots svg { width: 100%; height: auto; display: block; }
+  .shots svg { position: relative; z-index: 1; width: 100%; height: auto; display: block; }
   .shot { opacity: 0; transition: opacity 480ms ease; }
   .shot.on { opacity: 1; }
+  /* real product photos slot in under the heaven overlay when present */
+  .photo {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: contain; opacity: 0; transition: opacity 480ms ease;
+    pointer-events: none;
+  }
+  .photo.on { opacity: 1; }
 
   .convert-row { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 4px; }
   .toggle { display: inline-flex; background: var(--well); border-radius: 999px; padding: 5px; position: relative; }
@@ -303,6 +310,19 @@
           </svg>
         </div>
         <div class="shots">
+          <!--
+            PHOTO SLOTS: drop real product images at
+              public/big-softie/shots/chair.png   (front view)
+              public/big-softie/shots/flat.png    (side view, 80" flat)
+              public/big-softie/shots/twin.png    (3/4 view, butterfly-open twin)
+            Dark (#1E1206-ish) or transparent background, ~1200x850.
+            Any slot that exists automatically replaces the drawn version;
+            the beam/halo/dust overlay stays on top. Missing slots keep
+            the illustration. No code changes needed.
+          -->
+          <img id="photo-0" class="photo" src="shots/chair.png" alt="The Big Softie as a recliner" />
+          <img id="photo-1" class="photo" src="shots/flat.png" alt="The Big Softie fully flat, 80 inches" />
+          <img id="photo-2" class="photo" src="shots/twin.png" alt="The Big Softie butterfly-opened into a twin bed" />
           <svg viewBox="0 0 900 640" role="img" aria-label="The Big Softie shown as a recliner, an 80-inch flat lounger, and a butterfly-opened twin bed">
             <defs>
               <!-- fabric gradients -->
@@ -807,6 +827,8 @@
 
 <script>
   const shots = [0, 1, 2].map((i) => document.getElementById('shot-' + i));
+  const photos = [0, 1, 2].map((i) => document.getElementById('photo-' + i));
+  const photoOk = [false, false, false];
   const buttons = Array.from(document.querySelectorAll('.toggle button'));
   const thumb = document.getElementById('thumb');
   const caption = document.getElementById('caption');
@@ -817,8 +839,12 @@
   ];
 
   let userTouched = false;
+  let current = 0;
   function setState(i) {
-    shots.forEach((s, j) => s.classList.toggle('on', i === j));
+    current = i;
+    // a real photo, when present, replaces the drawn form; heaven stays on top
+    shots.forEach((s, j) => s.classList.toggle('on', i === j && !photoOk[j]));
+    photos.forEach((p, j) => p.classList.toggle('on', i === j && photoOk[j]));
     buttons.forEach((b, j) => {
       b.classList.toggle('on', i === j);
       b.setAttribute('aria-pressed', String(i === j));
@@ -826,6 +852,12 @@
     thumb.style.transform = 'translateX(' + i * 100 + '%)';
     caption.innerHTML = captions[i];
   }
+  photos.forEach((img, i) => {
+    img.addEventListener('load', () => { photoOk[i] = true; setState(current); });
+    img.addEventListener('error', () => { img.style.display = 'none'; });
+    if (img.complete && img.naturalWidth > 0) { photoOk[i] = true; }
+  });
+  setState(current);
   buttons.forEach((b) => b.addEventListener('click', () => { userTouched = true; setState(+b.dataset.i); }));
 
   // one quiet tour of all three forms on load
