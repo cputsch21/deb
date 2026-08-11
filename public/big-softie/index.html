@@ -10,15 +10,16 @@
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;900&family=Fraunces:ital,opsz,wght@0,9..144,400..900;1,9..144,400..900&family=DM+Sans:ital,opsz,wght@0,9..40,300..800;1,9..40,300..800&display=swap" rel="stylesheet" />
 <style>
   :root {
-    --cream: #FAF4EA;
-    --cream-deep: #F1E8D8;
-    --well: #EDE1CE;
-    --ink: #241B10;
-    --ink-soft: #6B5B49;
-    --clay: #C2603E;
-    --clay-deep: #A84E30;
-    --clay-soft: #E8C3B0;
-    --paper: #FFFDF8;
+    --cream: #14100A;          /* page ground — near-black, warm */
+    --cream-deep: #221B12;     /* raised panel */
+    --well: #2A2118;           /* deeper well */
+    --ink: #F4EBDB;            /* type — bone */
+    --ink-soft: #B3A28A;       /* muted type */
+    --clay: #D96C43;           /* the loud orange */
+    --clay-deep: #B85431;
+    --clay-soft: rgba(217, 108, 67, 0.16);
+    --paper: #1E1811;          /* cards */
+    --bone: #F1E6D4;           /* inverted moments */
     --radius: 20px;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -36,7 +37,7 @@
   /* ---------- header ---------- */
   header {
     position: sticky; top: 0; z-index: 20;
-    background: color-mix(in srgb, var(--cream) 92%, transparent);
+    background: color-mix(in srgb, var(--cream) 88%, transparent);
     backdrop-filter: blur(10px);
   }
   .nav { display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; max-width: 1140px; margin: 0 auto; }
@@ -50,18 +51,18 @@
   .nav-links a:hover { color: var(--ink); }
   .btn {
     display: inline-block; border: none; cursor: pointer;
-    background: var(--ink); color: var(--cream);
+    background: var(--bone); color: #14100A;
     font-family: "Archivo", sans-serif; font-weight: 700; font-size: 0.95rem;
     text-transform: uppercase; letter-spacing: 0.04em;
     padding: 14px 26px; border-radius: 999px;
     text-decoration: none; transition: background 150ms ease, transform 150ms ease;
   }
-  .btn:hover { background: #3C2E1E; }
+  .btn:hover { background: #FFFDF6; }
   .btn:active { transform: scale(0.98); }
-  .btn.clay { background: var(--clay); color: #fff; }
-  .btn.clay:hover { background: var(--clay-deep); }
+  .btn.clay { background: var(--clay); color: #14100A; }
+  .btn.clay:hover { background: #E87A4F; }
   .btn.ghost { background: var(--well); color: var(--ink); }
-  .btn.ghost:hover { background: #E4D5BC; }
+  .btn.ghost:hover { background: #352A1E; }
 
   /* ---------- hero ---------- */
   .hero { padding: 48px 0 24px; }
@@ -142,10 +143,10 @@
   .convert-caption strong { color: var(--ink); }
 
   /* ---------- ticker strip ---------- */
-  .strip { margin: 56px 0; padding: 16px 0; background: var(--ink); color: var(--cream); overflow: hidden; white-space: nowrap; }
+  .strip { margin: 56px 0; padding: 16px 0; background: var(--clay); color: #14100A; overflow: hidden; white-space: nowrap; }
   .strip-inner { display: inline-block; animation: slide 32s linear infinite; }
   .strip span { font-family: "Archivo", sans-serif; font-weight: 700; font-size: 0.85rem; letter-spacing: 0.16em; margin: 0 28px; }
-  .strip span::after { content: "✦"; color: var(--clay); margin-left: 56px; }
+  .strip span::after { content: "✦"; color: rgba(20, 16, 10, 0.45); margin-left: 56px; }
   @keyframes slide { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 
   /* ---------- sections ---------- */
@@ -163,14 +164,14 @@
   .versus { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 40px; }
   .vs-card { border-radius: var(--radius); padding: 30px 30px 24px; }
   .vs-card.them { background: var(--well); }
-  .vs-card.us { background: var(--clay); color: #FFF6EE; }
+  .vs-card.us { background: var(--clay); color: #2A1206; }
   .vs-card h3 { font-family: "Archivo", sans-serif; font-weight: 900; text-transform: uppercase; letter-spacing: -0.01em; font-size: 1.15rem; margin-bottom: 16px; }
   .vs-card ul { list-style: none; }
   .vs-card li { padding: 9px 0; display: flex; gap: 12px; align-items: baseline; font-size: 1rem; }
   .vs-card.them li { color: var(--ink-soft); }
   .vs-card li::before { flex-shrink: 0; font-weight: 800; }
   .vs-card.them li::before { content: "✕"; color: #B0977A; }
-  .vs-card.us li::before { content: "✓"; color: #FFD9C4; }
+  .vs-card.us li::before { content: "✓"; color: #5C2410; }
 
   /* features */
   .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 40px; }
@@ -201,17 +202,18 @@
   .qa h3 { font-family: "Fraunces", serif; font-style: italic; font-weight: 560; font-size: 1.22rem; margin-bottom: 10px; color: var(--clay); }
   .qa p { color: var(--ink-soft); font-size: 0.98rem; }
 
-  /* CTA */
-  .cta-panel { background: var(--ink); color: var(--cream); border-radius: 32px; padding: 64px 40px; text-align: center; }
-  .cta-panel h2 { color: var(--cream); margin-left: auto; margin-right: auto; }
-  .cta-panel .section-lede { color: #C9BBA8; margin: 0 auto 34px; }
+  /* CTA — the inverted bone moment */
+  .cta-panel { background: var(--bone); color: #14100A; border-radius: 32px; padding: 64px 40px; text-align: center; }
+  .cta-panel h2 { color: #14100A; margin-left: auto; margin-right: auto; }
+  .cta-panel .kicker { color: var(--clay-deep); }
+  .cta-panel .section-lede { color: #5C4F3E; margin: 0 auto 34px; }
   .cta-form { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
   .cta-form input {
     font-family: inherit; font-size: 1rem; border: none; outline: none;
-    background: #45362A; color: var(--cream); border-radius: 999px; padding: 13px 24px; width: 300px; max-width: 100%;
+    background: #E0D2BA; color: #14100A; border-radius: 999px; padding: 13px 24px; width: 300px; max-width: 100%;
   }
-  .cta-form input::placeholder { color: #A08D75; }
-  .cta-fine { margin-top: 18px; font-size: 0.85rem; color: #A08D75; }
+  .cta-form input::placeholder { color: #8A7A62; }
+  .cta-fine { margin-top: 18px; font-size: 0.85rem; color: #8A7A62; }
 
   footer { padding: 44px 0 56px; text-align: center; color: var(--ink-soft); font-size: 0.92rem; }
   footer .wordmark { font-size: 1.05rem; display: inline-block; margin-bottom: 10px; }
@@ -286,27 +288,27 @@
             <defs>
               <!-- fabric gradients -->
               <linearGradient id="fabV" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stop-color="#DFB88F"/>
-                <stop offset="0.55" stop-color="#C6935F"/>
-                <stop offset="1" stop-color="#A97846"/>
+                <stop offset="0" stop-color="#D8C1A4"/>
+                <stop offset="0.55" stop-color="#AE9070"/>
+                <stop offset="1" stop-color="#84674A"/>
               </linearGradient>
               <linearGradient id="fabV2" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stop-color="#EBC79E"/>
-                <stop offset="1" stop-color="#C08A55"/>
+                <stop offset="0" stop-color="#E4CFB4"/>
+                <stop offset="1" stop-color="#B2946F"/>
               </linearGradient>
               <linearGradient id="armH" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0" stop-color="#B98550"/>
-                <stop offset="0.45" stop-color="#E2B98C"/>
-                <stop offset="1" stop-color="#A0703F"/>
+                <stop offset="0" stop-color="#9C7C5C"/>
+                <stop offset="0.45" stop-color="#DCC6A8"/>
+                <stop offset="1" stop-color="#84674A"/>
               </linearGradient>
               <linearGradient id="armH2" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0" stop-color="#A0703F"/>
-                <stop offset="0.55" stop-color="#E2B98C"/>
-                <stop offset="1" stop-color="#B98550"/>
+                <stop offset="0" stop-color="#84674A"/>
+                <stop offset="0.55" stop-color="#DCC6A8"/>
+                <stop offset="1" stop-color="#9C7C5C"/>
               </linearGradient>
               <linearGradient id="baseV" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stop-color="#8A6038"/>
-                <stop offset="1" stop-color="#65431F"/>
+                <stop offset="0" stop-color="#4A3826"/>
+                <stop offset="1" stop-color="#2C2013"/>
               </linearGradient>
               <linearGradient id="mattTop" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0" stop-color="#FFFEFA"/>
@@ -327,6 +329,31 @@
               </radialGradient>
               <filter id="blurS" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="7"/></filter>
               <filter id="blurM" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="14"/></filter>
+              <!-- woven fabric grain -->
+              <filter id="grain" x="0" y="0" width="100%" height="100%">
+                <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" seed="7" stitchTiles="stitch" result="n"/>
+                <feColorMatrix in="n" type="matrix" values="0 0 0 0 0.42  0 0 0 0 0.36  0 0 0 0 0.28  0 0 0 0.6 0"/>
+              </filter>
+              <radialGradient id="plushHi">
+                <stop offset="0" stop-color="#FFF3DA" stop-opacity="0.5"/>
+                <stop offset="1" stop-color="#FFF3DA" stop-opacity="0"/>
+              </radialGradient>
+              <clipPath id="clipChair">
+                <rect x="268" y="92" width="364" height="356" rx="46"/>
+                <rect x="196" y="268" width="140" height="296" rx="52"/>
+                <rect x="564" y="268" width="140" height="296" rx="52"/>
+                <rect x="318" y="352" width="264" height="180" rx="16"/>
+                <rect x="252" y="512" width="396" height="58" rx="18"/>
+              </clipPath>
+              <clipPath id="clipFlat">
+                <rect x="118" y="338" width="234" height="86" rx="32"/>
+                <rect x="348" y="338" width="252" height="86" rx="26"/>
+                <rect x="596" y="338" width="186" height="86" rx="32"/>
+                <rect x="128" y="296" width="158" height="56" rx="28"/>
+              </clipPath>
+              <clipPath id="clipTwin">
+                <path d="M150 415 L300 300 L845 300 L845 378 L690 492 L150 492 Z"/>
+              </clipPath>
             </defs>
 
             <!-- ============ HEAVEN (shared — every form gets blessed) ============ -->
@@ -364,16 +391,16 @@
               <!-- backrest -->
               <rect x="268" y="118" width="364" height="330" rx="64" fill="url(#fabV)"/>
               <!-- back channels -->
-              <path d="M382 150 V400" stroke="#8F6236" stroke-width="7" opacity="0.32" filter="url(#blurS)"/>
-              <path d="M518 150 V400" stroke="#8F6236" stroke-width="7" opacity="0.32" filter="url(#blurS)"/>
+              <path d="M382 150 V400" stroke="#6B5340" stroke-width="7" opacity="0.32" filter="url(#blurS)"/>
+              <path d="M518 150 V400" stroke="#6B5340" stroke-width="7" opacity="0.32" filter="url(#blurS)"/>
               <!-- headrest roll -->
               <rect x="288" y="92" width="324" height="92" rx="46" fill="url(#fabV2)"/>
-              <path d="M300 168 Q450 190 600 168" stroke="#8F6236" stroke-width="8" opacity="0.28" fill="none" filter="url(#blurS)"/>
+              <path d="M300 168 Q450 190 600 168" stroke="#6B5340" stroke-width="8" opacity="0.28" fill="none" filter="url(#blurS)"/>
               <path d="M312 116 Q450 100 588 116" stroke="#FFF3E2" stroke-width="4" opacity="0.55" fill="none"/>
 
               <!-- seat cushion -->
               <rect x="318" y="360" width="264" height="102" rx="30" fill="url(#fabV2)"/>
-              <ellipse cx="450" cy="372" rx="112" ry="14" fill="#F4D9B6" opacity="0.6"/>
+              <ellipse cx="450" cy="372" rx="112" ry="14" fill="#F1E1C6" opacity="0.6"/>
 
               <!-- folded footrest panels (stacked, authentic) -->
               <rect x="326" y="452" width="248" height="42" rx="14" fill="url(#fabV)"/>
@@ -385,27 +412,41 @@
               <!-- arms: fat rolled fronts -->
               <g>
                 <rect x="196" y="268" width="140" height="296" rx="52" fill="url(#armH)"/>
-                <ellipse cx="266" cy="292" rx="58" ry="20" fill="#F0CFA6" opacity="0.55"/>
-                <path d="M214 330 V520" stroke="#8F6236" stroke-width="5" opacity="0.25" filter="url(#blurS)"/>
+                <ellipse cx="266" cy="292" rx="58" ry="20" fill="#EFDCC0" opacity="0.55"/>
+                <path d="M214 330 V520" stroke="#6B5340" stroke-width="5" opacity="0.25" filter="url(#blurS)"/>
               </g>
               <g>
                 <rect x="564" y="268" width="140" height="296" rx="52" fill="url(#armH2)"/>
-                <ellipse cx="634" cy="292" rx="58" ry="20" fill="#F0CFA6" opacity="0.55"/>
-                <path d="M686 330 V520" stroke="#8F6236" stroke-width="5" opacity="0.25" filter="url(#blurS)"/>
+                <ellipse cx="634" cy="292" rx="58" ry="20" fill="#EFDCC0" opacity="0.55"/>
+                <path d="M686 330 V520" stroke="#6B5340" stroke-width="5" opacity="0.25" filter="url(#blurS)"/>
               </g>
 
               <!-- seams where arms meet seat (soft AO) -->
-              <path d="M336 370 V540" stroke="#6E4A24" stroke-width="9" opacity="0.22" filter="url(#blurS)"/>
-              <path d="M564 370 V540" stroke="#6E4A24" stroke-width="9" opacity="0.22" filter="url(#blurS)"/>
+              <path d="M336 370 V540" stroke="#4E3B28" stroke-width="9" opacity="0.22" filter="url(#blurS)"/>
+              <path d="M564 370 V540" stroke="#4E3B28" stroke-width="9" opacity="0.22" filter="url(#blurS)"/>
 
               <!-- piping highlights -->
               <path d="M330 362 Q450 348 570 362" stroke="#FFF3E2" stroke-width="3.5" opacity="0.7" fill="none"/>
 
               <!-- wooden recline handle, hugging the outer arm -->
               <g transform="rotate(-10 700 440)">
-                <rect x="692" y="368" width="16" height="88" rx="8" fill="#6E4423"/>
-                <ellipse cx="700" cy="362" rx="17" ry="14" fill="#83552B"/>
-                <ellipse cx="696" cy="357" rx="7" ry="5" fill="#9A6B3C" opacity="0.8"/>
+                <rect x="692" y="368" width="16" height="88" rx="8" fill="#3F2D1A"/>
+                <ellipse cx="700" cy="362" rx="17" ry="14" fill="#5A4028"/>
+                <ellipse cx="696" cy="357" rx="7" ry="5" fill="#7A5F42" opacity="0.8"/>
+              </g>
+
+              <!-- plush swells where a body would sink -->
+              <ellipse cx="450" cy="398" rx="118" ry="30" fill="url(#plushHi)" opacity="0.65"/>
+              <ellipse cx="450" cy="215" rx="140" ry="78" fill="url(#plushHi)" opacity="0.4"/>
+              <ellipse cx="266" cy="302" rx="52" ry="26" fill="url(#plushHi)" opacity="0.55"/>
+              <ellipse cx="634" cy="302" rx="52" ry="26" fill="url(#plushHi)" opacity="0.55"/>
+              <!-- rim light from the beam -->
+              <path d="M304 100 Q450 82 596 100" stroke="#FFE9C4" stroke-width="4" fill="none" opacity="0.65"/>
+              <path d="M206 290 Q266 264 330 290" stroke="#FFE9C4" stroke-width="3.5" fill="none" opacity="0.5"/>
+              <path d="M570 290 Q634 264 694 290" stroke="#FFE9C4" stroke-width="3.5" fill="none" opacity="0.5"/>
+              <!-- woven grain over everything -->
+              <g clip-path="url(#clipChair)">
+                <rect x="0" y="0" width="900" height="640" filter="url(#grain)" style="mix-blend-mode: soft-light" opacity="0.6"/>
               </g>
             </g>
 
@@ -421,8 +462,8 @@
 
               <!-- base -->
               <rect x="256" y="424" width="336" height="34" rx="12" fill="url(#baseV)"/>
-              <rect x="292" y="452" width="18" height="42" rx="8" fill="#5C4326"/>
-              <rect x="536" y="452" width="18" height="42" rx="8" fill="#5C4326"/>
+              <rect x="292" y="452" width="18" height="42" rx="8" fill="#3A2C1B"/>
+              <rect x="536" y="452" width="18" height="42" rx="8" fill="#3A2C1B"/>
               <circle cx="301" cy="500" r="14" fill="#3B2E20"/>
               <circle cx="545" cy="500" r="14" fill="#3B2E20"/>
               <circle cx="301" cy="500" r="5" fill="#8A7458"/>
@@ -433,16 +474,28 @@
               <rect x="348" y="338" width="252" height="86" rx="26" fill="url(#fabV2)"/>
               <rect x="596" y="338" width="186" height="86" rx="32" fill="url(#fabV)"/>
               <!-- seam AO -->
-              <path d="M352 346 V418" stroke="#6E4A24" stroke-width="8" opacity="0.28" filter="url(#blurS)"/>
-              <path d="M600 346 V418" stroke="#6E4A24" stroke-width="8" opacity="0.28" filter="url(#blurS)"/>
+              <path d="M352 346 V418" stroke="#4E3B28" stroke-width="8" opacity="0.28" filter="url(#blurS)"/>
+              <path d="M600 346 V418" stroke="#4E3B28" stroke-width="8" opacity="0.28" filter="url(#blurS)"/>
               <!-- top sheen -->
-              <ellipse cx="235" cy="352" rx="98" ry="10" fill="#F4D9B6" opacity="0.55"/>
-              <ellipse cx="474" cy="352" rx="106" ry="10" fill="#F4D9B6" opacity="0.55"/>
-              <ellipse cx="689" cy="352" rx="76" ry="10" fill="#F4D9B6" opacity="0.55"/>
+              <ellipse cx="235" cy="352" rx="98" ry="10" fill="#F1E1C6" opacity="0.55"/>
+              <ellipse cx="474" cy="352" rx="106" ry="10" fill="#F1E1C6" opacity="0.55"/>
+              <ellipse cx="689" cy="352" rx="76" ry="10" fill="#F1E1C6" opacity="0.55"/>
 
               <!-- head pillow -->
               <rect x="128" y="296" width="158" height="56" rx="28" fill="#FBF4E6"/>
               <path d="M146 326 Q207 314 268 326" stroke="#E0D2B8" stroke-width="3.5" fill="none"/>
+
+              <!-- plush swells + rim light -->
+              <ellipse cx="235" cy="380" rx="100" ry="26" fill="url(#plushHi)" opacity="0.5"/>
+              <ellipse cx="474" cy="380" rx="108" ry="26" fill="url(#plushHi)" opacity="0.55"/>
+              <ellipse cx="689" cy="380" rx="78" ry="26" fill="url(#plushHi)" opacity="0.5"/>
+              <path d="M132 340 Q235 328 348 340" stroke="#FFE9C4" stroke-width="3.5" fill="none" opacity="0.55"/>
+              <path d="M356 340 Q474 328 596 340" stroke="#FFE9C4" stroke-width="3.5" fill="none" opacity="0.55"/>
+              <path d="M604 340 Q689 330 778 340" stroke="#FFE9C4" stroke-width="3.5" fill="none" opacity="0.55"/>
+              <!-- woven grain -->
+              <g clip-path="url(#clipFlat)">
+                <rect x="0" y="0" width="900" height="640" filter="url(#grain)" style="mix-blend-mode: soft-light" opacity="0.6"/>
+              </g>
 
               <!-- dimension line -->
               <g stroke="#C9B48E" stroke-width="2.5">
@@ -459,8 +512,8 @@
               <ellipse cx="480" cy="560" rx="360" ry="30" fill="#140B03" opacity="0.55" filter="url(#blurM)"/>
 
               <!-- frame under mattress -->
-              <path d="M190 486 L660 486 L660 516 L190 516 Z" fill="#65431F"/>
-              <path d="M660 486 L810 371 L810 398 L660 516 Z" fill="#523517"/>
+              <path d="M190 486 L660 486 L660 516 L190 516 Z" fill="#2C2013"/>
+              <path d="M660 486 L810 371 L810 398 L660 516 Z" fill="#241B0F"/>
               <circle cx="222" cy="536" r="14" fill="#3B2E20"/>
               <circle cx="630" cy="536" r="14" fill="#3B2E20"/>
               <circle cx="222" cy="536" r="5" fill="#8A7458"/>
@@ -514,10 +567,18 @@
               <path d="M566 428 L646 428 L796 313 L716 313 Z" fill="url(#fabV)"/>
               <path d="M566 428 L646 428 L646 496 Q640 510 606 510 Q572 510 566 494 Z" fill="url(#baseV)" opacity="0.25"/>
               <path d="M566 428 L646 428 L646 496 Q640 510 606 510 Q572 510 566 494 Z" fill="url(#fabV)" opacity="0.92"/>
-              <path d="M596 428 L740 318" stroke="#8F6236" stroke-width="3.5" opacity="0.35" fill="none"/>
-              <path d="M622 428 L766 318" stroke="#8F6236" stroke-width="3.5" opacity="0.35" fill="none"/>
-              <path d="M590 434 V500" stroke="#8F6236" stroke-width="3.5" opacity="0.3" fill="none"/>
-              <path d="M618 434 V504" stroke="#8F6236" stroke-width="3.5" opacity="0.3" fill="none"/>
+              <path d="M596 428 L740 318" stroke="#6B5340" stroke-width="3.5" opacity="0.35" fill="none"/>
+              <path d="M622 428 L766 318" stroke="#6B5340" stroke-width="3.5" opacity="0.35" fill="none"/>
+              <path d="M590 434 V500" stroke="#6B5340" stroke-width="3.5" opacity="0.3" fill="none"/>
+              <path d="M618 434 V504" stroke="#6B5340" stroke-width="3.5" opacity="0.3" fill="none"/>
+
+              <!-- mattress swell + far-edge rim light -->
+              <ellipse cx="495" cy="372" rx="190" ry="46" fill="url(#plushHi)" opacity="0.45"/>
+              <path d="M305 313 L838 313" stroke="#FFF3DA" stroke-width="3" opacity="0.5"/>
+              <!-- woven grain over the mattress -->
+              <g clip-path="url(#clipTwin)">
+                <rect x="0" y="0" width="900" height="640" filter="url(#grain)" style="mix-blend-mode: soft-light" opacity="0.5"/>
+              </g>
 
               <!-- dimension labels -->
               <rect x="290" y="576" width="240" height="36" rx="18" fill="#F1E8D8"/>
