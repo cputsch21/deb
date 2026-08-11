@@ -5,6 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>The Big Softie — The recliner that becomes a real bed</title>
 <meta name="description" content="The Big Softie is the delivery-room recliner made by dads, for dads. A classic thick recliner that goes 80 inches fully flat, then butterfly-opens into a real twin bed with a real mattress." />
+<meta name="theme-color" content="#14100A" />
+<meta property="og:title" content="The Big Softie" />
+<meta property="og:description" content="The recliner that becomes a real damn bed. 80 inches fully flat, butterfly-opens to a twin. Made by dads, for dads." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://deb-five.vercel.app/big-softie" />
+<meta property="og:image" content="https://deb-five.vercel.app/big-softie/og.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%2314100A'/%3E%3Cellipse cx='50' cy='30' rx='26' ry='7' fill='none' stroke='%23FFD98A' stroke-width='6'/%3E%3Ctext x='50' y='82' text-anchor='middle' font-size='44'%3E🛋️%3C/text%3E%3C/svg%3E" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;900&family=Fraunces:ital,opsz,wght@0,9..144,400..900;1,9..144,400..900&family=DM+Sans:ital,opsz,wght@0,9..40,300..800;1,9..40,300..800&display=swap" rel="stylesheet" />
@@ -37,7 +47,7 @@
   /* ---------- header ---------- */
   header {
     position: sticky; top: 0; z-index: 20;
-    background: color-mix(in srgb, var(--cream) 88%, transparent);
+    background: color-mix(in srgb, var(--cream) 94%, transparent);
     backdrop-filter: blur(10px);
   }
   .nav { display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; max-width: 1140px; margin: 0 auto; }
@@ -65,7 +75,7 @@
   .btn.ghost:hover { background: #352A1E; }
 
   /* ---------- hero ---------- */
-  .hero { padding: 48px 0 24px; }
+  .hero { padding-top: 48px; padding-bottom: 24px; }
   .hero-grid { display: grid; grid-template-columns: 0.9fr 1.15fr; gap: 44px; align-items: center; }
   .eyebrow {
     display: inline-block; font-family: "Archivo", sans-serif; font-weight: 700; font-size: 0.78rem;
@@ -108,6 +118,13 @@
   @keyframes breathe { 0%, 100% { opacity: 0.7; } 50% { opacity: 1; } }
   .halo { animation: bob 5s ease-in-out infinite; }
   @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
+  .mote { animation: drift 7s ease-in-out infinite alternate; }
+  .mote.m2 { animation-duration: 9s; animation-delay: 1.2s; }
+  .mote.m3 { animation-duration: 6s; animation-delay: 2.6s; }
+  .mote.m4 { animation-duration: 8s; animation-delay: 0.7s; }
+  .mote.m5 { animation-duration: 10s; animation-delay: 3.4s; }
+  .mote.m6 { animation-duration: 7.5s; animation-delay: 1.9s; }
+  @keyframes drift { from { transform: translateY(0); } to { transform: translateY(-34px); } }
   .tw { animation: twinkle 3.4s ease-in-out infinite; }
   .tw.t2 { animation-delay: 0.6s; } .tw.t3 { animation-delay: 1.2s; }
   .tw.t4 { animation-delay: 1.8s; } .tw.t5 { animation-delay: 2.4s; }
@@ -224,6 +241,8 @@
     .features, .stats, .quotes { grid-template-columns: 1fr; }
     .versus { grid-template-columns: 1fr; }
     .nav-links a:not(.btn) { display: none; }
+    .nav .btn { padding: 10px 16px; font-size: 0.8rem; }
+    .wordmark { font-size: 1.05rem; }
     section { padding: 48px 0; }
     .toggle button { padding: 11px 14px; font-size: 0.75rem; }
     .seal { width: 88px; height: 88px; top: -12px; right: -12px; }
@@ -231,7 +250,7 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .strip-inner, .beam, .beam2, .halo, .tw, .seal { animation: none; }
+    .strip-inner, .beam, .beam2, .halo, .tw, .seal, .mote { animation: none; }
     .shot, .toggle .thumb { transition: none; }
   }
 </style>
@@ -372,6 +391,15 @@
               <g class="halo">
                 <ellipse cx="450" cy="62" rx="94" ry="17" fill="none" stroke="#FFD98A" stroke-width="12" opacity="0.5" filter="url(#blurS)"/>
                 <ellipse cx="450" cy="62" rx="94" ry="17" fill="none" stroke="#FFEFC9" stroke-width="6"/>
+              </g>
+              <!-- dust motes drifting in the beam -->
+              <g fill="#FFE9B8">
+                <circle class="mote" cx="392" cy="240" r="2.6" opacity="0.55"/>
+                <circle class="mote m2" cx="470" cy="180" r="2" opacity="0.45"/>
+                <circle class="mote m3" cx="430" cy="330" r="3" opacity="0.5"/>
+                <circle class="mote m4" cx="520" cy="290" r="2.2" opacity="0.45"/>
+                <circle class="mote m5" cx="405" cy="430" r="2.8" opacity="0.4"/>
+                <circle class="mote m6" cx="545" cy="400" r="2" opacity="0.4"/>
               </g>
               <!-- twinkles -->
               <g fill="#FFE9B8">
