@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mac Daddy — The best seat in the delivery room</title>
+<meta name="description" content="Mac Daddy makes the hospital chair-bed dads actually want to sleep in. Made by dads, for dads. Converts in one motion. Comfortable on purpose." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..900;1,9..144,400..900&family=DM+Sans:ital,opsz,wght@0,9..40,300..800;1,9..40,300..800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --cream: #FAF4EA;
+    --cream-deep: #F3EADB;
+    --well: #EDE1CE;
+    --ink: #33261A;
+    --ink-soft: #6B5B49;
+    --clay: #C2603E;
+    --clay-deep: #A84E30;
+    --clay-soft: #E8C3B0;
+    --moss: #7A7A54;
+    --paper: #FFFDF8;
+    --radius: 20px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--cream);
+    color: var(--ink);
+    font-family: "DM Sans", system-ui, sans-serif;
+    font-size: 17px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .display { font-family: "Fraunces", Georgia, serif; font-optical-sizing: auto; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+
+  /* ---------- header ---------- */
+  header {
+    position: sticky; top: 0; z-index: 20;
+    background: color-mix(in srgb, var(--cream) 88%, transparent);
+    backdrop-filter: blur(10px);
+  }
+  .nav { display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; max-width: 1120px; margin: 0 auto; }
+  .wordmark { font-family: "Fraunces", serif; font-weight: 800; font-style: italic; font-size: 1.5rem; letter-spacing: -0.02em; color: var(--ink); text-decoration: none; }
+  .wordmark span { color: var(--clay); }
+  .nav-links { display: flex; gap: 28px; align-items: center; }
+  .nav-links a { color: var(--ink-soft); text-decoration: none; font-weight: 500; font-size: 0.95rem; }
+  .nav-links a:hover { color: var(--ink); }
+  .btn {
+    display: inline-block; border: none; cursor: pointer;
+    background: var(--clay); color: #fff;
+    font-family: inherit; font-weight: 600; font-size: 1rem;
+    padding: 13px 26px; border-radius: 999px;
+    text-decoration: none; transition: background 150ms ease, transform 150ms ease;
+  }
+  .btn:hover { background: var(--clay-deep); }
+  .btn:active { transform: scale(0.98); }
+  .btn.ghost { background: var(--well); color: var(--ink); }
+  .btn.ghost:hover { background: #E4D5BC; }
+
+  /* ---------- hero ---------- */
+  .hero { padding: 56px 0 24px; }
+  .hero-grid { display: grid; grid-template-columns: 1fr 1.1fr; gap: 40px; align-items: center; }
+  .eyebrow {
+    display: inline-block; font-weight: 700; font-size: 0.78rem; letter-spacing: 0.14em;
+    color: var(--clay); background: var(--clay-soft); border-radius: 999px; padding: 7px 16px;
+    margin-bottom: 22px;
+  }
+  h1 {
+    font-family: "Fraunces", serif; font-weight: 640; font-size: clamp(2.6rem, 5.2vw, 4.1rem);
+    line-height: 1.04; letter-spacing: -0.02em; margin-bottom: 22px;
+  }
+  h1 em { font-style: italic; color: var(--clay); }
+  .lede { font-size: 1.15rem; color: var(--ink-soft); max-width: 34em; margin-bottom: 32px; }
+  .hero-ctas { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; }
+  .hero-note { font-size: 0.88rem; color: var(--ink-soft); margin-top: 18px; }
+
+  /* ---------- the chair stage ---------- */
+  .stage {
+    background: var(--cream-deep);
+    border-radius: 28px;
+    padding: 36px 28px 28px;
+    text-align: center;
+  }
+  .stage svg { width: 100%; height: auto; max-width: 560px; display: block; margin: 0 auto; }
+  .convert-row { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 8px; }
+  .toggle {
+    display: inline-flex; background: var(--well); border-radius: 999px; padding: 5px; position: relative;
+  }
+  .toggle button {
+    position: relative; z-index: 1; border: none; background: transparent; cursor: pointer;
+    font-family: inherit; font-weight: 600; font-size: 0.98rem; color: var(--ink-soft);
+    padding: 10px 30px; border-radius: 999px; transition: color 200ms ease;
+  }
+  .toggle button.on { color: #fff; }
+  .toggle .thumb {
+    position: absolute; top: 5px; left: 5px; bottom: 5px; width: calc(50% - 5px);
+    background: var(--clay); border-radius: 999px;
+    transition: transform 350ms cubic-bezier(.4, 1.4, .4, 1);
+  }
+  .toggle.bed .thumb { transform: translateX(100%); }
+  .convert-caption { font-size: 0.88rem; color: var(--ink-soft); }
+  .convert-caption strong { color: var(--ink); }
+
+  /* chair animation */
+  #back-group, #foot-group, #arm, #zzz {
+    transition: transform 900ms cubic-bezier(.36, 1.12, .38, 1), opacity 500ms ease;
+  }
+  #back-group { transform-origin: 208px 250px; }
+  #foot-group { transform-origin: 428px 262px; }
+  .as-bed #back-group { transform: rotate(-71deg); }
+  .as-bed #foot-group { transform: rotate(-92deg); }
+  .as-bed #arm { transform: translateY(26px); opacity: 0; }
+  #zzz { opacity: 0; transform: translateY(8px); }
+  .as-bed #zzz { opacity: 1; transform: translateY(0); transition-delay: 700ms; }
+
+  /* ---------- ticker strip ---------- */
+  .strip {
+    margin: 56px 0; padding: 16px 0; background: var(--ink); color: var(--cream);
+    overflow: hidden; white-space: nowrap;
+  }
+  .strip-inner { display: inline-block; animation: slide 30s linear infinite; }
+  .strip span {
+    font-weight: 600; font-size: 0.85rem; letter-spacing: 0.16em; margin: 0 28px;
+  }
+  .strip span::after { content: "✦"; color: var(--clay); margin-left: 56px; }
+  @keyframes slide { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+  /* ---------- sections ---------- */
+  section { padding: 64px 0; }
+  .kicker { font-weight: 700; font-size: 0.8rem; letter-spacing: 0.14em; color: var(--clay); margin-bottom: 14px; }
+  h2 {
+    font-family: "Fraunces", serif; font-weight: 620; font-size: clamp(1.9rem, 3.4vw, 2.7rem);
+    line-height: 1.12; letter-spacing: -0.015em; margin-bottom: 18px; max-width: 20em;
+  }
+  h2 em { font-style: italic; color: var(--clay); }
+  .section-lede { color: var(--ink-soft); font-size: 1.08rem; max-width: 38em; }
+
+  /* the problem: versus */
+  .versus { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 40px; }
+  .vs-card { border-radius: var(--radius); padding: 30px 30px 24px; }
+  .vs-card.them { background: var(--well); }
+  .vs-card.us { background: var(--clay); color: #FFF6EE; }
+  .vs-card h3 { font-family: "Fraunces", serif; font-size: 1.35rem; font-weight: 620; margin-bottom: 16px; }
+  .vs-card ul { list-style: none; }
+  .vs-card li { padding: 9px 0; display: flex; gap: 12px; align-items: baseline; font-size: 1rem; }
+  .vs-card.them li { color: var(--ink-soft); }
+  .vs-card li::before { flex-shrink: 0; font-weight: 800; }
+  .vs-card.them li::before { content: "✕"; color: #B0977A; }
+  .vs-card.us li::before { content: "✓"; color: #FFD9C4; }
+
+  /* features */
+  .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 40px; }
+  .feature { background: var(--paper); border-radius: var(--radius); padding: 30px 28px; }
+  .feature .glyph {
+    width: 52px; height: 52px; border-radius: 16px; background: var(--clay-soft);
+    display: flex; align-items: center; justify-content: center; margin-bottom: 20px;
+    font-size: 1.5rem;
+  }
+  .feature h3 { font-family: "Fraunces", serif; font-weight: 620; font-size: 1.3rem; margin-bottom: 10px; }
+  .feature p { color: var(--ink-soft); font-size: 0.98rem; }
+
+  /* stats */
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 48px; }
+  .stat { background: var(--cream-deep); border-radius: var(--radius); padding: 26px 24px; text-align: center; }
+  .stat .num { font-family: "Fraunces", serif; font-weight: 700; font-size: 2.6rem; color: var(--clay); line-height: 1.1; }
+  .stat .label { font-size: 0.92rem; color: var(--ink-soft); margin-top: 6px; }
+
+  /* testimonials */
+  .quotes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 40px; }
+  .quote { background: var(--paper); border-radius: var(--radius); padding: 28px; display: flex; flex-direction: column; }
+  .quote p {
+    font-family: "Fraunces", serif; font-style: italic; font-weight: 480;
+    font-size: 1.18rem; line-height: 1.45; flex: 1;
+  }
+  .quote .who { margin-top: 20px; font-size: 0.92rem; color: var(--ink-soft); }
+  .quote .who strong { color: var(--ink); display: block; font-weight: 600; }
+
+  /* CTA */
+  .cta-panel {
+    background: var(--ink); color: var(--cream);
+    border-radius: 32px; padding: 64px 40px; text-align: center;
+  }
+  .cta-panel h2 { color: var(--cream); margin-left: auto; margin-right: auto; }
+  .cta-panel .section-lede { color: #C9BBA8; margin: 0 auto 34px; }
+  .cta-form { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .cta-form input {
+    font-family: inherit; font-size: 1rem; border: none; outline: none;
+    background: #4A3A29; color: var(--cream); border-radius: 999px; padding: 13px 24px; width: 300px; max-width: 100%;
+  }
+  .cta-form input::placeholder { color: #A08D75; }
+  .cta-fine { margin-top: 18px; font-size: 0.85rem; color: #A08D75; }
+
+  footer { padding: 44px 0 56px; text-align: center; color: var(--ink-soft); font-size: 0.92rem; }
+  footer .wordmark { font-size: 1.2rem; display: inline-block; margin-bottom: 10px; }
+
+  /* ---------- responsive ---------- */
+  @media (max-width: 900px) {
+    .hero-grid { grid-template-columns: 1fr; gap: 36px; }
+    .features, .stats, .quotes { grid-template-columns: 1fr; }
+    .versus { grid-template-columns: 1fr; }
+    .nav-links a:not(.btn) { display: none; }
+    section { padding: 48px 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .strip-inner { animation: none; }
+    #back-group, #foot-group, #zzz, .toggle .thumb { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <nav class="nav">
+    <a class="wordmark" href="#">Mac<span>Daddy</span></a>
+    <div class="nav-links">
+      <a href="#chair">The chair</a>
+      <a href="#why">Why us</a>
+      <a href="#dads">Dads</a>
+      <a class="btn" href="#hospitals">For hospitals</a>
+    </div>
+  </nav>
+</header>
+
+<main>
+  <div class="wrap hero">
+    <div class="hero-grid">
+      <div>
+        <span class="eyebrow">MADE BY DADS, FOR DADS</span>
+        <h1>The best seat in the <em>delivery room.</em></h1>
+        <p class="lede">
+          Mac Daddy is the hospital chair-bed built by dads who've spent the
+          night in the other kind. Actually comfortable. Converts in one
+          motion. Converts back before the nurse even notices.
+        </p>
+        <div class="hero-ctas">
+          <a class="btn" href="#hospitals">Bring it to your hospital</a>
+          <a class="btn ghost" href="#chair">Meet the chair</a>
+        </div>
+        <p class="hero-note">Trusted by 40,000+ well-rested dads and the nurses who no longer hear them complain.</p>
+      </div>
+
+      <div class="stage" id="chair">
+        <!-- The Mac Daddy — converts on toggle -->
+        <svg id="macdaddy" viewBox="0 0 640 420" role="img" aria-label="Illustration of the Mac Daddy chair converting into a bed">
+          <!-- floor shadow -->
+          <ellipse cx="320" cy="368" rx="235" ry="18" fill="#E0D2BB"/>
+
+          <!-- backrest: hinged at rear of seat -->
+          <g id="back-group">
+            <!-- back slab -->
+            <rect x="176" y="96" width="64" height="164" rx="26" fill="#C2603E"/>
+            <!-- channel stitching -->
+            <line x1="182" y1="138" x2="234" y2="138" stroke="#A84E30" stroke-width="3" stroke-linecap="round"/>
+            <line x1="182" y1="178" x2="234" y2="178" stroke="#A84E30" stroke-width="3" stroke-linecap="round"/>
+            <line x1="182" y1="218" x2="234" y2="218" stroke="#A84E30" stroke-width="3" stroke-linecap="round"/>
+            <!-- headrest pillow -->
+            <g id="pillow">
+              <rect x="160" y="52" width="96" height="56" rx="26" fill="#F3E3D2"/>
+              <path d="M176 80 Q208 70 240 80" stroke="#E2C8AC" stroke-width="3" fill="none" stroke-linecap="round"/>
+            </g>
+          </g>
+
+          <!-- seat -->
+          <rect x="196" y="238" width="240" height="52" rx="24" fill="#C2603E"/>
+          <line x1="276" y1="244" x2="276" y2="284" stroke="#A84E30" stroke-width="3" stroke-linecap="round"/>
+          <line x1="356" y1="244" x2="356" y2="284" stroke="#A84E30" stroke-width="3" stroke-linecap="round"/>
+
+          <!-- footrest: hinged at front of seat, hangs down as chair -->
+          <g id="foot-group">
+            <rect x="404" y="262" width="48" height="96" rx="20" fill="#C2603E"/>
+            <line x1="410" y1="308" x2="446" y2="308" stroke="#A84E30" stroke-width="3" stroke-linecap="round"/>
+          </g>
+
+          <!-- armrest (stays put, like the real thing) -->
+          <g id="arm">
+            <rect x="232" y="196" width="150" height="34" rx="17" fill="#8A4630"/>
+            <rect x="232" y="212" width="30" height="60" rx="14" fill="#8A4630"/>
+          </g>
+
+          <!-- base + legs -->
+          <rect x="236" y="288" width="164" height="34" rx="14" fill="#5C4632"/>
+          <rect x="252" y="318" width="14" height="30" rx="6" fill="#5C4632"/>
+          <rect x="372" y="318" width="14" height="30" rx="6" fill="#5C4632"/>
+          <!-- lockable casters -->
+          <circle cx="259" cy="354" r="12" fill="#3B2E20"/>
+          <circle cx="379" cy="354" r="12" fill="#3B2E20"/>
+          <circle cx="259" cy="354" r="4" fill="#8A7458"/>
+          <circle cx="379" cy="354" r="4" fill="#8A7458"/>
+
+          <!-- sleeping z's, appear in bed mode -->
+          <g id="zzz" fill="#B0977A" font-family="Fraunces, Georgia, serif" font-style="italic" font-weight="600">
+            <text x="120" y="150" font-size="40">z</text>
+            <text x="152" y="118" font-size="30">z</text>
+            <text x="177" y="95" font-size="22">z</text>
+          </g>
+        </svg>
+
+        <div class="convert-row">
+          <div class="toggle" id="toggle">
+            <div class="thumb"></div>
+            <button type="button" id="btn-chair" class="on" aria-pressed="true">Chair</button>
+            <button type="button" id="btn-bed" aria-pressed="false">Bed</button>
+          </div>
+          <p class="convert-caption">One motion. <strong>Four seconds.</strong> Zero pinched fingers.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="strip" aria-hidden="true">
+    <div class="strip-inner">
+      <span>3&nbsp;A.M. APPROVED</span><span>ONE-MOTION RECLINE</span><span>HOSPITAL-GRADE</span><span>SNORE-TESTED</span><span>ACTUAL PADDING</span><span>DAD-ENGINEERED</span>
+      <span>3&nbsp;A.M. APPROVED</span><span>ONE-MOTION RECLINE</span><span>HOSPITAL-GRADE</span><span>SNORE-TESTED</span><span>ACTUAL PADDING</span><span>DAD-ENGINEERED</span>
+    </div>
+  </div>
+
+  <section class="wrap" id="why">
+    <p class="kicker">YOU KNOW THE CHAIR</p>
+    <h2>Every dad remembers <em>that</em> chair.</h2>
+    <p class="section-lede">
+      The vinyl one in the corner. The one that "converts" — if you can find
+      the lever, and you're willing to sleep on the seam. Your kid arrived;
+      your spine never did. We started Mac Daddy because the most important
+      night of your life shouldn't come with a chiropractor bill.
+    </p>
+
+    <div class="versus">
+      <div class="vs-card them">
+        <h3>That chair</h3>
+        <ul>
+          <li>Vinyl that sticks to your arms in July</li>
+          <li>A fold-out seam positioned exactly at your lower back</li>
+          <li>Conversion requires two nurses and an engineering degree</li>
+          <li>Sounds like a haunted ship when you roll over</li>
+          <li>"Padding"</li>
+        </ul>
+      </div>
+      <div class="vs-card us">
+        <h3>The Mac Daddy</h3>
+        <ul>
+          <li>Breathable woven fabric over real, honest cushioning</li>
+          <li>A flat, seamless sleep surface — all six-foot-four of it</li>
+          <li>One motion to bed, one motion back. Four seconds.</li>
+          <li>Silent recline — the baby stays asleep, and so do you</li>
+          <li>Padding. Actual padding.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <p class="kicker">BUILT LIKE WE MEAN IT</p>
+    <h2>Comfortable on purpose. Tough by necessity.</h2>
+
+    <div class="features">
+      <div class="feature">
+        <div class="glyph">😴</div>
+        <h3>Sleep you can use</h3>
+        <p>High-resilience foam layered under a breathable weave. Firm where
+        your back needs it, soft everywhere else. It's a real place to
+        sleep, not a rumor of one.</p>
+      </div>
+      <div class="feature">
+        <div class="glyph">🔄</div>
+        <h3>One-motion convert</h3>
+        <p>Pull the handle, the back lays flat, the footrest rises. No
+        levers to hunt for, no fingers to pinch, no waking anyone up. Back
+        to a chair just as fast when the doctor walks in.</p>
+      </div>
+      <div class="feature">
+        <div class="glyph">🏥</div>
+        <h3>Ward-ready for years</h3>
+        <p>Wipeable, fluid-resistant fabric. Lockable casters. A steel frame
+        warrantied for ten years of dads who said they'd "just rest their
+        eyes for a minute."</p>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="num">4 sec</div>
+        <div class="label">chair to bed, one motion</div>
+      </div>
+      <div class="stat">
+        <div class="num">6'4"</div>
+        <div class="label">of flat, seamless sleep surface</div>
+      </div>
+      <div class="stat">
+        <div class="num">0</div>
+        <div class="label">pinched fingers since 2024</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap" id="dads">
+    <p class="kicker">FIELD REPORTS</p>
+    <h2>From the dads who were <em>there.</em></h2>
+
+    <div class="quotes">
+      <div class="quote">
+        <p>"36 hours of labor. I slept 6 of them, and I'd like to formally
+        apologize to my wife for how well-rested I looked."</p>
+        <div class="who"><strong>Marcus T.</strong>Girl dad, day one</div>
+      </div>
+      <div class="quote">
+        <p>"I converted it one-handed while holding a sleeping newborn. I
+        have never felt more capable in my life."</p>
+        <div class="who"><strong>Dave R.</strong>Twin dad, somehow surviving</div>
+      </div>
+      <div class="quote">
+        <p>"The nurse asked if I wanted a cot. I gestured at the Mac Daddy
+        like I owned the hospital."</p>
+        <div class="who"><strong>Andre K.</strong>Boy dad, third time around</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap" id="hospitals">
+    <div class="cta-panel">
+      <p class="kicker">FOR HOSPITALS &amp; BIRTH CENTERS</p>
+      <h2>Give your dads a fighting chance.</h2>
+      <p class="section-lede">
+        Volume pricing, white-glove delivery, and a chair your maternity ward
+        will stop getting complaints about. Drop your email and we'll send
+        the spec sheet — plus a sample of the cushion, because you won't
+        believe us otherwise.
+      </p>
+      <form class="cta-form" onsubmit="event.preventDefault(); this.querySelector('button').textContent='Talk soon 👋';">
+        <input type="email" required placeholder="you@yourhospital.org" aria-label="Work email" />
+        <button class="btn" type="submit">Send me the goods</button>
+      </form>
+      <p class="cta-fine">Not a hospital? Forward this to yours. Loudly.</p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <a class="wordmark" href="#">Mac<span>Daddy</span></a>
+  <p>Made by dads, for dads. © 2026 Mac Daddy Co. — Sleep tight, pops.</p>
+</footer>
+
+<script>
+  const stage = document.getElementById('macdaddy');
+  const toggle = document.getElementById('toggle');
+  const btnChair = document.getElementById('btn-chair');
+  const btnBed = document.getElementById('btn-bed');
+
+  function setMode(bed) {
+    stage.classList.toggle('as-bed', bed);
+    toggle.classList.toggle('bed', bed);
+    btnBed.classList.toggle('on', bed);
+    btnChair.classList.toggle('on', !bed);
+    btnBed.setAttribute('aria-pressed', String(bed));
+    btnChair.setAttribute('aria-pressed', String(!bed));
+  }
+  btnChair.addEventListener('click', () => setMode(false));
+  btnBed.addEventListener('click', () => setMode(true));
+
+  // one quiet demo on load, so nobody misses the party trick
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    setTimeout(() => setMode(true), 1400);
+    setTimeout(() => setMode(false), 3600);
+  }
+</script>
+</body>
+</html>
