@@ -1,0 +1,626 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>The Big Softie — The recliner that becomes a real bed</title>
+<meta name="description" content="The Big Softie is the delivery-room recliner made by dads, for dads. A classic thick recliner that goes 80 inches fully flat, then butterfly-opens into a real twin bed with a real mattress." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;900&family=Fraunces:ital,opsz,wght@0,9..144,400..900;1,9..144,400..900&family=DM+Sans:ital,opsz,wght@0,9..40,300..800;1,9..40,300..800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --cream: #FAF4EA;
+    --cream-deep: #F1E8D8;
+    --well: #EDE1CE;
+    --ink: #241B10;
+    --ink-soft: #6B5B49;
+    --clay: #C2603E;
+    --clay-deep: #A84E30;
+    --clay-soft: #E8C3B0;
+    --paper: #FFFDF8;
+    --radius: 20px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--cream);
+    color: var(--ink);
+    font-family: "DM Sans", system-ui, sans-serif;
+    font-size: 17px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1140px; margin: 0 auto; padding: 0 24px; }
+
+  /* ---------- header ---------- */
+  header {
+    position: sticky; top: 0; z-index: 20;
+    background: color-mix(in srgb, var(--cream) 92%, transparent);
+    backdrop-filter: blur(10px);
+  }
+  .nav { display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; max-width: 1140px; margin: 0 auto; }
+  .wordmark {
+    font-family: "Archivo", sans-serif; font-weight: 900; font-size: 1.25rem;
+    letter-spacing: -0.01em; text-transform: uppercase; color: var(--ink); text-decoration: none;
+  }
+  .wordmark span { color: var(--clay); }
+  .nav-links { display: flex; gap: 28px; align-items: center; }
+  .nav-links a { color: var(--ink-soft); text-decoration: none; font-weight: 600; font-size: 0.95rem; }
+  .nav-links a:hover { color: var(--ink); }
+  .btn {
+    display: inline-block; border: none; cursor: pointer;
+    background: var(--ink); color: var(--cream);
+    font-family: "Archivo", sans-serif; font-weight: 700; font-size: 0.95rem;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    padding: 14px 26px; border-radius: 999px;
+    text-decoration: none; transition: background 150ms ease, transform 150ms ease;
+  }
+  .btn:hover { background: #3C2E1E; }
+  .btn:active { transform: scale(0.98); }
+  .btn.clay { background: var(--clay); color: #fff; }
+  .btn.clay:hover { background: var(--clay-deep); }
+  .btn.ghost { background: var(--well); color: var(--ink); }
+  .btn.ghost:hover { background: #E4D5BC; }
+
+  /* ---------- hero ---------- */
+  .hero { padding: 48px 0 24px; }
+  .hero-grid { display: grid; grid-template-columns: 0.9fr 1.15fr; gap: 44px; align-items: center; }
+  .eyebrow {
+    display: inline-block; font-family: "Archivo", sans-serif; font-weight: 700; font-size: 0.78rem;
+    letter-spacing: 0.14em; color: var(--clay); background: var(--clay-soft);
+    border-radius: 999px; padding: 8px 16px; margin-bottom: 24px;
+  }
+  h1 {
+    font-family: "Archivo", sans-serif; font-weight: 900; text-transform: uppercase;
+    font-size: clamp(2.7rem, 5.4vw, 4.3rem);
+    line-height: 0.98; letter-spacing: -0.025em; margin-bottom: 14px;
+  }
+  h1 .soft { color: var(--clay); }
+  .hero-sub {
+    font-family: "Fraunces", Georgia, serif; font-style: italic; font-weight: 500;
+    font-size: clamp(1.25rem, 2.2vw, 1.6rem); color: var(--ink); margin-bottom: 20px;
+  }
+  .lede { font-size: 1.1rem; color: var(--ink-soft); max-width: 34em; margin-bottom: 30px; }
+  .hero-ctas { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; }
+  .hero-note { font-size: 0.88rem; color: var(--ink-soft); margin-top: 18px; }
+
+  /* ---------- product stage ---------- */
+  .stage {
+    background: linear-gradient(180deg, #F4ECDD 0%, #EBDFC9 100%);
+    border-radius: 28px;
+    padding: 20px 18px 26px;
+    text-align: center;
+  }
+  .shots { position: relative; width: 100%; max-width: 640px; margin: 0 auto; }
+  .shots svg { width: 100%; height: auto; display: block; }
+  .shot { opacity: 0; transition: opacity 480ms ease; }
+  .shot.on { opacity: 1; }
+
+  .convert-row { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 4px; }
+  .toggle { display: inline-flex; background: var(--well); border-radius: 999px; padding: 5px; position: relative; }
+  .toggle button {
+    position: relative; z-index: 1; border: none; background: transparent; cursor: pointer;
+    font-family: "Archivo", sans-serif; font-weight: 700; font-size: 0.82rem;
+    text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-soft);
+    padding: 11px 20px; border-radius: 999px; transition: color 200ms ease; white-space: nowrap;
+    flex: 1 1 0;
+  }
+  .toggle button.on { color: #fff; }
+  .toggle .thumb {
+    position: absolute; top: 5px; left: 5px; bottom: 5px; width: calc((100% - 10px) / 3);
+    background: var(--clay); border-radius: 999px;
+    transition: transform 380ms cubic-bezier(.4, 1.3, .4, 1);
+  }
+  .convert-caption { font-size: 0.92rem; color: var(--ink-soft); min-height: 1.6em; }
+  .convert-caption strong { color: var(--ink); }
+
+  /* ---------- ticker strip ---------- */
+  .strip { margin: 56px 0; padding: 16px 0; background: var(--ink); color: var(--cream); overflow: hidden; white-space: nowrap; }
+  .strip-inner { display: inline-block; animation: slide 32s linear infinite; }
+  .strip span { font-family: "Archivo", sans-serif; font-weight: 700; font-size: 0.85rem; letter-spacing: 0.16em; margin: 0 28px; }
+  .strip span::after { content: "✦"; color: var(--clay); margin-left: 56px; }
+  @keyframes slide { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+  /* ---------- sections ---------- */
+  section { padding: 64px 0; }
+  .kicker { font-family: "Archivo", sans-serif; font-weight: 700; font-size: 0.8rem; letter-spacing: 0.14em; color: var(--clay); margin-bottom: 14px; }
+  h2 {
+    font-family: "Archivo", sans-serif; font-weight: 900; text-transform: uppercase;
+    font-size: clamp(1.8rem, 3.4vw, 2.6rem);
+    line-height: 1.05; letter-spacing: -0.02em; margin-bottom: 18px; max-width: 22em;
+  }
+  h2 em { font-family: "Fraunces", serif; font-style: italic; font-weight: 550; text-transform: none; color: var(--clay); font-size: 1.12em; }
+  .section-lede { color: var(--ink-soft); font-size: 1.08rem; max-width: 40em; }
+
+  /* versus */
+  .versus { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 40px; }
+  .vs-card { border-radius: var(--radius); padding: 30px 30px 24px; }
+  .vs-card.them { background: var(--well); }
+  .vs-card.us { background: var(--clay); color: #FFF6EE; }
+  .vs-card h3 { font-family: "Archivo", sans-serif; font-weight: 900; text-transform: uppercase; letter-spacing: -0.01em; font-size: 1.15rem; margin-bottom: 16px; }
+  .vs-card ul { list-style: none; }
+  .vs-card li { padding: 9px 0; display: flex; gap: 12px; align-items: baseline; font-size: 1rem; }
+  .vs-card.them li { color: var(--ink-soft); }
+  .vs-card li::before { flex-shrink: 0; font-weight: 800; }
+  .vs-card.them li::before { content: "✕"; color: #B0977A; }
+  .vs-card.us li::before { content: "✓"; color: #FFD9C4; }
+
+  /* features */
+  .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 40px; }
+  .feature { background: var(--paper); border-radius: var(--radius); padding: 30px 28px; }
+  .feature .glyph {
+    width: 52px; height: 52px; border-radius: 16px; background: var(--clay-soft);
+    display: flex; align-items: center; justify-content: center; margin-bottom: 20px; font-size: 1.5rem;
+  }
+  .feature h3 { font-family: "Archivo", sans-serif; font-weight: 900; text-transform: uppercase; font-size: 1.05rem; margin-bottom: 10px; }
+  .feature p { color: var(--ink-soft); font-size: 0.98rem; }
+
+  /* stats */
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 48px; }
+  .stat { background: var(--cream-deep); border-radius: var(--radius); padding: 26px 24px; text-align: center; }
+  .stat .num { font-family: "Archivo", sans-serif; font-weight: 900; font-size: 2.4rem; color: var(--clay); line-height: 1.1; letter-spacing: -0.02em; }
+  .stat .label { font-size: 0.92rem; color: var(--ink-soft); margin-top: 6px; }
+
+  /* testimonials */
+  .quotes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 40px; }
+  .quote { background: var(--paper); border-radius: var(--radius); padding: 28px; display: flex; flex-direction: column; }
+  .quote p { font-family: "Fraunces", serif; font-style: italic; font-weight: 480; font-size: 1.18rem; line-height: 1.45; flex: 1; }
+  .quote .who { margin-top: 20px; font-size: 0.92rem; color: var(--ink-soft); }
+  .quote .who strong { color: var(--ink); display: block; font-weight: 600; }
+
+  /* CTA */
+  .cta-panel { background: var(--ink); color: var(--cream); border-radius: 32px; padding: 64px 40px; text-align: center; }
+  .cta-panel h2 { color: var(--cream); margin-left: auto; margin-right: auto; }
+  .cta-panel .section-lede { color: #C9BBA8; margin: 0 auto 34px; }
+  .cta-form { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .cta-form input {
+    font-family: inherit; font-size: 1rem; border: none; outline: none;
+    background: #45362A; color: var(--cream); border-radius: 999px; padding: 13px 24px; width: 300px; max-width: 100%;
+  }
+  .cta-form input::placeholder { color: #A08D75; }
+  .cta-fine { margin-top: 18px; font-size: 0.85rem; color: #A08D75; }
+
+  footer { padding: 44px 0 56px; text-align: center; color: var(--ink-soft); font-size: 0.92rem; }
+  footer .wordmark { font-size: 1.05rem; display: inline-block; margin-bottom: 10px; }
+
+  /* ---------- responsive ---------- */
+  @media (max-width: 900px) {
+    .hero-grid { grid-template-columns: 1fr; gap: 36px; }
+    .features, .stats, .quotes { grid-template-columns: 1fr; }
+    .versus { grid-template-columns: 1fr; }
+    .nav-links a:not(.btn) { display: none; }
+    section { padding: 48px 0; }
+    .toggle button { padding: 11px 14px; font-size: 0.75rem; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .strip-inner { animation: none; }
+    .shot, .toggle .thumb { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <nav class="nav">
+    <a class="wordmark" href="#">The Big<span>&nbsp;Softie</span></a>
+    <div class="nav-links">
+      <a href="#chair">The chair</a>
+      <a href="#why">Why</a>
+      <a href="#dads">Dads</a>
+      <a class="btn clay" href="#hospitals">For hospitals</a>
+    </div>
+  </nav>
+</header>
+
+<main>
+  <div class="wrap hero">
+    <div class="hero-grid">
+      <div>
+        <span class="eyebrow">MADE BY DADS, FOR DADS</span>
+        <h1>Meet<br />the <span class="soft">Big&nbsp;Softie.</span></h1>
+        <p class="hero-sub">The recliner that becomes a real damn bed.</p>
+        <p class="lede">
+          A classic, thick, unapologetic recliner for the delivery room. Pull
+          the handle and it lays out 80 inches, fully flat. Fold it open,
+          butterfly-style, and it's a twin-sized bed with an actual mattress.
+          You're about to become a father — not a pretzel.
+        </p>
+        <div class="hero-ctas">
+          <a class="btn clay" href="#hospitals">Bring it to your hospital</a>
+          <a class="btn ghost" href="#chair">See all three forms</a>
+        </div>
+        <p class="hero-note">Trusted by 40,000+ well-rested dads and the nurses who no longer hear them complain.</p>
+      </div>
+
+      <div class="stage" id="chair">
+        <div class="shots">
+          <svg viewBox="0 0 900 640" role="img" aria-label="The Big Softie shown as a recliner, an 80-inch flat lounger, and a butterfly-opened twin bed">
+            <defs>
+              <!-- fabric gradients -->
+              <linearGradient id="fabV" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#DFB88F"/>
+                <stop offset="0.55" stop-color="#C6935F"/>
+                <stop offset="1" stop-color="#A97846"/>
+              </linearGradient>
+              <linearGradient id="fabV2" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#EBC79E"/>
+                <stop offset="1" stop-color="#C08A55"/>
+              </linearGradient>
+              <linearGradient id="armH" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0" stop-color="#B98550"/>
+                <stop offset="0.45" stop-color="#E2B98C"/>
+                <stop offset="1" stop-color="#A0703F"/>
+              </linearGradient>
+              <linearGradient id="armH2" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0" stop-color="#A0703F"/>
+                <stop offset="0.55" stop-color="#E2B98C"/>
+                <stop offset="1" stop-color="#B98550"/>
+              </linearGradient>
+              <linearGradient id="baseV" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#8A6038"/>
+                <stop offset="1" stop-color="#65431F"/>
+              </linearGradient>
+              <linearGradient id="mattTop" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#FFFEFA"/>
+                <stop offset="1" stop-color="#F0E7D4"/>
+              </linearGradient>
+              <linearGradient id="mattSide" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#EFE5D0"/>
+                <stop offset="1" stop-color="#D3C3A6"/>
+              </linearGradient>
+              <filter id="blurS" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="7"/></filter>
+              <filter id="blurM" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="14"/></filter>
+            </defs>
+
+            <!-- ============ SHOT 1: THE CHAIR (front view) ============ -->
+            <g class="shot on" id="shot-0">
+              <ellipse cx="450" cy="582" rx="270" ry="26" fill="#7A6142" opacity="0.28" filter="url(#blurM)"/>
+
+              <!-- backrest -->
+              <rect x="268" y="118" width="364" height="330" rx="64" fill="url(#fabV)"/>
+              <!-- back channels -->
+              <path d="M382 150 V400" stroke="#8F6236" stroke-width="7" opacity="0.32" filter="url(#blurS)"/>
+              <path d="M518 150 V400" stroke="#8F6236" stroke-width="7" opacity="0.32" filter="url(#blurS)"/>
+              <!-- headrest roll -->
+              <rect x="288" y="92" width="324" height="92" rx="46" fill="url(#fabV2)"/>
+              <path d="M300 168 Q450 190 600 168" stroke="#8F6236" stroke-width="8" opacity="0.28" fill="none" filter="url(#blurS)"/>
+              <path d="M312 116 Q450 100 588 116" stroke="#FFF3E2" stroke-width="4" opacity="0.55" fill="none"/>
+
+              <!-- seat cushion -->
+              <rect x="318" y="360" width="264" height="102" rx="30" fill="url(#fabV2)"/>
+              <ellipse cx="450" cy="372" rx="112" ry="14" fill="#F4D9B6" opacity="0.6"/>
+
+              <!-- folded footrest panels (stacked, authentic) -->
+              <rect x="326" y="452" width="248" height="42" rx="14" fill="url(#fabV)"/>
+              <rect x="330" y="490" width="240" height="40" rx="14" fill="url(#baseV)" opacity="0.9"/>
+
+              <!-- base skirt -->
+              <rect x="252" y="512" width="396" height="58" rx="18" fill="url(#baseV)"/>
+
+              <!-- arms: fat rolled fronts -->
+              <g>
+                <rect x="196" y="268" width="140" height="296" rx="52" fill="url(#armH)"/>
+                <ellipse cx="266" cy="292" rx="58" ry="20" fill="#F0CFA6" opacity="0.55"/>
+                <path d="M214 330 V520" stroke="#8F6236" stroke-width="5" opacity="0.25" filter="url(#blurS)"/>
+              </g>
+              <g>
+                <rect x="564" y="268" width="140" height="296" rx="52" fill="url(#armH2)"/>
+                <ellipse cx="634" cy="292" rx="58" ry="20" fill="#F0CFA6" opacity="0.55"/>
+                <path d="M686 330 V520" stroke="#8F6236" stroke-width="5" opacity="0.25" filter="url(#blurS)"/>
+              </g>
+
+              <!-- seams where arms meet seat (soft AO) -->
+              <path d="M336 370 V540" stroke="#6E4A24" stroke-width="9" opacity="0.22" filter="url(#blurS)"/>
+              <path d="M564 370 V540" stroke="#6E4A24" stroke-width="9" opacity="0.22" filter="url(#blurS)"/>
+
+              <!-- piping highlights -->
+              <path d="M330 362 Q450 348 570 362" stroke="#FFF3E2" stroke-width="3.5" opacity="0.7" fill="none"/>
+
+              <!-- wooden recline handle, hugging the outer arm -->
+              <g transform="rotate(-10 700 440)">
+                <rect x="692" y="368" width="16" height="88" rx="8" fill="#6E4423"/>
+                <ellipse cx="700" cy="362" rx="17" ry="14" fill="#83552B"/>
+                <ellipse cx="696" cy="357" rx="7" ry="5" fill="#9A6B3C" opacity="0.8"/>
+              </g>
+            </g>
+
+            <!-- ============ SHOT 2: 80" FULLY FLAT (side view) ============ -->
+            <g class="shot" id="shot-1">
+              <ellipse cx="450" cy="520" rx="350" ry="22" fill="#7A6142" opacity="0.28" filter="url(#blurM)"/>
+
+              <!-- steel recline linkage, cantilevered foot end -->
+              <g stroke="#5A5248" stroke-width="8" stroke-linecap="round">
+                <path d="M596 442 L692 408"/>
+                <path d="M648 444 L724 410"/>
+              </g>
+
+              <!-- base -->
+              <rect x="256" y="424" width="336" height="34" rx="12" fill="url(#baseV)"/>
+              <rect x="292" y="452" width="18" height="42" rx="8" fill="#5C4326"/>
+              <rect x="536" y="452" width="18" height="42" rx="8" fill="#5C4326"/>
+              <circle cx="301" cy="500" r="14" fill="#3B2E20"/>
+              <circle cx="545" cy="500" r="14" fill="#3B2E20"/>
+              <circle cx="301" cy="500" r="5" fill="#8A7458"/>
+              <circle cx="545" cy="500" r="5" fill="#8A7458"/>
+
+              <!-- three flat cushion segments -->
+              <rect x="118" y="338" width="234" height="86" rx="32" fill="url(#fabV)"/>
+              <rect x="348" y="338" width="252" height="86" rx="26" fill="url(#fabV2)"/>
+              <rect x="596" y="338" width="186" height="86" rx="32" fill="url(#fabV)"/>
+              <!-- seam AO -->
+              <path d="M352 346 V418" stroke="#6E4A24" stroke-width="8" opacity="0.28" filter="url(#blurS)"/>
+              <path d="M600 346 V418" stroke="#6E4A24" stroke-width="8" opacity="0.28" filter="url(#blurS)"/>
+              <!-- top sheen -->
+              <ellipse cx="235" cy="352" rx="98" ry="10" fill="#F4D9B6" opacity="0.55"/>
+              <ellipse cx="474" cy="352" rx="106" ry="10" fill="#F4D9B6" opacity="0.55"/>
+              <ellipse cx="689" cy="352" rx="76" ry="10" fill="#F4D9B6" opacity="0.55"/>
+
+              <!-- head pillow -->
+              <rect x="128" y="296" width="158" height="56" rx="28" fill="#FBF4E6"/>
+              <path d="M146 326 Q207 314 268 326" stroke="#E0D2B8" stroke-width="3.5" fill="none"/>
+
+              <!-- dimension line -->
+              <g stroke="#8A7458" stroke-width="2.5">
+                <path d="M118 566 H782"/>
+                <path d="M118 556 V576"/>
+                <path d="M782 556 V576"/>
+              </g>
+              <rect x="360" y="548" width="180" height="36" rx="18" fill="#F1E8D8"/>
+              <text x="450" y="572" text-anchor="middle" font-family="Archivo, sans-serif" font-weight="800" font-size="21" fill="#241B10" letter-spacing="1">80 INCHES</text>
+            </g>
+
+            <!-- ============ SHOT 3: BUTTERFLY-OPEN TWIN (3/4 view) ============ -->
+            <g class="shot" id="shot-2">
+              <ellipse cx="480" cy="560" rx="360" ry="30" fill="#7A6142" opacity="0.28" filter="url(#blurM)"/>
+
+              <!-- frame under mattress -->
+              <path d="M190 486 L660 486 L660 516 L190 516 Z" fill="#65431F"/>
+              <path d="M660 486 L810 371 L810 398 L660 516 Z" fill="#523517"/>
+              <circle cx="222" cy="536" r="14" fill="#3B2E20"/>
+              <circle cx="630" cy="536" r="14" fill="#3B2E20"/>
+              <circle cx="222" cy="536" r="5" fill="#8A7458"/>
+              <circle cx="630" cy="536" r="5" fill="#8A7458"/>
+              <circle cx="782" cy="424" r="12" fill="#3B2E20"/>
+
+              <!-- mattress: side faces -->
+              <path d="M150 428 L690 428 L690 490 L150 490 Z" fill="url(#mattSide)"/>
+              <path d="M690 428 L840 313 L840 375 L690 490 Z" fill="#CBBBA2"/>
+
+              <!-- mattress: top face (parallelogram) -->
+              <path d="M150 428 L690 428 L840 313 L300 313 Z" fill="url(#mattTop)"/>
+
+              <!-- butterfly center seam along the length -->
+              <path d="M225 370 L765 370" stroke="#CDBFA6" stroke-width="4"/>
+              <path d="M225 374 L765 374" stroke="#FFFEF8" stroke-width="2" opacity="0.8"/>
+
+              <!-- quilt lines across (following depth) -->
+              <g stroke="#B9A988" stroke-width="1.6" opacity="0.35">
+                <path d="M240 428 L390 313"/>
+                <path d="M330 428 L480 313"/>
+                <path d="M420 428 L570 313"/>
+                <path d="M510 428 L660 313"/>
+                <path d="M600 428 L750 313"/>
+              </g>
+              <!-- quilt dimples -->
+              <g fill="#B9A988" opacity="0.5">
+                <ellipse cx="322" cy="399" rx="4.5" ry="2.8"/>
+                <ellipse cx="412" cy="399" rx="4.5" ry="2.8"/>
+                <ellipse cx="502" cy="399" rx="4.5" ry="2.8"/>
+                <ellipse cx="592" cy="399" rx="4.5" ry="2.8"/>
+                <ellipse cx="398" cy="341" rx="4.5" ry="2.8"/>
+                <ellipse cx="488" cy="341" rx="4.5" ry="2.8"/>
+                <ellipse cx="578" cy="341" rx="4.5" ry="2.8"/>
+                <ellipse cx="668" cy="341" rx="4.5" ry="2.8"/>
+              </g>
+              <!-- puffy piping on top edge -->
+              <path d="M150 428 L690 428 L840 313" stroke="#FFFEF8" stroke-width="5" fill="none" opacity="0.9"/>
+
+              <!-- pillow lying on the head end of the mattress -->
+              <ellipse cx="308" cy="392" rx="80" ry="18" fill="#8A7458" opacity="0.35" filter="url(#blurS)"/>
+              <g transform="rotate(-37 300 370)">
+                <rect x="212" y="336" width="176" height="68" rx="32" fill="#FFFFFF" stroke="#DFD2B9" stroke-width="2.5"/>
+                <path d="M234 372 Q300 356 366 372" stroke="#E0D2B6" stroke-width="3.5" fill="none"/>
+                <ellipse cx="300" cy="352" rx="58" ry="10" fill="#FFFFFF"/>
+                <path d="M222 348 Q232 336 246 332" stroke="#EDE2CC" stroke-width="3" fill="none"/>
+                <path d="M378 348 Q368 336 354 332" stroke="#EDE2CC" stroke-width="3" fill="none"/>
+              </g>
+
+              <!-- caramel throw draped over the foot end -->
+              <path d="M566 428 L646 428 L796 313 L716 313 Z" fill="url(#fabV)"/>
+              <path d="M566 428 L646 428 L646 496 Q640 510 606 510 Q572 510 566 494 Z" fill="url(#baseV)" opacity="0.25"/>
+              <path d="M566 428 L646 428 L646 496 Q640 510 606 510 Q572 510 566 494 Z" fill="url(#fabV)" opacity="0.92"/>
+              <path d="M596 428 L740 318" stroke="#8F6236" stroke-width="3.5" opacity="0.35" fill="none"/>
+              <path d="M622 428 L766 318" stroke="#8F6236" stroke-width="3.5" opacity="0.35" fill="none"/>
+              <path d="M590 434 V500" stroke="#8F6236" stroke-width="3.5" opacity="0.3" fill="none"/>
+              <path d="M618 434 V504" stroke="#8F6236" stroke-width="3.5" opacity="0.3" fill="none"/>
+
+              <!-- dimension labels -->
+              <rect x="290" y="576" width="240" height="36" rx="18" fill="#F1E8D8"/>
+              <text x="410" y="600" text-anchor="middle" font-family="Archivo, sans-serif" font-weight="800" font-size="20" fill="#241B10" letter-spacing="1">38" × 80" TWIN</text>
+            </g>
+          </svg>
+        </div>
+
+        <div class="convert-row">
+          <div class="toggle" id="toggle">
+            <div class="thumb" id="thumb"></div>
+            <button type="button" data-i="0" class="on" aria-pressed="true">The Chair</button>
+            <button type="button" data-i="1" aria-pressed="false">80" Flat</button>
+            <button type="button" data-i="2" aria-pressed="false">Twin Bed</button>
+          </div>
+          <p class="convert-caption" id="caption">A classic thick recliner. <strong>Feels like a bear hug.</strong></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="strip" aria-hidden="true">
+    <div class="strip-inner">
+      <span>80" FULLY FLAT</span><span>BUTTERFLY-OPENS TO A TWIN</span><span>A REAL MATTRESS</span><span>ONE HANDLE</span><span>SNORE-TESTED</span><span>MADE BY DADS</span>
+      <span>80" FULLY FLAT</span><span>BUTTERFLY-OPENS TO A TWIN</span><span>A REAL MATTRESS</span><span>ONE HANDLE</span><span>SNORE-TESTED</span><span>MADE BY DADS</span>
+    </div>
+  </div>
+
+  <section class="wrap" id="why">
+    <p class="kicker">YOU KNOW THE CHAIR</p>
+    <h2>Every dad remembers <em>that</em> chair.</h2>
+    <p class="section-lede">
+      The vinyl one in the corner. The one that "converts" — if you can find
+      the lever, and you're willing to sleep on the seam. Your kid arrived;
+      your spine never did. We built The Big Softie because the most
+      important night of your life shouldn't come with a chiropractor bill.
+    </p>
+
+    <div class="versus">
+      <div class="vs-card them">
+        <h3>That chair</h3>
+        <ul>
+          <li>Vinyl that sticks to your arms in July</li>
+          <li>A fold-out seam positioned exactly at your lower back</li>
+          <li>Conversion requires two nurses and an engineering degree</li>
+          <li>Sounds like a haunted ship when you roll over</li>
+          <li>"Padding"</li>
+        </ul>
+      </div>
+      <div class="vs-card us">
+        <h3>The Big Softie</h3>
+        <ul>
+          <li>A thick, over-stuffed recliner you'd want in your living room</li>
+          <li>80 inches fully flat — head, spine, and toes included</li>
+          <li>Butterfly-opens to a 38" × 80" twin with a real mattress</li>
+          <li>One handle, one motion, dead silent — the baby stays asleep</li>
+          <li>Padding. So much padding.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <p class="kicker">BUILT LIKE WE MEAN IT</p>
+    <h2>One handle. <em>Three</em> forms.</h2>
+    <p class="section-lede">
+      Chair for the pep talks. Flat for the catnaps. Twin bed for the long
+      haul. Every form takes about four seconds and zero engineering degrees.
+    </p>
+
+    <div class="features">
+      <div class="feature">
+        <div class="glyph">🛋️</div>
+        <h3>Thick where it counts</h3>
+        <p>A classic, deep, over-stuffed recliner — rolled arms, high-resilience
+        foam, a headrest that means it. It looks like comfort because it is
+        comfort. No apologies, no vinyl.</p>
+      </div>
+      <div class="feature">
+        <div class="glyph">🛏️</div>
+        <h3>A mattress, not a metaphor</h3>
+        <p>Pull the handle: 80 inches, fully flat. Fold it open butterfly-style:
+        a genuine twin-sized sleep surface with a quilted pillow-top mattress.
+        Not "sleeps okay." Sleeps.</p>
+      </div>
+      <div class="feature">
+        <div class="glyph">🏥</div>
+        <h3>Ward-proof for years</h3>
+        <p>Wipeable, fluid-resistant fabric over the plush. Lockable casters. A
+        steel frame warrantied for ten years of dads who said they'd "just
+        rest their eyes for a minute."</p>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="num">80"</div>
+        <div class="label">fully flat — toes included</div>
+      </div>
+      <div class="stat">
+        <div class="num">38" × 80"</div>
+        <div class="label">butterfly-open. An actual twin.</div>
+      </div>
+      <div class="stat">
+        <div class="num">4 sec</div>
+        <div class="label">per form. Zero pinched fingers.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap" id="dads">
+    <p class="kicker">FIELD REPORTS</p>
+    <h2>From the dads who were <em>there.</em></h2>
+
+    <div class="quotes">
+      <div class="quote">
+        <p>"36 hours of labor. I slept 6 of them, and I'd like to formally
+        apologize to my wife for how well-rested I looked."</p>
+        <div class="who"><strong>Marcus T.</strong>Girl dad, day one</div>
+      </div>
+      <div class="quote">
+        <p>"I butterflied it open one-handed while holding a sleeping newborn.
+        I have never felt more capable in my life."</p>
+        <div class="who"><strong>Dave R.</strong>Twin dad, somehow surviving</div>
+      </div>
+      <div class="quote">
+        <p>"The nurse asked if I wanted a cot. I gestured at The Big Softie
+        like I owned the hospital."</p>
+        <div class="who"><strong>Andre K.</strong>Boy dad, third time around</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap" id="hospitals">
+    <div class="cta-panel">
+      <p class="kicker">FOR HOSPITALS &amp; BIRTH CENTERS</p>
+      <h2>Give your dads a fighting chance.</h2>
+      <p class="section-lede">
+        Volume pricing, white-glove delivery, and a chair your maternity ward
+        will stop getting complaints about. Drop your email and we'll send
+        the spec sheet — plus a swatch of the cushion, because you won't
+        believe us otherwise.
+      </p>
+      <form class="cta-form" onsubmit="event.preventDefault(); this.querySelector('button').textContent='Talk soon 👋';">
+        <input type="email" required placeholder="you@yourhospital.org" aria-label="Work email" />
+        <button class="btn clay" type="submit">Send me the goods</button>
+      </form>
+      <p class="cta-fine">Not a hospital? Forward this to yours. Loudly.</p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <a class="wordmark" href="#">The Big<span>&nbsp;Softie</span></a>
+  <p>Made by dads, for dads. © 2026 The Big Softie. Sleep tight, pops.</p>
+</footer>
+
+<script>
+  const shots = [0, 1, 2].map((i) => document.getElementById('shot-' + i));
+  const buttons = Array.from(document.querySelectorAll('.toggle button'));
+  const thumb = document.getElementById('thumb');
+  const caption = document.getElementById('caption');
+  const captions = [
+    'A classic thick recliner. <strong>Feels like a bear hug.</strong>',
+    'Pull the handle. <strong>80 inches, fully flat.</strong> Toes included.',
+    'Fold it open. <strong>38" × 80" — an actual twin</strong> with an actual mattress.',
+  ];
+
+  let userTouched = false;
+  function setState(i) {
+    shots.forEach((s, j) => s.classList.toggle('on', i === j));
+    buttons.forEach((b, j) => {
+      b.classList.toggle('on', i === j);
+      b.setAttribute('aria-pressed', String(i === j));
+    });
+    thumb.style.transform = 'translateX(' + i * 100 + '%)';
+    caption.innerHTML = captions[i];
+  }
+  buttons.forEach((b) => b.addEventListener('click', () => { userTouched = true; setState(+b.dataset.i); }));
+
+  // one quiet tour of all three forms on load
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    [[1, 1800], [2, 3600], [0, 5600]].forEach(([i, t]) =>
+      setTimeout(() => { if (!userTouched) setState(i); }, t)
+    );
+  }
+</script>
+</body>
+</html>
